@@ -1,5 +1,5 @@
 # ParameciaAndroidReverse
-草履虫的Android逆向教程 
+草履虫的Android逆向教程 [欢迎大家在issue当中指出更正的地方，或者是通过下面的联系方式联系我]
 
 联系方式：[telegram账号](https://t.me/GitFub)
 
@@ -9,6 +9,7 @@
 * 系统：MIUI 13（基于Android 11-12）
 * IDA：IDA 7.5 pro
 * jadx-gui：jadx-gui-1.4.2-no-jre-win.exe
+* JEB：JEB 3.19.1.202005071620
 
 ---
 
@@ -25,17 +26,17 @@
 ---
 
 - [ParameciaAndroidReverse](#parameciaandroidreverse)
-  - [- 工具脱壳实操](#--工具脱壳实操)
   - [JEB 静态分析登录过程实例](#jeb-静态分析登录过程实例)
   - [动态调试流程](#动态调试流程)
   - [工具脱壳实操](#工具脱壳实操)
+
 ---
 
 ## JEB 静态分析登录过程实例
 
+[JEB动态调试获取注册码_java层](\教程、JEB动态调试获取注册码_java层.md)
 
-
-
+通过 JEB 静态分析和动态调试，获取一个软件的注册码。将 apk 放在 JEB 软件当中，分析反编译之后的代码，发现 Java 层的 checkSN() 函数的位置最有可能是在处理验证码的校验函数，通过分析，得到 chechSN() 是通过不断的获取MD5 值得到的，通过分析 smali 代码，获得的单个字符存储在 v8 寄存器当中，完整的验证码存储在 v5 寄存器当中
 
 ---
 
