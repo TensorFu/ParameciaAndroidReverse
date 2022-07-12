@@ -23,13 +23,13 @@
 
 首先将我们的 apk 放进 JEB 当中，左边的显示了这个当中有三个类，随便双击打开一个，通过 tab 键，切换 smali 代码和 Java 代码
 
-![17](media\17.png)
+![17](media/17.png)
 
 
 
 通过分析发现，软件打开之后直接呈现注册画面，所以注册内容在整个程序比较靠前的位置，onCreate() 函数是初始化整个程序的部分，所以从这个地方开始分析，在 MainActivity 这个类当中的 onCreate() 函数有一个判断程序是否注册成功的程序，判断的依据就是 checkSN() 这个函数，双击查看这个程序
 
-![18](media\18.png)
+![18](media/18.png)
 
 
 
@@ -51,7 +51,7 @@
 
 `adb shell am start -D -n com.qianyu.zhuceji/com.qianyu.zhuceji.MainActivity` 
 
-`adb shell am start -D -n 包名\类名`
+`adb shell am start -D -n 包名/类名`
 
 挂载程序
 
