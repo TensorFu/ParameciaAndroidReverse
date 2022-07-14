@@ -8,7 +8,9 @@
 在本教程当中所使用到的软件版本和设备信息列表
 
 * 设备：小米10
-* 系统：MIUI 13（基于Android 11-12）
+* 手机系统：MIUI 13（基于Android 11-12）
+* PC系统：Windows10专业版
+* Java：1.8.0_202
 * IDA：IDA 7.5 pro
 * jadx-gui：jadx-gui-1.4.2-no-jre-win.exe
 * JEB：JEB 3.19.1.202005071620
