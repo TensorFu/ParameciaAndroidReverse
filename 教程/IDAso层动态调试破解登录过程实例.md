@@ -7,7 +7,7 @@
     - [进行附加进程调试](#进行附加进程调试)
 
 
-***此教程当中所用的 APK 在 release 当中的  JEBDebugger_so.zip 压缩包当中***
+***此教程当中所用的 APK 在 release 当中的  IDADebugger_so.zip 压缩包当中***
 
 
 
