@@ -38,3 +38,12 @@
 [IDA在附加继承调试的时候显示计算机积极的拒绝](bug/IDA在附加继承调试的时候显示计算机积极的拒绝.md)
 
 [IDA在附加进程调试的时候没有找到对应的进程](bug/IDA在附加进程调试的时候没有找到对应的进程.md)
+
+
+
+---
+
+### ADB指令使用过程当中出现的错误
+
+[remote fchown failed: Operation not permitted](remotefchownfailed:Operationnotpermitted.md)
+
