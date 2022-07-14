@@ -45,5 +45,5 @@
 
 ### ADB指令使用过程当中出现的错误
 
-[remote fchown failed: Operation not permitted](bug/remotefchownfailed:Operationnotpermitted.md)
+[remote fchown failed: Operation not permitted](bug/remotefchownfailedOperationnotpermitted.md)
 
