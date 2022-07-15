@@ -57,4 +57,6 @@ ___
 
 [编译的时候报错无法进行一下步的签名](bug/编译的时候报错无法进行一下步的签名.md)
 
- 
+[获取包结构信息出错请检查AndroidManifest](bug/获取包结构信息出错请检查AndroidManifest.md)
+
+[java.lang.NoClassDefFoundErrorsunmiscBASE64Encoder](bug/java.lang.NoClassDefFoundErrorsunmiscBASE64Encoder.md)
