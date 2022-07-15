@@ -2,8 +2,10 @@
 
 - [bug](#bug)
     - [在运行frida_server时候出现出现的错误](#在运行frida_server时候出现出现的错误)
-    - [JEB在附加进程调试的时候出现的错误](#jeb在附加进程调试的时候出现的错误)
-    - [IDA在附加进程调试的时候出现的错误](#ida在附加进程调试的时候出现的错误)
+    - [JEB在使用的时候出现的错误](#jeb在使用的时候出现的错误)
+    - [IDA在使用的时候出现的错误](#ida在使用的时候出现的错误)
+    - [ADB指令使用过程当中出现的错误](#adb指令使用过程当中出现的错误)
+    - [在使用AndroidKiller的时候出现的错误](#在使用androidkiller的时候出现的错误)
 
 
 
@@ -21,7 +23,7 @@
 
 
 
-### JEB在附加进程调试的时候出现的错误
+### JEB在使用的时候出现的错误
 
 [JEB在附加进程调试的时候页面空白](bug/JEB在附加进程调试的时候页面空白.md)
 
@@ -31,7 +33,7 @@
 
 
 
-### IDA在附加进程调试的时候出现的错误
+### IDA在使用的时候出现的错误
 
 [IDA在附加进程调试的时候没有检测到对应的进程](bug/IDA在附加进程调试的时候没有检测到对应的进程.md)
 
@@ -47,3 +49,12 @@
 
 [remote fchown failed: Operation not permitted](bug/remotefchownfailedOperationnotpermitted.md)
 
+
+
+___
+
+###  在使用AndroidKiller的时候出现的错误
+
+
+
+ 
