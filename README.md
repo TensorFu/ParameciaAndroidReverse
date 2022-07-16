@@ -30,6 +30,7 @@
 ---
 
 - [ParameciaAndroidReverse](#parameciaandroidreverse)
+  - [smali语法](#smali语法)
   - [汇编代码阅读](#汇编代码阅读)
   - [JEB 静态分析动态调试Java层破解登录过程实例](#jeb-静态分析动态调试java层破解登录过程实例)
   - [IDA 动态调试流程](#ida-动态调试流程)
@@ -38,9 +39,9 @@
 
 ---
 
-### smali语法
+## smali语法
 
-[smali语法](教程/smali语法)
+[smali语法](教程/smali语法.md)
 
 静态分析当中常见的 smali 代码
 
