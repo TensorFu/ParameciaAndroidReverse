@@ -60,7 +60,7 @@
 ```assembly
 .class public Lcom/lvf/simplestdemo/MainActivity; # 有这么一个类，叫做 MainActivity，并且权限是 public
 .super Landroid/support/v7/app/AppCompatActuvuty; # 这个类继承于 AppCompatActuvuty
-.source "MainActivity.java" # 这个类所在的文件是 MainActivity.java
+.source "MainActivity.java"; # 这个类所在的文件是 MainActivity.java
 ```
 
 ```java
