@@ -41,7 +41,9 @@
 
 [IDA在附加进程调试的时候没有找到对应的进程](bug/IDA在附加进程调试的时候没有找到对应的进程.md)
 
-[CreatesegmentIllegalsegmentbitness](bug/CreatesegmentIllegalsegmentbitness.md)
+[Create segment Illegal segment bitness](bug/CreatesegmentIllegalsegmentbitness.md)
+
+[armlinux debugger: more than one special register present]()
 
 
 
