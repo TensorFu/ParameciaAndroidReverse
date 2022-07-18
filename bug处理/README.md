@@ -43,7 +43,7 @@
 
 [Create segment Illegal segment bitness](bug/CreatesegmentIllegalsegmentbitness.md)
 
-[armlinux debugger: more than one special register present]()
+[armlinux debugger: more than one special register present](bug/morethanonespecialregisterpresent.md)
 
 
 
