@@ -155,9 +155,9 @@ MainActivity.this.User_Pass.getText().toString().trim()
 
 ![56](media/56.png)
 
+​    
 
-
-打开你的软件让他出运行的状态
+打开你的软件让他处于的状态
 
 打开 IDA pro （需要打开对应的 IDA pro 在刚刚的分析当中我们已经知道这个 APP 是 32位 的 APP 所以 使用 IDA pro 如果是 64 位的 APP 那么就使用 IDA pro 64）
 
