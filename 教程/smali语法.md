@@ -118,7 +118,13 @@ private Button mButton
 
 例子1：
 
-`.local v0, "ans":Ljava/lang/String;` <=对应源码=> `String ans=""`;  
+```assembly
+.local v0, "ans":Ljava/lang/String;
+```
+
+```java
+String ans=""`;  
+```
 
 
 
