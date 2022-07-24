@@ -64,3 +64,5 @@ ___
 [获取包结构信息出错请检查AndroidManifest](bug/获取包结构信息出错请检查AndroidManifest.md)
 
 [java.lang.NoClassDefFoundErrorsunmiscBASE64Encoder](bug/java.lang.NoClassDefFoundErrorsunmiscBASE64Encoder.md)
+
+[APK 反编译失败，无法继续下一步源码反编译!](bug/APK 反编译失败，无法继续下一步源码反编译!.md)
