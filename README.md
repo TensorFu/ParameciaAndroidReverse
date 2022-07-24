@@ -65,7 +65,7 @@
 
 ## APKtool工具反编译apk
 
-[APKtool工具反编译apk](教程/APKtool工具反编译apk.md)
+[APKtool工具反编译apk](教程/Apktool工具反编译apk.md)
 
 我们将 apk 解压之后会看到很多的 .dex 的文件，在反编译之后，就会生成一个一个 smali 的文件，通过这些文件，我们就能够了解应用的运行逻辑，以及动态调试，当然使用 Androidkiller 也能够直接进行反编译
 

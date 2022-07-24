@@ -11,4 +11,4 @@
 1. 更换更高版本的 APKTOOL（目前使用的是2.4.1，最新版本是2.6.1）
    1. 已经更换，但是没有什么作用
 2. 通过 apktool 这个工具直接进行反编译
-   1. [APKtool工具反编译apk](../../教程/APKtool工具反编译apk.md)
+   1. [APKtool工具反编译apk](../../教程/Apktool工具反编译apk.md)
