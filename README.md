@@ -30,8 +30,10 @@
 ---
 
 - [ParameciaAndroidReverse](#parameciaandroidreverse)
+  - [汇编](#汇编)
   - [smali语法](#smali语法)
   - [汇编代码阅读](#汇编代码阅读)
+  - [APKtool工具反编译apk](#apktool工具反编译apk)
   - [JEB 静态分析动态调试Java层破解登录过程实例](#jeb-静态分析动态调试java层破解登录过程实例)
   - [IDA 动态调试流程](#ida-动态调试流程)
   - [IDAso层动态调试破解登录过程实例](#idaso层动态调试破解登录过程实例)
