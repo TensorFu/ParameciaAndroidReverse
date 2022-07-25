@@ -53,6 +53,8 @@
 
 [remote fchown failed: Operation not permitted](bug/remotefchownfailedOperationnotpermitted.md)
 
+[没有办法通过ADB安装应用](bug/没有办法通过ADB安装应用.md)
+
 
 
 ___
