@@ -30,6 +30,7 @@
 ---
 
 - [ParameciaAndroidReverse](#parameciaandroidreverse)
+  - [APK文件结构](#apk文件结构)
   - [APK的打包流程](#apk的打包流程)
   - [汇编](#汇编)
   - [smali语法](#smali语法)
@@ -42,6 +43,13 @@
 
 ---
 
+## APK文件结构
+
+[APK文件结构](教程/APK文件结构)
+
+APK文件 就是 Android 的安装包，它本身也是一个压缩包，我们可以通过解压软件对 APK 文件直接进行解压
+
+---
 
 ## APK的打包流程
 
