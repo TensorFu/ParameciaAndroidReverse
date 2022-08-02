@@ -27,6 +27,10 @@
 
 [JEB在附加进程调试的时候页面空白](bug/JEB在附加进程调试的时候页面空白.md)
 
+[JEB在动态调试的时候找不到对应的进程](bug/JEB在动态调试的时候找不到对应的进程.md)
+
+[卡在AttachingToTarget](bug/卡在AttachingToTarget.md)
+
 
 
 ---
@@ -55,6 +59,8 @@
 
 [没有办法通过ADB安装应用](bug/没有办法通过ADB安装应用.md)
 
+[cannot connect to daemon](bug/cannotconnecttodaemon.md)
+
 
 
 ___
@@ -68,4 +74,12 @@ ___
 [java.lang.NoClassDefFoundErrorsunmiscBASE64Encoder](bug/java.lang.NoClassDefFoundErrorsunmiscBASE64Encoder.md)
 
 [APK 反编译失败，无法继续下一步源码反编译!](bug/APK反编译失败无法继续下一步源码反编译.md)
+
+
+
+---
+
+### 在使用DDMS的时候出现的错误
+
+[DDMS不显示对应的调试的进程](bug/DDMS不显示对应的进程.md)
 
