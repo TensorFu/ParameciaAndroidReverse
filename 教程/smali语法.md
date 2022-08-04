@@ -614,3 +614,11 @@ sswitch_data_0 的代码区块，但是这里的并没有给出 case 的初始�
 ```
 
 不同的 p1 的值对应不同的 sswitch_x
+
+---
+
+```assembly
+sget-object v0, Lcom/aaa;->ID:Ljava/lang/String;
+```
+
+sget-object就是用来获取变量值并保存到紧接着的参数的寄存器中，在这里，把上面出现的ID这个String成员变量获取并放到v0这个寄存器中,因为只指出了该类的所属的类型,可以看出这是个静态的(static fields)
