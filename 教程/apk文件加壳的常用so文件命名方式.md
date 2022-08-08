@@ -1,4 +1,4 @@
-# apk加固常用的so文件名命
+# apk文件加壳的常用so文件命名方式
 
         markNameMap.put("libchaosvmp.so", "娜迦");
         markNameMap.put("libddog.so", "娜迦");
