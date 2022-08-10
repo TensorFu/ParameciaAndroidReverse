@@ -622,3 +622,31 @@ sget-object v0, Lcom/aaa;->ID:Ljava/lang/String;
 ```
 
 sget-object就是用来获取变量值并保存到紧接着的参数的寄存器中，在这里，把上面出现的ID这个String成员变量获取并放到v0这个寄存器中,因为只指出了该类的所属的类型,可以看出这是个静态的(static fields)
+
+
+
+```assembly
+sget-object v0, Lcom/disney/Class1;->PREFS_INSTALLATION_ID:Ljava/lang/String;
+```
+
+上句中sget-object指令把PREFS_INSTALLATION_ID这个String成员变量获取并放到v0寄存器中。
+
+
+
+```assembly
+iget-object v0, p0, Lcom/disney/Class1;->_view:Lcom/disney/Class2;
+```
+
+上句iget-object指令比sget-object多了一个参数p0，就是该变量所在类的实例，在这里就是p0即“this”。
+
+
+
+```assembly
+const/4 v3, 0x0
+sput-object v3, Lcom/disney/Class1;->globalIapHandler:Lcom/disney/config/GlobalPurchaseHandler;
+```
+
+Class1.globalIapHandler = null;
+
+
+
