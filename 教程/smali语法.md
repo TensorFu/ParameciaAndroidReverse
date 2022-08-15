@@ -302,7 +302,7 @@ if-lez vA, :cond_X      如果vA小于等于0则跳转到:cond_X
 ### 函数的调用 invoke
 
 1. private：invoke-direct 
-2. public|protected： invoke-virtual 
+2. public    |    protected： invoke-virtual 
 3. static：invoke-static 
 4. parent:  invoke-super
 

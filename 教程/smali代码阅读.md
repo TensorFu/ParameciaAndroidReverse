@@ -197,7 +197,7 @@ public class MainActivity extends Activity implements View.OnClickListener {
 ​    
 
 ```
-.method public constructor <init>()V
+.method public constructor <init>()V 
           .registers 2
 00000000  invoke-direct       Activity-><init>()V, p0
 00000006  const/4             v0, 0
@@ -213,11 +213,48 @@ public class MainActivity extends Activity implements View.OnClickListener {
 ```
 
 ```java
- public MainActivity() {
+     public MainActivity() {
         this.cnt = 0;
         this.handler = new Handler();
         this.showMessageTask = new Runnable() {
+            @Override
+            public void run() {
+                TextView tv3 = (TextView)MainActivity.this.findViewById(0x7F0C0052);  // id:textView3
+                if(MainActivity.this.n - MainActivity.this.m == 1) {
+                    ++MainActivity.this.cnt;
+                    tv3.setText("WIN! +" + String.valueOf(MainActivity.this.cnt));
+                }
+                else if(MainActivity.this.m - MainActivity.this.n == 1) {
+                    MainActivity.this.cnt = 0;
+                    tv3.setText("LOSE +0");
+                }
+                else if(MainActivity.this.m == MainActivity.this.n) {
+                    tv3.setText("DRAW +" + String.valueOf(MainActivity.this.cnt));
+                }
+                else if(MainActivity.this.m < MainActivity.this.n) {
+                    MainActivity.this.cnt = 0;
+                    tv3.setText("LOSE +0");
+                }
+                else {
+                    ++MainActivity.this.cnt;
+                    tv3.setText("WIN! +" + String.valueOf(MainActivity.this.cnt));
+                }
+
+                if(1000 == MainActivity.this.cnt) {
+                    tv3.setText("SECCON{" + String.valueOf((MainActivity.this.cnt + MainActivity.this.calc()) * 107) + "}");
+                }
+
+                MainActivity.this.flag = 0;
+            }
+        };
+    }
+
+    public native int calc() {
+    }
 ```
 
+`.method public constructor <init>()V` 表示的是定义一个构造函数，构造函数和类名同名
 
+`          .registers 2` 申请两个寄存器		
 
+`00000000  invoke-direct       Activity-><init>()V, p0` 
