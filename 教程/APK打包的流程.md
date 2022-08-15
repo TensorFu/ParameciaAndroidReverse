@@ -6,7 +6,7 @@
 
 ### **1. 打包资源文件，生成R.java文件**
 
-打包资源的工具是aapt（The sAndroid Asset Packaing Tool）
+打包资源的工具是aapt（The Android Asset Packaing Tool）
 
 在这个过程中，项目中的 AndroidManifest.xml 文件和布局文件XML 都会编译，然后生成相应的R.java（R.java文件是编译器自动生成的，它无需开发人员对其进行维护。R.java会自动收录当前应用中所有的资源，并根据这些资源建立对应的ID。可以简单的把R.java理解成是当前Android应用的资源字典。）
 
