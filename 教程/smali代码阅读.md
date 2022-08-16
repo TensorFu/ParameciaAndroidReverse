@@ -257,4 +257,8 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
 `          .registers 2` 申请两个寄存器		
 
-`00000000  invoke-direct       Activity-><init>()V, p0` 
+`invoke-direct       Activity-><init>()V, p0` 这个是和构造函数一起配对使用的，它和`.method public constructor <init>()V` 共同构成构造函数		
+
+`const/4             v0, 0` 给 $V_0$ 寄存器一个值（0）		
+
+`iput                v0, p0, MainActivity->cnt:I` iput 赋值操作，用于将 int 类型的数据赋值给后面的对象 P0.cnt 也就是this.cnt 
