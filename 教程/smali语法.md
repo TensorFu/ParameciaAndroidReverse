@@ -671,3 +671,25 @@ Class1.globalIapHandler = null;
 
 
 
+```
+return-void　　函数返回void
+```
+
+
+
+```assembly
+new-array           v1, v9, [String  # 获得一个 string 类型的列表 长度是 V9 ，并且将这个存放在寄存器 v1 当中
+```
+
+
+
+```assembly
+aput-object         v5, v1, v7 # 这是针对列表的一种赋值，表示的将 v5 的值，给到列表 v1 的 v7 地址当中
+```
+
+
+
+```assembly
+aget-object         v5, v1, v5 # 取出地址为 V5 的 V1 列表当中的 数据 存放在 V5 寄存器当中
+```
+
