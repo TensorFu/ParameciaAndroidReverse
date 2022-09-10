@@ -62,6 +62,14 @@ APK文件 就是 Android 的安装包，它本身也是一个压缩包，我们�
 
 ---
 
+## Android 相关的基础知识
+
+[android相关的基础知识](教程/Android相关的基础知识.md)
+
+
+
+---
+
 ## java代码基础
 
 [Java代码基础](教程/java代码基础.md)
