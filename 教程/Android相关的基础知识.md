@@ -9,7 +9,7 @@
 
 ### Linux内核层
 
-![img](assets\1620.jpeg)
+![img](assets\1620.jpg)
 
 根据这一张图的描述，一共分为下面的五个部分 
 
