@@ -9,7 +9,7 @@
 
 ### Linux内核层
 
-![img](C:\Users\86480\Desktop\ParameciaAndroidReverse\教程\assets\1620.jpeg)
+![img](assets\1620.jpeg)
 
 根据这一张图的描述，一共分为下面的五个部分 
 
