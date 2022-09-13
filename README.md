@@ -74,6 +74,8 @@ APK文件 就是 Android 的安装包，它本身也是一个压缩包，我们�
 
 [Java代码基础](教程/java代码基础.md)
 
+static关键字[static关键字的修饰方法，static关键字修饰变量，static静态代码块]，构造函数，方法重写与方法重载，接口
+
 ---
 
 ## smali语法
