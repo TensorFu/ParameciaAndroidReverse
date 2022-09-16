@@ -14,6 +14,8 @@
 * IDA：IDA 7.5 pro
 * jadx-gui：jadx-gui-1.4.2-no-jre-win.exe
 * JEB：JEB 3.19.1.202005071620
+* 参考书籍《安卓Frida逆向与抓包实战》
+* 参考书籍《安卓Frida逆向与协议分析》
 
 ---
 
@@ -46,7 +48,7 @@
 
 ---
 
-## APK文件结构
+## APK 文件结构
 
 [APK文件结构](教程/APK文件结构.md)
 
@@ -54,7 +56,7 @@ APK文件 就是 Android 的安装包，它本身也是一个压缩包，我们�
 
 ---
 
-## APK的打包流程
+## APK 的打包流程
 
 [APK打包的流程](教程/APK打包的流程.md)
 
@@ -70,7 +72,15 @@ APK文件 就是 Android 的安装包，它本身也是一个压缩包，我们�
 
 ---
 
-## java代码基础
+## Android开发流程简介
+
+[Android 开发流程简介](教程/Android开发流程简介.md)
+
+从新建工程了解 Android 开发的流程
+
+---
+
+## java 代码基础
 
 [Java代码基础](教程/java代码基础.md)
 
@@ -78,7 +88,7 @@ static关键字[static关键字的修饰方法，static关键字修饰变量，s
 
 ---
 
-## smali语法
+## smali 语法
 
 [smali语法](教程/smali语法.md)
 
@@ -86,7 +96,7 @@ static关键字[static关键字的修饰方法，static关键字修饰变量，s
 
 ---
 
-## smali代码阅读
+## smali 代码阅读
 
 [smali代码阅读](教程/smali代码阅读.md)
 
@@ -106,7 +116,7 @@ static关键字[static关键字的修饰方法，static关键字修饰变量，s
 
 ---
 
-## APKtool工具反编译apk
+## APKtool 工具反编译 apk
 
 [APKtool工具反编译apk](教程/Apktool工具反编译apk.md)
 
