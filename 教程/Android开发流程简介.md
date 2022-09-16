@@ -9,7 +9,7 @@
 
 1. new project
 
-![image-20220916231355381](.\assets\image-20220916231355381.png)
+![image-20220916231355381](./assets/image-20220916231355381.png)
 
 
 
