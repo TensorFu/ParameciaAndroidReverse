@@ -2,7 +2,7 @@
 
 SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate
 
-![截屏2022-09-21 19.07.04](./assets/截屏2022-09-21 19.07.04.png)
+![截屏2022-09-21 19.07.04](.\assets\截屏2022-09-21 19.07.04.png)
 
 
 
