@@ -17,7 +17,7 @@
 
 [Unable to load SELinux policy from the kernel: Failed to open file ?/sys/fs/selinux/policy?: Permission denied](bug/UnabletoloadSELinuxpolicy.md)
 
-
+[macos在安装frida的时候报错](bug/macOS在安装frida的时候报错.md)
 
 ---
 
