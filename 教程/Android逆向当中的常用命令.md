@@ -38,21 +38,65 @@
 
 ---
 
+### ps指令
 
+在 Android8之前 ps 能够显示所有的进程
 
+在 Android 8 之后 ps 只能够显示当前的进程，想要显示全部的进程需要 ps -e
 
+![image-20220926112729298](./assets/image-20220926112729298.png)
 
+![image-20220926112831715](./assets/image-20220926112831715.png)
 
+​			
 
+可以配合 grep 指令进行过滤
 
+![image-20220926113319779](./assets/image-20220926113319779.png)
 
+---
 
+### netstat指令
 
+通常使用的参数组合为-alpe。netstat -alpe用于查看所有sockets连 接的IP和端口以及相应的进程名和pid
 
+![image-20220926134108164](./assets/image-20220926134108164.png)
 
+tcp6      32      0 ::ffff:10.0.2.15:57194  ec2-54-160-50-69.:https CLOSE_WAIT  u0_a156    1509043     15290/com.superclean.booster 
 
+可以理解为 com.superclean.booster 正在链接网络，并且他的进程的pid 是 15290			
 
+---
 
+### lsof指令
+
+该命令是用来查看，这个进程正在打开的文件
+
+![image-20220926134434102](./assets/image-20220926134434102.png)
+
+erclean.booster 15290    u0_a156  187u      REG              253,4     20480      17599 /data/data/com.superclean.booster/databases/npth_log.db
+
+表示的是 15290 这个进程正在打开  /data/data/com.superclean.booster/databases/npth_log.db 这个数据库文件
+
+---
+
+### top指令
+
+这个是用来查看当前的正在进行的进程
+
+![image-20220926134720021](./assets/image-20220926134720021.png)
+
+---
+
+### adb shell dumpsys activity top | ACTIVITY
+
+这个指令就是看当前页面的这个 activity 
+
+![image-20220926145448885](./assets/image-20220926145448885.png)
+
+---
+
+### adb shell dumpsys package <包名>
 
 
 
