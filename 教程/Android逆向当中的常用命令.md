@@ -98,11 +98,29 @@ erclean.booster 15290    u0_a156  187u      REG              253,4     20480    
 
 ### adb shell dumpsys package <包名>
 
+这个指令主要是查看包信息，包括四大组件信息以及MIME等相关信息，或者是程序入口，权限的相关信息
 
+![image-20220926165410768](./assets/image-20220926165410768.png)
 
+---
 
+### adb shell dumpsys dbinfo <包名>
 
+于查看App使用的数据库信息，以及程序对该数据库做出的 相关的 SQL 语句的操作
 
+![image-20220926170128926](./assets/image-20220926170128926.png)
+
+---
+
+### adb shell pm list packages 
+
+展示，整手机的包名
+
+![image-20220926170259011](./assets/image-20220926170259011.png)
+
+---
+
+### adb shell am start-activity -D -N <包名>/<类 名>
 
 
 
