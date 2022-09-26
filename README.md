@@ -7,11 +7,11 @@
 
 在本教程当中所使用到的软件版本和设备信息列表
 
-* 设备：小米10
+* 设备：小米10  虚拟机
 * 手机系统：MIUI 13（基于Android 11-12）
-* PC系统：Windows10专业版
-* Java：1.8.0_202
-* IDA：IDA 7.5 pro
+* PC系统：Windows10专业版    macOS12.3
+* Java：1.8.0_202  Java17
+* IDA：IDA 7.5 pro 
 * jadx-gui：jadx-gui-1.4.2-no-jre-win.exe
 * JEB：JEB 3.19.1.202005071620
 * 参考书籍《安卓Frida逆向与抓包实战》
@@ -63,6 +63,12 @@ APK文件 就是 Android 的安装包，它本身也是一个压缩包，我们�
 [APK打包的流程](教程/APK打包的流程.md)
 
 简介程序从 Java 代码到安装包的过程
+
+---
+
+### Android逆向当中的常用命令
+
+[Android逆向当中的常用命令](教程/Android逆向当中的常用命令.md)
 
 ---
 
