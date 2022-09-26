@@ -88,7 +88,7 @@ erclean.booster 15290    u0_a156  187u      REG              253,4     20480    
 
 ---
 
-### adb shell dumpsys activity top | ACTIVITY
+### adb shell dumpsys activity top | grep ACTIVITY
 
 这个指令就是看当前页面的这个 activity 
 
@@ -122,5 +122,32 @@ erclean.booster 15290    u0_a156  187u      REG              253,4     20480    
 
 ### adb shell am start-activity -D -N <包名>/<类 名>
 
+这个指令主要是，拉起指定的 activity 
 
+![image-20220926180330537](./assets/image-20220926180330537.png)
 
+![image-20220926175331667](./assets/image-20220926175331667.png)
+
+---
+
+### logcat指令
+
+这个跟Android studio 上面的 logcat 是一样的，打印你的日志的时候用的。
+
+![image-20220926180745552](./assets/image-20220926180745552.png)
+
+---
+
+### adb push指令
+
+这个指令是将电脑上面的文件，传到手机/模拟器当中
+
+![image-20220926181749108](./assets/image-20220926181749108.png)
+
+---
+
+### adb pull 指令展示
+
+这个指令主要是将，手机当中的文件存放在电脑
+
+![image-20220926182054968](./assets/image-20220926182054968.png)
