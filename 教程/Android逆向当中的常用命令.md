@@ -151,3 +151,26 @@ erclean.booster 15290    u0_a156  187u      REG              253,4     20480    
 这个指令主要是将，手机当中的文件存放在电脑
 
 ![image-20220926182054968](./assets/image-20220926182054968.png)
+
+---
+
+### 查看包名
+
+当我们将 SDK/build-tools.. 这个路径加入到环境变量之后，就可以使用 `aapt dump badging file.apk` 查看包名以及对应的				
+
+![image-20220927134128480](./assets/image-20220927134128480.png)
+
+![image-20220927134151829](./assets/image-20220927134151829.png)
+
+​			
+
+或者是通过，`adb shell am monitor` 		
+
+想看哪一个包名就在虚拟机里面点哪一个应用				
+
+![image-20220927134349257](./assets/image-20220927134349257.png)
+
+
+
+
+

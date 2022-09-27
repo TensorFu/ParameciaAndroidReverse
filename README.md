@@ -148,6 +148,12 @@ static关键字[static关键字的修饰方法，static关键字修饰变量，s
 
 ---
 
+## frida使用
+
+[frida使用](教程/frida使用.md)
+
+---
+
 ## JEB 静态分析动态调试Java层破解登录过程实例
 
 [JEB动态调试获取注册码_java层](/教程/JEB动态调试获取注册码_java层.md)
