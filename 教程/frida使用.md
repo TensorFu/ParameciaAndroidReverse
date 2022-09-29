@@ -43,7 +43,7 @@ setTimeout
 
 ----
 
-### frida Hook Java层
+### frida Hook Java层 普通函数
 
 * 新建一个工程，MainActivity.java 如下
 
@@ -134,6 +134,15 @@ setImmediate(main);
 这个函数和`setTimeout()` 函数类似，都是用于指定要执 行的函数，不同的是`setTimeout` 可以用于指定Frida注入App多长时间后执行函数，往往用于延时注入。				
 
 如果传递的第二个参数为0或者 压根没有第二个参数，就和setImmediate()函数的作用一样
+
+​			
+
+### Hook Java层 重载函数
+
+* 新建一个工程，Mainactivity 的内容如下
+
+```java
+```
 
 
 
