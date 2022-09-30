@@ -142,11 +142,247 @@ setImmediate(main);
 * 新建一个工程，Mainactivity 的内容如下
 
 ```java
+package com.example.demo2;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.util.Log;
+
+import java.util.Locale;
+
+public class MainActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        while(true)
+        {
+            try{
+                Thread.sleep(1000);
+            }
+            catch (InterruptedException e)
+            {
+                e.printStackTrace();
+            }
+            fun(50,30);
+            Log.d("chongzai",fun("重载部分"));
+        }
+    }
+    void fun (int x,int y){
+        Log.d("chongzai",String.valueOf(x+y));
+    }
+    String fun(String x){
+        return x.toLowerCase();
+    }
+}
+```
+
+​			
+
+Hook_java.js
+
+```javascript
+function main()
+{
+    console.log("脚本加载成功...")
+    Java.perform(function()
+    {
+        console.log("注入函数成功...")
+        var MainActivity = Java.use("com.example.demo2.MainActivity")
+        console.log("java.use 执行成功...")
+        MainActivity.fun.overload("int","int").implementation = function(x,y)
+        {
+            console.log("x=>",x,"y=>",y)
+            var result_value = this.fun(30,40)
+            return result_value
+        }
+        
+    })
+}
+setTimeout(main)
+```
+
+​				
+
+```javascript
+function main()
+{
+    console.log("脚本加载成功...")
+    Java.perform(function()
+    {
+        console.log("注入函数成功...")
+        var MainActivity = Java.use("com.example.demo2.MainActivity")
+        console.log("java.use 执行成功...")
+        MainActivity.fun.overload("java.lang.String").implementation = function(x)
+        {
+            console.log("x=>",x)
+            var result_value = this.fun("hook string")
+            return result_value
+        }
+        
+    })
+}
+setTimeout(main)
+```
+
+​				
+
+---
+
+### 主动调用
+
+主动调用就是强制调用一个函数去执行
+
+如果不想分析详细的算法逻辑，可以直接通过主动传递 参数来调用关键算法函数，忽略方法函数的实现过程直接得到密文或 者明文，可以说这是各种算法调用的“克星”
+
+在Java中，类中的函数可分为两种:类函数和实例方法。通俗地 讲，就是静态的方法和动态的方法。				
+
+类函数使用关键字static修饰， 和对应类是绑定的，如果类函数还被public关键词修饰着，在外部就 可以直接通过类去调用			
+
+如果是类函数的主动调用，直接 使用Java.use()函数找到类进行调用即可			
+
+​				
+
+实例方法则没有关键字static修饰，在外部 只能通过创建对应类的实例再通过这个实例去调用。在Frida中主动 调用的类型会根据方法类型区分开
+
+如果是实例方法的主动调 用，则需要在找到对应的实例后对方法进行调用。这里用到了Frida 中非常重要的一个API函数Java.choose()，这个函数可以在Java的堆 中寻找指定类的实例。
+
+
+
+* 新建一个工程，Mainactivity如下
+
+```java
+package com.example.demo2;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.util.Log;
+
+import java.util.Locale;
+
+public class MainActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        while(true)
+        {
+            try{
+                Thread.sleep(1000);
+            }
+            catch (InterruptedException e)
+            {
+                e.printStackTrace();
+            }
+            fun(50,30);
+            Log.d("chongzai",fun("重载部分"));
+            //secret();
+            //staticsecret();z
+        }
+    }
+    void fun (int x,int y){
+        Log.d("chongzai",String.valueOf(x+y));
+    }
+    String fun(String x){
+        return x.toLowerCase();
+    }
+    String secret()
+    {
+        Log.d("sss","这是一个动态方法");
+        return "动态方法被hook";
+    }
+    static String staticsecret()
+    {
+        Log.d("sss","这是一个静态方法");
+        return "静态方法被hook";
+    }
+}
 ```
 
 
 
+* 主动调用和被动调用的代码如下
 
+```javascript
+function main()
+{
+    console.log("脚本加载成功...")
+    Java.perform(function()
+    {
+        console.log("注入函数成功...")
+        var MainActivity = Java.use("com.example.demo2.MainActivity")
+        console.log("java.use 执行成功...")
+        MainActivity.fun.overload("java.lang.String").implementation = function(x)
+        {
+            console.log("x=>11",x)
+            var result_value = this.fun("hook string")
+            return result_value
+        }
+        
+    })
+}
 
+function hook_java()
+{
+    console.log("脚本记载已经OK。。。")
+    Java.perform(function()
+    {
+        var MainActivity = Java.use("com.example.demo2.MainActivity")
+        console.log("脚本已经注入...")
+        MainActivity.secret.implementation = function()
+        {
+            console.log(this.secret())
+            return "";
+        }
+    })
+}
 
+function Djava()
+{
+    console.log("脚本交在成功...")
+    Java.perform(function()
+    {
+        console.log("开始注入脚本...")
+
+        // 主动调用静态函数
+        var MainActivity = Java.use("com.example.demo2.MainActivity")
+        console.log("脚本注入成功...")
+        MainActivity.staticsecret()
+
+        // 主动调用动态函数
+        Java.choose(
+            "com.example.demo2.MainActivity",
+        {
+            onMatch:function(instance)
+            {
+                console.log("instance found",instance)
+                instance.secret()
+            },
+            onComplete:function()
+            {
+                console.log("调用完成...")
+            }
+        })
+    })
+}
+
+ 
+setTimeout(Djava)
+```
+
+调用之后发现，在代码当中没有被调用的两个函数，在 `adb catlog | grep sss` 显示打印的结果
+
+​			
+
+可以发现静态的staticSecret()函数 和Hook时使用的方式大同小异，都是使用Java.use这个API去获取，MainActivity类，在获取对应的类对象后通过“.”连接符连接 staticSecret方法名，最终以和Java中一样的方式直接调用静态方法 staticSecret()函数			
+
+​				
+
+动态方法secret需要先通过Java.choose这个 API从内存中获取相应类的实例对象，然后才能通过这个实例对象去 调用动态的secret()函数，如果需要主动调用动态函数，必须确保存在相应类的对象，否则 无法进入Java.choose这个API的回调onMatch逻辑中，比如 MainActivity类对象。由于App在打开后确实运行在MainActivity界 面上，那么这个对象就一定会存在，这就是所谓的“所见即所得”思想				
+
+---
 

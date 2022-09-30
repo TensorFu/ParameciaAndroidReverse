@@ -84,6 +84,12 @@ APK文件 就是 Android 的安装包，它本身也是一个压缩包，我们�
 
 ---
 
+## Android的生命周期
+
+[android的生命周期](教程/android的生命周期.md)
+
+---
+
 ## Android开发流程简介
 
 [Android 开发流程简介](教程/Android开发流程简介.md)
