@@ -38,3 +38,111 @@ Service 就是一个后台
 Broadcast Receiver 就是相应其他应用程序（包括系统） 的广播消息
 
 Content Provider 用于进程之间的交互，通常就是从一个应用程序像其他的应用程序提供数据
+
+---
+
+### 广播
+
+想想三体当中叶文杰，罗辑通过太阳向宇宙当中发送的一个安全声明，公布了地球的位置，Android当中的广播与之类似，就是发送一个消息让整个手机都接到消息，比方说，你的屏幕点亮了，比方说你的电量很低了，比方说你的某一个软件卸载了，或者是安装了，这个时候都会有一些软件会突然跳起来（特别是清理类的软件）他是怎么知道的呢，就是通过系统广播知道的，当然，还有一些广播是通过软件自己发送出去的，比方说，你的微信想要拉起某一个浏览器，也是通过广播这样的方式进行的。
+
+广播分为静态注册和动态注册两种
+
+​				
+
+* 动态注册
+
+编写一个继承BroadcastReceiver的广播接收器的类
+
+```java
+   class DynamicReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Toast.makeText(context,intent.getStringExtra("dynamicInfo"), Toast.LENGTH_SHORT).show();
+        }
+    }
+```
+
+  			
+
+设置广播接收器参数并注册
+
+```java
+	@Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+//        实例化动态广播所需IntertFilter
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction("dynamic");
+        dynamicReceiver = new DynamicReceiver();
+//        动态注册广播
+        registerReceiver(dynamicReceiver, intentFilter);
+    }
+
+```
+
+​			
+
+发送广播
+
+```java
+    Intent intent = new Intent();
+    intent.setAction("dynamic");
+    intent.putExtra("dynamicInfo", "动态广播");
+    sendBroadcast(intent);
+```
+
+​					
+
+* 静态注册
+
+通过这样的方式生成一个 MyStaticReceiver.java 
+
+![image-20221010135606819](./assets/image-20221010135606819.png)
+
+​			
+
+编写接收到广播之后操作
+
+```java
+public class MyStaticReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        Toast.makeText(context,intent.getStringExtra("staticInfo"), Toast.LENGTH_SHORT).show();
+    }
+}
+```
+
+​			
+
+发送广播
+
+```java
+	Intent intent = new Intent(this, MyStaticReceiver.class);
+//        Android 8.0及以上静态注册广播需要使用显示Intent
+//        Intent intent = new Intent();
+//        intent.setAction("static");
+    intent.putExtra("staticInfo", "静态广播");
+    sendBroadcast(intent);
+```
+
+
+
+**动态注册广播不是常驻型广播**，也就是说广播跟随Activity的生命周期。注意在Activity结束前，移除广播接收器。**静态注册是常驻型**，也就是说当应用程序关闭后，如果有信息广播来，程序也会被系统调用自动运行
+
+​				
+
+* 有序广播和无序广播
+
+1.Normalbroadcasts：默认广播
+
+默认广播即普通广播，发送一个普通广播使用Context.sendBroadcast方法，普通广播对于多个接收者来说是完全异步的，通常每个接收者都无需等待即可以接收到广播，接收者相互之间不会有影响。对于这种广播，接收者无法终止广播，即无法阻止其他接收者的接收动作。
+
+2.orderedbroadcasts：有序广播
+
+发送一个有序广播使用Context.sendorderedBroadcast方法，有序广播比较特殊，它每次只发送到优先级较高的接收者那里，然后由优先级高的接受者再传播到优先级低的接收者那里，优先级高的接收者有能力终止这个广播。
+			
+
+1. 当广播为默认广播时：无视优先级，优先接收动态广播。
+2. 当广播为有序广播时：优先级高的先接收（不分静态和动态）。同优先级的广播接收器，优先接收动态广播。

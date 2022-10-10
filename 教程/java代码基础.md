@@ -311,3 +311,73 @@ class TestFish
 
 startsWith() 方法用于检测字符串是否以指定的前缀开始
 
+---
+
+### TextUtils.isEmpty
+
+用来判断字符串是不是为空
+
+```java
+
+public static boolean isEmpty(CharSequence str) {  
+    if (str == null || str.length() == 0)  
+        return true;  
+    else  
+        return false;  
+```
+
+在字符串为null或者""的情况下，都是可以用 TextUtils.isEmpty() 来进行判断的，因为当""情况下，str.length()==0，所以同样也会返回true
+
+---
+
+### Bundle
+
+这个类似于 Python 当中的字典
+
+Bundle主要用于传递数据；它保存的数据，是以key-value(键值对)的形式存在的。
+
+我们经常使用Bundle在Activity之间传递数据，传递的数据可以是boolean、byte、int、long、float、double、string等基本类型或它们对应的数组，也可以是对象或对象数组。当Bundle传递的是对象或对象数组时，必须实现Serializable 或 Parcelable接口。下面分别介绍Activity之间如何传递基本类型、传递对象
+
+​		
+
+Bundle提供了各种常用类型的putXxx()/getXxx()方法
+
+---
+
+### Context
+
+Context的中文翻译为：语境; 上下文; 背景; 环境，在开发中我们经常说称之为“上下文”，那么这个“上下文”到底是指什么意思呢？在语文中，我们可以理解为语境，在程序中，我们可以理解为当前对象在程序中所处的一个环境，一个与系统交互的过程。比如微信聊天，此时的“环境”是指聊天的界面以及相关的数据请求与传输，Context在加载资源、启动Activity、获取系统服务、创建View等操作都要参与。
+
+​							
+
+那Context到底是什么呢？一个Activity就是一个Context，一个Service也是一个Context。Android程序员把“场景”抽象为Context类，他们认为用户和操作系统的每一次交互都是一个场景，比如打电话、发短信，这些都是一个有界面的场景，还有一些没有界面的场景，比如后台运行的服务（Service）。一个应用程序可以认为是一个工作环境，用户在这个环境中会切换到不同的场景，这就像一个前台秘书，她可能需要接待客人，可能要打印文件，还可能要接听客户电话，而这些就称之为不同的场景，前台秘书可以称之为一个应用程序。
+
+​			
+
+Context一共有三种类型，分别是Application、Activity和Service。这三个类虽然分别各种承担着不同的作用，但它们都属于Context的一种，而它们具体Context的功能则是由ContextImpl类去实现的
+
+​			
+
+就像它的名字(上下文)一样，他是项目当前的状态的一个标识，他可以让新创建出来，新加入进来的对象或组件知道当前项目的进度，处于一个什么状态，这样我们就可以容易理解上下文的意思了把，上文就是自己知道了之前项目已经处于一个什么样的状态，下文就是告诉后来的对象或者组件当前项目处于一个什么状态。
+你可以通过getApplication()、getContext()、getBaseContext()或者this(在当前的Activity中时)来获取context上下文。
+
+​			
+
+---
+
+### synchronized
+
+synchronized可以保证方法或者代码块在运行时，同一时刻只有一个方法可以进入到临界区			
+
+一个线程访问一个对象中的synchronized(this)同步代码块时，其它线程试图访问该对象的线程将被阻塞			
+
+---
+
+### volatile
+
+**变量修改对其他线程立即可见**			
+
+就是我在一个线程对一个变量进行了修改，那么其他线程马上就可以知道我修改了他	
+
+---
+

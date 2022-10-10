@@ -386,3 +386,6 @@ setTimeout(Djava)
 
 ---
 
+## 自动化之RPC
+
+就是使用Python对JavaScript脚本进行操作
