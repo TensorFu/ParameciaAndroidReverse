@@ -512,3 +512,232 @@ CharSequence与String都能用于定义字符串，但CharSequence的值是可�
 
 ---
 
+### ArrayList
+
+ArrayList 类是一个可以动态修改的数组，与普通数组的区别就是它是没有固定大小的限制，我们可以添加或删除元素，类似于Python当中的列表
+
+---
+
+### Android中的RemoteViews
+
+RemoteViews翻译过来就是远程视图.顾名思义,RemoteViews不是当前进程的View,是属于SystemServer进程
+
+RemoteViews在Android中的使用场景有两种：通知栏和桌面小部件。
+
+```java
+private void showDefaultNotification() {
+    NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+
+    // 设置通知的基本信息：icon、标题、内容
+    builder.setSmallIcon(R.mipmap.ic_launcher);
+    builder.setContentTitle("My notification");
+    builder.setContentText("Hello World!");
+    builder.setAutoCancel(true);
+
+    // 设置通知的点击行为：这里启动一个 Activity
+    Intent intent = new Intent(this, SecondActivity.class);
+    PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+    builder.setContentIntent(pendingIntent);
+
+    // 发送通知 id 需要在应用内唯一
+    NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+    notificationManager.notify(id, builder.build());
+}
+```
+
+
+
+自定义通知
+
+```java
+private void showCustomNotification() {
+
+    RemoteViews remoteView;
+
+    // 构建 remoteView
+    remoteView = new RemoteViews(getPackageName(), R.layout.layout_notification);
+    remoteView.setTextViewText(R.id.tvMsg, "哈shenhuniurou");
+    remoteView.setImageViewResource(R.id.ivIcon, R.mipmap.ic_launcher_round);
+
+    NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+
+    // 设置自定义 RemoteViews
+    builder.setContent(remoteView).setSmallIcon(R.mipmap.ic_launcher);
+
+    // 设置通知的优先级(悬浮通知)
+    builder.setPriority(NotificationCompat.PRIORITY_MAX);
+    Uri alarmSound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+    // 设置通知的提示音
+    builder.setSound(alarmSound);
+
+
+    // 设置通知的点击行为：这里启动一个 Activity
+    Intent intent = new Intent(this, SecondActivity.class);
+    PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+    builder.setContentIntent(pendingIntent);
+    builder.setAutoCancel(true);
+    Notification notification = builder.build();
+
+    NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+    notificationManager.notify(1001, notification);
+}
+```
+
+
+
+
+
+* setTextViewText(viewId, text) 设置文本
+* setTextColor(viewId, color)           设置文本颜色
+* setTextViewTextSize(viewId, units, size)     设置文本大小
+* setImageViewBitmap(viewId, bitmap)        设置图片
+* setImageViewResource(viewId, srcId)       根据图片资源设置图片
+* setViewPadding(viewId,left, top,right, bottom) 设置Padding间距
+* setOnClickPendingIntent(viewId, pendingIntent)  设置点击事件，表示的是点击 viewId 这标签的按钮，会触发后面的 pendingIntent 
+
+---
+
+### Intent
+
+Intent 是 Android 非常常用的一个用于组件间互相通信的信息对象，常用于启动组件和传递数据
+
+Intent传送数据是以键值对的形式，主要通过`putExtra()`方法，该方法接收两个参数，第一个是数据的键,第二个是数据的值
+
+​		
+
+向目标Activity传递数据：
+
+```java
+Intent intent=new Intent(this,Main2Activity.class);
+//可传递多种类型的数据
+intent.putExtra("name","张三");
+intent.putExtra("age",12);
+startActivity(intent);
+```
+
+​			
+
+在目标Activity中取出数据
+
+```java
+Intent intent=getIntent();
+//用getXxxExtra()取出对应类型的数据。取出String只需要指定key
+String name=intent.getStringExtra("name");
+//取出int要指定key，还要设置默认值，当intent中没有该key对应的value时，返回设置的默认值
+int age=intent.getIntExtra("age",0);
+```
+
+​		
+
+Intent 的包含信息与构造
+
+![5064136-90a90f76a05437fa](./assets/5064136-90a90f76a05437fa.png)
+
+| 代码                                         | 描述                                                         |
+| -------------------------------------------- | ------------------------------------------------------------ |
+| Intent()                                     | 构造一个空 Intent                                            |
+| Intent(String action)                        | 构造一个指定 action 的 Intent                                |
+| Intent(String action，Uri uri)               | 构造一个指定 action 和 uri（相当于同时设定了 data）的 Intent |
+| Intent(Context packageContext，Class<?> cls) | 构造一个指定目标组件的 Intent，显式 Intent 的主要构造方法    |
+
+​			
+
+| 代码                                            | 描述                                                        |
+| ----------------------------------------------- | ----------------------------------------------------------- |
+| setAction(String action)                        | 指定 action                                                 |
+| setClass(Context packageContext, Class<?> cls)  | 制定目标组件类名                                            |
+| setData(Uri data)                               | 设置 Data 的 uri                                            |
+| setType(String type)                            | 设置 Data 的 MIME 类型                                      |
+| setDataAndType(Uri data, String type)           | 同时设置 Data 的 uri 与 MIME 类型                           |
+| addCategory(String category)                    | 添加一项 Category，Intent 可有多个 Category                 |
+| addFlags(int flags)                             | 设置 Flag，决定目标组件的启动方式                           |
+| putExtra(String name, 基本类型和序列化类 value) | 放入附加数据，参 2 可以是各种基本类型，及序列化后的自定义类 |
+| putExtras(Bundle extras)                        | 把封装了数据信息的 Bundle 对象放入 Intent                   |
+
+​			
+
+#### Action
+
+指 Intent 发向的组件的主要动作，比如：图片应用中主要动作为查看图片的组件、地图应用中主要动作为查看地址的组件。另外，对于广播（Broadcast）组件而言，Intent 的 action 则是指广播具体的值。当 Broadcast Receiver 接收到该值时代表了某事件已经发生。
+通常使用的主要是 Android 系统内置 action，这些 action 实际上是保存在 Intent 类中的静态常量，系统的默认组件（如：默认浏览器、图片浏览器、拨号页面等）都可以响应相应的 action。下面给出几个比较常见内置 action。
+
+**ACTION_VIEW**
+向用户展示某信息，比如使用浏览器打开网址，用图片应用显示图片等
+
+**ACTION_SEND**
+用于发送数据，比如电子邮件应用或者一些社交应用。
+
+**ACTION_DIAL**
+显示带拨号盘的页面，让用户可以进行拨号动作。
+
+
+
+**自定义action**， 供 Intent 在自己的应用内使用（或者供其他应用在自己的应用中调用组件）。如果定义自己的操作，请确保将应用的软件包名称作为前缀。 例如：
+
+```java
+static final String ACTION_TIMETRAVEL = "com.example.action.TIMETRAVEL";
+```
+
+​				
+
+​				
+
+#### Data
+
+包含了 URI 对象和 memitype 两个部分，分别是待操作数据的引用 uri，以及待操作数据的数据类型。两部分均为可选，但是要注意同时设置时应该使用 `setDataAndType()`方法，防止互相抵消。
+Data 内容一般由 action 决定，比如 action 为 ACTION_VIEW，那么 Data 就可以是一个网址，也可以是图片之类的数据 uri。
+同时指定 Uri 和 MIME 类型有助于 Android 系统找到接收 Intent 的最佳组件，例如可以响应 ACTION_VIEW 的组件可能有非常多，浏览器、播放器、图片应用等等。此时设置`mimeType`为`"image/jpeg"`或者`video/mp4`，则系统可以筛选出更合适的响应组件。
+
+
+
+#### Category
+
+目标组件的类型信息字符串，一个 Intent 可以添加多个 Category 。以下是比较常见的 Category：
+
+**CATEGORY_BROWSABLE**
+目标 Activity 允许本身通过网络浏览器启动，以显示链接引用的数据，如图像或电子邮件。
+
+**CATEGORY_LAUNCHER**
+该 Activity 是任务的初始 Activity，在系统的应用启动器中列出。
+
+需要注意的是大部分 Intent 虽然不需要设置 Category，但是在调用使用 Intent 的方法（如`starActivity（）`等）的时候，会默认为该 Intent 添加 CATEGORY_DEFAULT，相应目标组件的Intent过滤器应该添加该类别，具体会在下文 **2、Intent的用法** 中详述。
+
+**以上 4 种（组件类名、Action、Data、Category）是会影响系统对 Intent 的解析从而决定最终启动那个组件的信息，以下两种（Extra、Flag）属于附加的信息，不影响系统解析启动那个组件**
+
+​				
+
+#### Extra
+
+Intent 携带附加数据，也是组件间互相传递信息比较常见的做法。使用各种 `putExtra()`方法添加 extra 数据，每种方法均接受两个参数：键名和值。还可以创建一个包含所有 extra 数据的 Bundle 对象，然后使用 `putExtras()`将 Bundle 插入 Intent 中。
+具体用法在下文 **3、数据传送** 中详述。
+
+​					
+
+#### Flag
+
+指示 Android 系统如何启动 Activity，例如，Activity 应属于哪个任务，以及启动之后如何处理（例如，它是否属于最近的 Activity 列表）。
+
+​					
+
+#### Intent 构造示例：
+
+```java
+    Intent intent = new Intent(this,TagerActivity.class);//显式 Intent 构造示例
+
+    //隐式Intent构造示例
+    Intent intent=new Intent(Intent.ACTION_VIEW);//设定 action 为展示内容
+    intent.setData(Uri.parse("http://www.baidu.com"));//设置 data 的 uri 为一个网址
+    intent.addCategory(Intent.CATEGORY_LAUNCHER);//目标组件为某个应用的首页面
+    intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);//目标 Activity 的启动方式为 single top
+    intent.putExtra("extra_my","Tom");//附加 String 数据
+```
+
+
+
+---
+
+### PendingIntent
+
+PendingIntent可以看作是对Intent的一个封装，但它不是立刻执行某个行为，
+
+而是满足某些条件或触发某些事件后才执行指定的行为。
