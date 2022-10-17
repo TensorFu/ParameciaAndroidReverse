@@ -8,6 +8,12 @@
   - [构造函数](#构造函数)
   - [方法重写与方法重载](#方法重写与方法重载)
   - [接口](#接口)
+  - [startsWith()](#startswith)
+  - [TextUtils.isEmpty](#textutilsisempty)
+  - [Bundle](#bundle)
+  - [Context](#context)
+  - [synchronized](#synchronized)
+  - [volatile](#volatile)
 
 ### static关键字
 
@@ -330,6 +336,12 @@ public static boolean isEmpty(CharSequence str) {
 
 ---
 
+### TextUtils.isDigitsOnly
+
+用来判断字符串是不是全部都是数字
+
+---
+
 ### Bundle
 
 这个类似于 Python 当中的字典
@@ -378,6 +390,125 @@ synchronized可以保证方法或者代码块在运行时，同一时刻只有�
 **变量修改对其他线程立即可见**			
 
 就是我在一个线程对一个变量进行了修改，那么其他线程马上就可以知道我修改了他	
+
+---
+
+### getString()
+
+**getString**表示以 Java 编程语言中String的形式获取此 ResultSet 对象的当前行中指定列的值。			
+
+```java
+Connection conn = ……  //省略部分代码
+String sql = "SELECT username,pwd FROM myTable";
+Statement st = conn.createStatement();
+ResultSet rs = st.executeQuery(sql);
+while(rs.next()){
+    System.out.println(rs.getString("username"));  //获取username列的列值
+    System.out.println(rs.getString("pwd"));  //获取pwd列的列值
+}
+```
+
+​							
+
+```java
+Connection conn = ……  //省略部分代码
+String sql = "SELECT username,pwd FROM myTable";  //定义查询SQL语句
+Statement st = conn.createStatement();
+ResultSet rs = st.executeQuery(sql);
+while(rs.next()){
+    System.out.println(rs.getString(1));  //获取数据表中第一列数据值
+    System.out.println(rs.getString(2));  //获取数据表中第二列数据值
+}
+```
+
+---
+
+### System.currentTimeMillis()
+
+生产一个当前的毫秒数，一个从1970年1月1日开始的毫秒数
+
+---
+
+### MMKV
+
+是一种支持多进程的字典
+
+MMKV 是基于 mmap 内存映射的 key-value 组件
+
+MMKV 的使用非常简单，所有变更立马生效，无需调用 sync、apply。
+
+​			
+
+MMKV 提供一个全局的实例，可以直接使用
+
+```java
+import com.tencent.mmkv.MMKV;
+//……
+
+//1. 获取默认全局实例 (一般就使用这个就行)
+MMKV kv = MMKV.defaultMMKV();
+
+//2. 也可以自定义MMKV对象，设置自定ID  (根据业务区分的存取实例)
+MMKV kv = MMKV.mmkvWithID("ID");
+
+//3. MMKV默认是支持单进程的，如果业务需要多进程访问，需要在初始化的时候添加多进程模式参数
+MMKV kv = MMKV.mmkvWithID("ID", MMKV.MULTI_PROCESS_MODE); //多进程同步支持
+```
+
+​				
+
+```java
+/** 添加/更新数据 **/
+//存boolean类型
+kv.encode("bool", true);
+//存int类型
+kv.encode("int", Integer.MIN_VALUE);
+//存string类型
+kv.encode("string", "MyiSMMKV");
+
+
+/** 获取数据 **/
+//获取boolean类型数据
+boolean bValue = kv.decodeBool("bool");
+//获取int类型数据
+int iValue = kv.decodeInt("int");
+//获取string类型数据
+String str = kv.decodeString("string");
+//...等类型的获取
+
+// 删除数据
+mmkv.removeValueForKey(key);
+```
+
+---
+
+### parseInt()
+
+```java
+int I = Integer.parseInt("123456");
+```
+
+把字符串转变成整形
+
+---
+
+### Build. VERSION. SDK_INT
+
+代表的操作系统的版本号，谷歌的解释大致翻译如下当前在此硬件上运行的软件的SDK
+
+---
+
+### CharSequence
+
+简单理解成，这就是一个 String 
+
+CharSequence与String都能用于定义字符串，但CharSequence的值是可读可写序列，而String的值是只读序列。
+
+---
+
+### System.currentTimeMillis()
+
+获取一个当前系统时间的时间戳
 
 ---
 
