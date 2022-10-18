@@ -439,6 +439,60 @@ function zhudo()
 setTimeout(zhudo)
 ```
 
+​		
+
+这是一个主动调用静态函数的办法，其中涉及到 context 的获取，context 是一个上下文，没有办法直接给定，只能够获取
+
+Android代码
+
+```java
+package a.a.a.a.a.a.a.a;
+
+	...
+ 
+public final class lIllI1ll {
+    
+  ...
+  
+ 	private final void IIIll1Il(Context arg12, int arg13, String arg14)
+  {
+    
+    ...
+      
+  }
+
+```
+
+
+
+hook代码
+
+```javascript
+function zhudongDynamic()
+{
+    console.log("打开 js 脚本...")
+    Java.perform(function()
+    {
+        console.log("注入 js 脚本..")
+        var currentApplication = Java.use("android.app.ActivityThread").currentApplication()
+        var context = currentApplication.getApplicationContext()
+        Java.choose(
+            "a.a.a.a.a.a.a.a.lIllI1ll",
+        {
+            onMatch:function(instance)
+            {
+                console.log("choose...")
+                instance.IIIll1Il(context)
+            },
+            onComplete:function()
+            {
+                console.log("调用完成")
+            }
+        })
+    })
+}
+```
+
 
 
 ​		
