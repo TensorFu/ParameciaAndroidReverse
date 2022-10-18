@@ -382,7 +382,66 @@ setTimeout(Djava)
 
 ​				
 
-动态方法secret需要先通过Java.choose这个 API从内存中获取相应类的实例对象，然后才能通过这个实例对象去 调用动态的secret()函数，如果需要主动调用动态函数，必须确保存在相应类的对象，否则 无法进入Java.choose这个API的回调onMatch逻辑中，比如 MainActivity类对象。由于App在打开后确实运行在MainActivity界 面上，那么这个对象就一定会存在，这就是所谓的“所见即所得”思想				
+动态方法secret需要先通过Java.choose这个 API从内存中获取相应类的实例对象，然后才能通过这个实例对象去 调用动态的secret()函数，如果需要主动调用动态函数，必须确保存在相应类的对象，否则 无法进入Java.choose这个API的回调onMatch逻辑中，比如 MainActivity类对象。由于App在打开后确实运行在MainActivity界 面上，那么这个对象就一定会存在，这就是所谓的“所见即所得”思想		
+
+
+
+#### 主动调用获取context
+
+这是一个主动调用静态函数的办法，其中涉及到 context 的获取，context 是一个上下文，没有办法直接给定，只能够获取
+
+
+
+Android 的Java代码
+
+```java
+package a.a.a.a.a.a.a.a;
+
+	...
+
+
+
+public final class III111II {
+    
+  	...
+    
+    public static final void IIIll1Il(Context arg10, String arg11, String arg12, int arg13)
+    {
+      
+      ...
+        
+    }
+```
+
+
+
+hook代码
+
+```java
+// -----------------------------------主动调用--------------------
+
+function zhudo()
+{
+    console.log("打开 js 脚本...")
+    Java.perform(function()
+    {
+        console.log("注入 js 脚本...")
+        var III111IIclass = Java.use("a.a.a.a.a.a.a.a.III111II")
+        console.log("use...")
+        var currentApplication = Java.use("android.app.ActivityThread").currentApplication()
+        console.log("获取contetx...")
+        var context = currentApplication.getApplicationContext()
+        console.log("获取到的 context:" , context)
+        III111IIclass.IIIll1Il(context,"CLEAN","source_install_app",1)
+    })
+}
+
+setTimeout(zhudo)
+```
+
+
+
+​		
 
 ---
 
