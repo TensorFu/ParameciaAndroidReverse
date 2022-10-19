@@ -146,3 +146,106 @@ public class MyStaticReceiver extends BroadcastReceiver {
 
 1. 当广播为默认广播时：无视优先级，优先接收动态广播。
 2. 当广播为有序广播时：优先级高的先接收（不分静态和动态）。同优先级的广播接收器，优先接收动态广播。
+
+---
+
+### Service
+
+#### Service的介绍
+
+Service是一种处于后台长时间运行的组件，它没有UI界面，不需要与用户交互。它被设计用来后台执行耗时任务或者为其他应用程序提供功能调用的服务。
+
+​			
+
+Service是一种应用程序组件，用于两种使用场景：
+
+1. 后台执行长时间的任务，而不需要与用户交互。例如后台播放音乐
+2. 将本应用的功能通过接口的形式暴露给其他应用程序调用
+
+​			
+
+#### 两种启动Service的方式：
+1、startService，Service会执行onCreate和onStartCommand。多次启动同一个Service不会多次执行onCreate，会多次执行onStartCommand
+
+​		
+
+以调用startService()为例，onCreate方法仅在startSercice()调用后运行一次；然后运行onStartCommand()； onDestory ()仅在stopService()或stopSelf()方法调用后执行一次。
+   那么在这期间，如果service被系统kill掉，那么会重新调用onStartCommand()来重新运行。
+
+两种启动service的方式：startService和bindService
+
+bindService启动的服务在调用者和服务之间是典型的client-server的接口，即调用者是客户端，service是服务端，service就一个，但是连接绑定到service上面的客户端client可以是一个或多个。这里特别要说明的是，这里所提到的client指的是组件，比如某个Activity。
+
+​				
+
+bindService启动的服务的生命周期与其绑定的client息息相关。当client销毁的时候，client会自动与Service解除绑定，当然client也可以通过明确调用Context的unbindService方法与Service解除绑定。当没有任何client与Service绑定的时候，Service会自行销毁（通过startService启动的除外）
+			
+
+startService和bindService二者执行的回调方法不同：startService启动的服务会涉及Service的的onStartCommand回调方法，而通过bindService启动的服务会涉及Service的onBind、onUnbind等回调方法。
+
+​			
+
+直接开启startService，使用stopService关闭。
+
+![1441907-3dbf045663fb54a5](./assets/1441907-3dbf045663fb54a5.png)
+
+​			
+
+绑定开启bindService，使用unbindService解绑关闭
+
+![1441907-08f50068b747b98d](./assets/1441907-08f50068b747b98d.png)
+
+两者区别是：
+
+start和stop只能开启和关闭，无法操作service。bind和unbind可以操作service。
+
+start开启的service，调用者退出后service仍然存在。bind开启的service，调用者退出后，随着调用者销毁。
+
+​					
+
+#### service的生命周期
+
+生命周期过程中的方法一共有五种：
+
+| 方法             | 含义 |
+| ---------------- | ---- |
+| onCreate()       | 创建 |
+| onStartCommand() | 开始 |
+| onDestroy()      | 销毁 |
+| onBind()         | 绑定 |
+| onUnbind()       | 解绑 |
+
+​			
+
+注意以下条件：
+1.在整个生命周期内，只有**startCommand()**能被多次调用。其他方法只能被调用**一次**。（即只能绑定和解绑一次。）
+2.绑定后没有解绑，**无法**使用stopService()将其停止。
+3.如果已经onCreate()，那么startService()将**只**调用startCommand()。
+4.如果是以bindService开启，那么使用unbindService时就会**自动调用**onDestroy销毁。
+
+
+
+![1441907-57a878f709761676](./assets/1441907-57a878f709761676.png)
+
+​			
+
+![1441907-035ceb14cc7e2be5](./assets/1441907-035ceb14cc7e2be5.png)
+
+​				
+
+![1441907-388d07644612d1d6](./assets/1441907-388d07644612d1d6.png)
+
+​			
+
+![1441907-2fad9e8ecb3a6cfa](./assets/1441907-2fad9e8ecb3a6cfa.png)
+
+​				
+
+#### bindService 代码演示
+
+使用bindService主要分两种情形: 
+1. Service的调用者client与Service在同一个App中； 
+2. Service的调用者client是App1中的一个Activity，而Service是App2中的Service，client与service分属两个App，这种情形下主要用于实现跨进程的通信。
+
+
+
