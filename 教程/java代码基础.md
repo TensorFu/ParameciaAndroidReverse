@@ -508,6 +508,199 @@ String str = kv.decodeString("string");
 mmkv.removeValueForKey(key);
 ```
 
+
+
+```java
+//读写bool类型相关
+public boolean encode(String key, boolean value) {
+    return this.encodeBool(this.nativeHandle, key, value);
+}
+public boolean decodeBool(String key) {
+    return this.decodeBool(this.nativeHandle, key, false);
+}
+
+public boolean decodeBool(String key, boolean defaultValue) {
+    return this.decodeBool(this.nativeHandle, key, defaultValue);
+}
+//读写int 类型
+public boolean encode(String key, int value) {
+    return this.encodeInt(this.nativeHandle, key, value);
+}
+
+public int decodeInt(String key) {
+    return this.decodeInt(this.nativeHandle, key, 0);
+}
+
+public int decodeInt(String key, int defaultValue) {
+    return this.decodeInt(this.nativeHandle, key, defaultValue);
+}
+//读写long 类型
+public boolean encode(String key, long value) {
+    return this.encodeLong(this.nativeHandle, key, value);
+}
+
+public long decodeLong(String key) {
+    return this.decodeLong(this.nativeHandle, key, 0L);
+}
+
+public long decodeLong(String key, long defaultValue) {
+    return this.decodeLong(this.nativeHandle, key, defaultValue);
+}
+//读写float类型
+public boolean encode(String key, float value) {
+    return this.encodeFloat(this.nativeHandle, key, value);
+}
+
+public float decodeFloat(String key) {
+    return this.decodeFloat(this.nativeHandle, key, 0.0F);
+}
+
+public float decodeFloat(String key, float defaultValue) {
+    return this.decodeFloat(this.nativeHandle, key, defaultValue);
+}
+//读写double 类型
+public boolean encode(String key, double value) {
+    return this.encodeDouble(this.nativeHandle, key, value);
+}
+
+public double decodeDouble(String key) {
+    return this.decodeDouble(this.nativeHandle, key, 0.0D);
+}
+
+public double decodeDouble(String key, double defaultValue) {
+    return this.decodeDouble(this.nativeHandle, key, defaultValue);
+}
+//读写字符串类型
+public boolean encode(String key, @Nullable String value) {
+    return this.encodeString(this.nativeHandle, key, value);
+}
+
+@Nullable
+public String decodeString(String key) {
+    return this.decodeString(this.nativeHandle, key, (String)null);
+}
+
+@Nullable
+public String decodeString(String key, @Nullable String defaultValue) {
+    return this.decodeString(this.nativeHandle, key, defaultValue);
+}
+//读写 set<string> 类型
+public boolean encode(String key, @Nullable Set<String> value) {
+    return this.encodeSet(this.nativeHandle, key, value == null ? null : (String[])value.toArray(new String[0]));
+}
+
+@Nullable
+public Set<String> decodeStringSet(String key) {
+    return this.decodeStringSet(key, (Set)null);
+}
+
+@Nullable
+public Set<String> decodeStringSet(String key, @Nullable Set<String> defaultValue) {
+    return this.decodeStringSet(key, defaultValue, HashSet.class);
+}
+
+@Nullable
+public Set<String> decodeStringSet(String key, @Nullable Set<String> defaultValue, Class<? extends Set> cls) {
+    String[] result = this.decodeStringSet(this.nativeHandle, key);
+    if (result == null) {
+        return defaultValue;
+    } else {
+        Set a;
+        try {
+            a = (Set)cls.newInstance();
+        } catch (IllegalAccessException var7) {
+            return defaultValue;
+        } catch (InstantiationException var8) {
+            return defaultValue;
+        }
+
+        a.addAll(Arrays.asList(result));
+        return a;
+    }
+}
+//读写 byte[]
+public boolean encode(String key, @Nullable byte[] value) {
+    return this.encodeBytes(this.nativeHandle, key, value);
+}
+
+@Nullable
+public byte[] decodeBytes(String key) {
+    return this.decodeBytes(key, (byte[])null);
+}
+
+@Nullable
+public byte[] decodeBytes(String key, @Nullable byte[] defaultValue) {
+    byte[] ret = this.decodeBytes(this.nativeHandle, key);
+    return ret != null ? ret : defaultValue;
+}
+//读写序列化类型 Parcelable
+public boolean encode(String key, @Nullable Parcelable value) {
+    if (value == null) {
+        return this.encodeBytes(this.nativeHandle, key, (byte[])null);
+    } else {
+        Parcel source = Parcel.obtain();
+        value.writeToParcel(source, value.describeContents());
+        byte[] bytes = source.marshall();
+        source.recycle();
+        return this.encodeBytes(this.nativeHandle, key, bytes);
+    }
+}
+
+@Nullable
+public <T extends Parcelable> T decodeParcelable(String key, Class<T> tClass) {
+    return this.decodeParcelable(key, tClass, (Parcelable)null);
+}
+
+@Nullable
+public <T extends Parcelable> T decodeParcelable(String key, Class<T> tClass, @Nullable T defaultValue) {
+    if (tClass == null) {
+        return defaultValue;
+    } else {
+        byte[] bytes = this.decodeBytes(this.nativeHandle, key);
+        if (bytes == null) {
+            return defaultValue;
+        } else {
+            Parcel source = Parcel.obtain();
+            source.unmarshall(bytes, 0, bytes.length);
+            source.setDataPosition(0);
+
+            Parcelable var8;
+            try {
+                String name = tClass.toString();
+                Creator creator;
+                synchronized(mCreators) {
+                    //先从本地缓存中获取
+                    creator = (Creator)mCreators.get(name);
+                    if (creator == null) {
+                        //获取public 变量  CREATOR，  由于是反射所以会保存到hashmap中 避免耗时
+                        Field f = tClass.getField("CREATOR");
+                        creator = (Creator)f.get((Object)null);
+                        if (creator != null) {
+                            mCreators.put(name, creator);
+                        }
+                    }
+                }
+                //如果为空 则表明类没有实现Parcelable 序列化
+                if (creator == null) {
+                    throw new Exception("Parcelable protocol requires a non-null static Parcelable.Creator object called CREATOR on class " + name);
+                }
+
+                var8 = (Parcelable)creator.createFromParcel(source);
+            } catch (Exception var16) {
+                simpleLog(MMKVLogLevel.LevelError, var16.toString());
+                return defaultValue;
+            } finally {
+                source.recycle();
+            }
+
+            return var8;
+        }
+    }
+}
+```
+
+
+
 ---
 
 ### parseInt()
@@ -805,6 +998,19 @@ PendingIntent.getService(Context context, int requestCode, Intent intent, int fl
 
 * getActivity()的意思其实是，获取一个PendingIntent对象，而且该对象日后激发时所做的事情是启动一个新activity，会执行类似Context.startActivity()那样的动作
 * 相应地，getBroadcast()和getService()所获取的PendingIntent对象在激发时，会分别执行类似Context.sendBroadcast()和Context.startService()这样的动作
+
+
+
+#### PendingIntent.getActivities
+
+/参数1:context 上下文对象
+//参数2:发送者私有的请求码(Private request code for the sender)
+//参数3:intent 意图对象
+//参数4:必须为FLAG_ONE_SHOT,FLAG_NO_CREATE,FLAG_CANCEL_CURRENT,FLAG_UPDATE_CURRENT,中的一个
+
+        ```java
+        pi = PendingIntent.getActivity(this, count, intent, PendingIntent.FLAG_CANCEL_CURRENT);//用户点击该notification后才启动SecondActivity类
+        ```
 
 
 
@@ -1336,3 +1542,195 @@ private void clearNotify() {
    mManager.cancelAll();
 }
 ```
+
+
+
+#### Notification的基本使用流程
+
+**Notification**：通知信息类，它里面对应了通知栏的各个属性
+
+**NotificationManager**：是状态栏通知的管理类，负责发通知、清除通知等操作。
+
+使用的基本流程：
+
+- **Step 1.** 获得NotificationManager对象： NotificationManager mNManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+- **Step 2.** 创建一个通知栏的Builder构造类： Notification.Builder mBuilder = new Notification.Builder(this);
+- **Step 3.** 对Builder进行相关的设置，比如标题，内容，图标，动作等！
+- **Step 4.**调用Builder的build()方法为notification赋值
+- **Step 5**.调用NotificationManager的notify()方法发送通知！
+- **PS:**另外我们还可以调用NotificationManager的cancel()方法取消通知
+
+
+
+#### NotificationManager 和 NotificationManagerCompat 之间有什么区别
+
+我能够创建通知
+
+```
+NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+ if (notificationManager != null) {
+     notificationManager.notify(NOTIFICATION_ID, notification);
+ }
+```
+
+​				
+
+所以
+
+```java
+NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(MainActivity.this);
+ notificationManagerCompat.notify(NOTIFICATION_ID, notification);
+```
+
+那么，这些方式有什么区别呢？
+
+​				
+
+`NotificationManagerCompat`是一个兼容库，`NotificationManager`用于旧平台的回退。
+
+​				
+
+#### NotificationManagerCompat的使用
+
+```java
+    Intent snoozeIntent = new Intent(this, MyBroadcastReceiver.class);
+    snoozeIntent.setAction(ACTION_SNOOZE);
+    snoozeIntent.putExtra(EXTRA_NOTIFICATION_ID, 0);
+    PendingIntent snoozePendingIntent =
+            PendingIntent.getBroadcast(this, 0, snoozeIntent, 0);
+
+    NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.notification_icon)
+            .setContentTitle("My notification")
+            .setContentText("Hello World!")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(pendingIntent)
+            .addAction(R.drawable.ic_snooze, getString(R.string.snooze),
+                    snoozePendingIntent);
+    
+```
+
+
+
+### 完整的通过NotificationManagerCompat新建通知的流程
+
+本页面上的代码使用了 Android 支持库中的 `NotificationCompat` API。这些 API 允许您添加仅在较新版本 Android 上可用的功能，同时仍向后兼容 Android 4.0（API 级别 14）
+
+在本部分中，您将了解如何创建用户点击后可启动应用中的 Activity 的通知。
+
+
+
+##### 设置通知内容
+
+首先，您需要使用 `NotificationCompat.Builder` 对象设置通知内容和渠道。以下示例显示了如何创建包含下列内容的通知：
+
+- 小图标，通过 `setSmallIcon()` 设置。这是所必需的唯一用户可见内容。
+- 标题，通过 `setContentTitle()` 设置。
+- 正文文本，通过 `setContentText()` 设置。
+- 通知优先级，通过 `setPriority()` 设置。优先级确定通知在 Android 7.1 和更低版本上的干扰程度。（对于 Android 8.0 和更高版本，必须设置渠道重要性，如下一节中所示。）
+
+```java
+NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.notification_icon)
+            .setContentTitle(textTitle)
+            .setContentText(textContent)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+```
+
+​			
+
+请注意，`NotificationCompat.Builder` 构造函数要求您提供渠道 ID。这是兼容 Android 8.0（API 级别 26）及更高版本所必需的，但会被较旧版本忽略。
+
+默认情况下，通知的文本内容会被截断以放在一行。如果您想要更长的通知，可以使用 `setStyle()` 添加样式模板来启用可展开的通知。例如，以下代码会创建更大的文本区域：
+
+```java
+    NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.notification_icon)
+            .setContentTitle("My notification")
+            .setContentText("Much longer text that cannot fit one line...")
+            .setStyle(new NotificationCompat.BigTextStyle()
+                    .bigText("Much longer text that cannot fit one line..."))
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+    
+```
+
+​			
+
+##### 创建渠道并设置重要性
+
+必须先通过向 `createNotificationChannel()` 传递 `NotificationChannel` 的实例在系统中注册应用的通知渠道，然后才能在 Android 8.0 及更高版本上提供通知。因此以下代码会被 `SDK_INT` 版本上的条件阻止：
+
+
+
+
+
+---
+
+#### equalsIgnoreCase() 
+
+equalsIgnoreCase() 方法用于将字符串与指定的对象比较，不考虑大小写。 (推荐：java视频教程)语法public boolean. 返回值：如果给定对象与字符串相等，则返回true；否则返回false
+
+​				
+
+boolean equals(Object str)
+
+这里str是一个用来与调用字符串（String）对象做比较的字符串（String）对象。如果两个字符串具有相同的字符和长度，它返回true，否则返回false。这种比较是区分大小写的。
+
+---
+
+### setCategory()
+
+设置通知的类别
+
+**CATEGORY_ALARM：** 警报或计时器通知。
+
+**CATEGORY_REMINDER：** 上次通知用户决定稍后提醒的通知。
+**CATEGORY_EVENT：** 日历事件的通知。
+**CATEGORY_CALL：** 来电等类似的通知。
+
+---
+
+### 广播发出来的广播
+
+Intent.ACTION_TIME_TICK 含义：系统每分钟会发出该广播 
+Intent.ACTION_TIME_CHANGED); // 时间改变,例如手动修改设置里的时间 
+Intent.ACTION_TIMEZONE_CHANGED); // 时区变化,例如手动修改设置里的时区
+
+
+
+---
+
+### Random().nextInt()
+
+在方法调用返回介于0(含)和n(不含)伪随机
+
+---
+
+### ActivityManager.getSystemService("activity").getRunningAppProcesses()
+
+这个是获取当前正在运行的进程
+
+​			
+
+#### ActivityManager.RunningAppProcessInfo.importance
+
+这个是获取当前进程的等级
+
+​				
+
+IMPORTANCE_FOREGROUND	100	进程正在运行前台ui，可直接与用户发生交互。
+IMPORTANCE_FOREGROUND_SERVICE	125	进程正在运行前台服务。例如播放音乐
+IMPORTANCE_VISIBLE	200	进程正在运行一些内容，内容不与用户交互，但是对用户可见。
+IMPORTANCE_PERCEPTIBLE	230	用户无法直接感知到的进程，但是从某种程度上，用户可以感知到。
+IMPORTANCE_PERCEPTIBLE_PRE_26	130	sdk 26版本以前，这个值代表IMPORTANCE_PERCEPTIBLE
+IMPORTANCE_SERVICE	300	进程包含运行的服务。这些服务是各种程序启动的服务，但是对用户无感知。系统尽可能保持服务运行，但是有可能杀死。
+IMPORTANCE_TOP_SLEEPING	325	进程正在运行前台ui，但是设备处于休眠状态，对用户不可见。系统努力防止其被杀死，但是可以认为这是一个缓存进程，被限制了网络访问、运行后台服务等能力。
+IMPORTANCE_TOP_SLEEPING_PRE_28	150	sdk 28以前，这个值代表IMPORTANCE_TOP_SLEEPING
+IMPORTANCE_CANT_SAVE_STATE	350	进程正在运行无法保存其状态的应用程序，因此无法再后台被杀死。应用于Application标签中设置了cantSaveState属性的程序。
+IMPORTANCE_CANT_SAVE_STATE_PRE_26	170	sdk 26以前，这个值代表IMPORTANCE_CANT_SAVE_STATE
+IMPORTANCE_CACHED	400	进程包含缓存的代码，不会主动运行任何app组件
+IMPORTANCE_EMPTY	500	进程为空，没有运行任何代码。已废弃，使用IMPORTANCE_CACHED代替
+IMPORTANCE_GONE	1000	进程不存在
+
+----
+
