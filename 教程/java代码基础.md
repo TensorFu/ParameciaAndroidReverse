@@ -32,6 +32,7 @@
     - [Flag](#flag)
     - [Intent 构造示例：](#intent-构造示例)
   - [PendingIntent](#pendingintent)
+    - [PendingIntent.getActivities](#pendingintentgetactivities)
   - [Notification](#notification)
     - [Notification 的基本操作](#notification-的基本操作)
     - [Notification 的必要属性有三项](#notification-的必要属性有三项)
@@ -42,6 +43,21 @@
     - [更新 Notification](#更新-notification)
     - [取消 Notification](#取消-notification)
     - [设置 Notification 的通知效果](#设置-notification-的通知效果)
+    - [Notification的基本使用流程](#notification的基本使用流程)
+    - [NotificationManager 和 NotificationManagerCompat 之间有什么区别](#notificationmanager-和-notificationmanagercompat-之间有什么区别)
+    - [NotificationManagerCompat的使用](#notificationmanagercompat的使用)
+  - [完整的通过NotificationManagerCompat新建通知的流程](#完整的通过notificationmanagercompat新建通知的流程)
+      - [设置通知内容](#设置通知内容)
+      - [创建渠道并设置重要性](#创建渠道并设置重要性)
+    - [equalsIgnoreCase()](#equalsignorecase)
+  - [setCategory()](#setcategory)
+  - [广播发出来的广播](#广播发出来的广播)
+  - [Random().nextInt()](#randomnextint)
+  - [ActivityManager.getSystemService("activity").getRunningAppProcesses()](#activitymanagergetsystemserviceactivitygetrunningappprocesses)
+    - [ActivityManager.RunningAppProcessInfo.importance](#activitymanagerrunningappprocessinfoimportance)
+  - [NetworkInfo v11 (NetworkInfo)intent.getParcelableExtra("networkInfo");](#networkinfo-v11-networkinfointentgetparcelableextranetworkinfo)
+  - [内部类](#内部类)
+    - [Inner Class](#inner-class)
 
 ### static关键字
 
@@ -1739,4 +1755,70 @@ IMPORTANCE_GONE	1000	进程不存在
 这个能够拿到网络信息
 
 `v11.getState() == NetworkInfo.State.CONNECTED`  能够拿得到网络的连接信息
+
+
+
+
+
+---
+
+### 内部类
+
+有一种类，它被定义在另一个类的内部，所以称为内部类（Nested Class）
+
+#### Inner Class
+
+```java
+class Outer {
+    class Inner {
+        // 定义了一个Inner Class
+    }
+}
+```
+
+​			
+
+```java
+public class Main {
+    public static void main(String[] args) {
+        Outer outer = new Outer("Nested"); // 实例化一个Outer
+        Outer.Inner inner = outer.new Inner(); // 实例化一个Inner
+        inner.hello();
+    }
+}
+
+class Outer {
+    private String name;
+
+    Outer(String name) {
+        this.name = name;
+    }
+
+    class Inner {
+        void hello() {
+            System.out.println("Hello, " + Outer.this.name);
+        }
+    }
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
