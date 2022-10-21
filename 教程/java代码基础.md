@@ -1734,3 +1734,9 @@ IMPORTANCE_GONE	1000	进程不存在
 
 ----
 
+### NetworkInfo v11 (NetworkInfo)intent.getParcelableExtra("networkInfo");
+
+这个能够拿到网络信息
+
+`v11.getState() == NetworkInfo.State.CONNECTED`  能够拿得到网络的连接信息
+

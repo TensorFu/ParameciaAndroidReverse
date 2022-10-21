@@ -493,7 +493,63 @@ function zhudongDynamic()
 }
 ```
 
+​			
 
+#### 主动调用之CharSequence
+
+CharSequence 数据是数据类型，charSequence是一个接口，表示char值的一个可读序列
+
+在主动调用的时候，输入输出参数，当我们在主动调用的时候，可能会遇到这样的类型的参数
+
+​			
+
+Android 代码
+
+```java
+public static boolean IIIllI1I(CharSequence arg0, CharSequence arg1, boolean arg2, int arg3, Object arg4) {  // 定位
+        if((arg3 & 2) != 0) {
+            arg2 = false;
+        }
+
+        return lI1II1lI.IIIllI1I(arg0, arg1, arg2);
+    }
+```
+
+​				
+
+`var charseqClazz = Java.use('java.lang.CharSequence')`
+
+`var stringClzz = Java.use('java.lang.String')` 
+
+`var strok = stringClzz.$new('unknown ssid')`
+
+`var charseqok = Java.cast(strok, charseqClazz)`
+
+Hook 代码
+
+```javascript
+function zhudongtanchuang()
+{
+    console.log("打开脚本 ... ")
+    Java.perform(function()
+    {
+        console.log("注入脚本 ... ")
+
+        var charseqClazz = Java.use('java.lang.CharSequence')
+        var stringClzz = Java.use('java.lang.String')
+        var strok = stringClzz.$new('unknown ssid')
+        var strunknown_ssid = stringClzz.$new("unknown ssid")
+        var charseqok = Java.cast(strok, charseqClazz)
+        var charsequnknown_ssid = Java.cast(strunknown_ssid,charseqClazz)
+
+        var historyclass = Java.use("IllI1Ill.lIl11l1l.IlIlI1Il")
+        historyclass.IIIllI1I(charseqok,charsequnknown_ssid, false, 2, null)
+
+    })
+}
+```
+
+有时候，false 和 true 是没有办法直接输入的，因为 js 代码可能会把他解释为，字符串，所以我们可以直接用 0 / 1 进行代替
 
 ​		
 
