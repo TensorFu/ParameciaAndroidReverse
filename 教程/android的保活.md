@@ -214,7 +214,22 @@ ACTION_BOOT_COMPLETED 开机广播 , ACTION_USER_INITIALIZE 用户账户添加�
 
 ## 应用进程拉活 ( 双进程守护保活 )
 
-[【Android 进程保活】应用进程拉活 ( 双进程守护保活 )](https://blog.csdn.net/shulianghan/article/details/115604667)				
+[【Android 进程保活】应用进程拉活 ( 双进程守护保活 )](https://blog.csdn.net/shulianghan/article/details/115604667)					
+
+" 远程前台进程 " 与 " 本地前台进程 " 实现了相同的功能 , 代码基本一致 , 这两个进程都是前台进程 , 都进行了提权 , 并且互相绑定 , 当监听到绑定的另外一个进程突然断开连接 , 则本进程再次开启前台进程提权 , 并且重新绑定对方进程 , 以达到拉活对方进程的目的 ;
+					
+
+这两个进程之间需要绑定，每个服务中都需要定义继承 IMyAidlInterface.Stub 的 Binder 类
+
+但是		
+
+没有找到 IMyAidlInterface.Stub，搜索的方式：IMyAidlInterface.Stub				
+
+
+
+未完 。。。。
+
+
 
 
 
@@ -232,9 +247,131 @@ ACTION_BOOT_COMPLETED 开机广播 , ACTION_USER_INITIALIZE 用户账户添加�
 
 在 JobService 的 onStartJob 方法中 , 判定 " 双进程守护保活 " 中的双进程是否挂了 , 如果这两个进程挂了 , 就重新将挂掉的进程重启 ;
 
+​			
 
 
 
+未完 。。。
+
+---
+
+提高进程优先级
+
+开机之后能够自启动软件，oom_adj 的值是 3
+
+当打开的时候软件的 oom_adj = 0 
+
+切换后台的时候，oom_adj 3
+
+手动关闭软件之后还是 3
+
+可能是通过 3 的优先级，进行保活（但是感觉这个优先级也不是很高）也可能没有用优先级保活，
+
+分析：没有采用 一个像素 activity 的保活策略			
+
+​				
+
+----
+
+## 提升进程优先级（1 像素 Activity 提高进程优先级）
+
+[【Android 进程保活】提升进程优先级 ( 1 像素 Activity 提高进程优先级 | taskAffinity 亲和性说明 | 运行效果 | 源码资源 )](https://hanshuliang.blog.csdn.net/article/details/115482010)
+
+使用 Activity 可以提升进程的 oom_adj 值
+
+APP 进入后台后 , 使用 BroadcastReceiver 广播接收者 , 监听 Android 系统的锁屏广播事件		
+
+屏幕锁定 : 启动只有 1 像素的透明 Activity 界面 ;
+屏幕解锁 : 退出上述 1 像素的透明 Activity 界面 ;
+
+​		
+
+实现逻辑：
+
+1. 注册一个 广播接受者
+2. 设置成一个像素的 activity 
+3. 监听 android.intent.action.SCREEN_ON 和 android.intent.action.SCREEN_OFF , 两个广播 , 再锁屏时启动 1 像素 Activity , 在解除锁屏时 , 关闭 1 像素 Activity 
+   1. 【通过搜索 android.intent.action.SCREEN_ON定位到，检测开屏广播的函数，但是在判断开屏广播的函数当中，没有找到任何一个判断，通过 startactivity() 函数打开 activity 】
+4. 新建管理类，该管理类负责 Activity 组件与 BroadcastReceiver 组件的耦合，在里面实现，注册广播和接触注册广播，开启activity 界面和关闭activity界面。
+5. Androidmanifest.xml 文件配置，配置 1 像素 Activity 的亲和性设置 , 不要把这个 Activity 放在与主 Activity 相同的任务栈中 , 否则在解除锁定时 , 会拉起后台的无关任务栈 ，不要把 1 像素 Activity 展示到用户眼前 , 对用户透明即可
+   1. 通过 android:excludeFromRecents="true" 将该 activity 组件在最近任务当中不可见
+   2. 通过 android:taskAffinity="kim.hsl.keep_progress_alive.onepixel" />  设置 Activity 亲和性，让该界面在一个独立的任务栈中 , 不要与本应用的其它任务栈放在一起避免解除锁屏后 , 关闭 1 像素界面 , 将整个任务栈都唤醒
+   3. 设置透明主题，保证一个像素的 activity 是完全透明的
+
+​			
+
+分析：
+
+1. 准备通过 android.intent.action.SCREEN_ON 找到，app 在关屏之后，打开一个 activity 的代码，但是，在代码当中，接受了关屏广播之后没有发现，有通过 startActivity() 打开Activity 的代码。
+2. 在 Androidmanifest.xml 文件当中找到 android:excludeFromRecents="true" 其对应的，Activity ：io.github.crius.dae.HoActivity
+
+io.github.crius.dae.HoActivity 代码
+
+```java
+public class HoActivity extends AppCompatActivity {
+    @Override // android.app.Activity
+    public void onCreate(Bundle bundle, PersistableBundle persistableBundle) {
+        super.onCreate(bundle, persistableBundle);
+        Window window = getWindow();
+        window.setGravity(8388659);
+        WindowManager.LayoutParams attributes = window.getAttributes();
+        attributes.x = 0;
+        attributes.y = 0;
+        attributes.height = 1;
+        attributes.width = 1;
+        window.setAttributes(attributes);
+    }
+
+    @Override // androidx.fragment.app.FragmentActivity, android.app.Activity
+    public void onResume() {
+        super.onResume();
+        try {
+            if (((PowerManager) getApplicationContext().getSystemService("power")).isScreenOn()) {
+                finish();
+                return;
+            }
+            dating datingVar = acre.f13524tied;
+            if (datingVar == null) {
+                return;
+            }
+            datingVar.f14580dating.startKeepService();
+        } catch (Exception unused) {
+            finish();
+        }
+    }
+}
+```
+
+​			
+
+开启这个 Activity 的管理类，在 com.superclean.booster.notification.services.BackupWorker 
+
+run 函数代码
+
+```java
+public final void run() {
+            try {
+                Intent intent = new Intent(BackupWorker.this.f9074dating, HoActivity.class);
+                intent.addFlags(268435456);
+                BackupWorker.this.f9074dating.startActivity(intent);
+              
+                Intent intent2 = new Intent(BackupWorker.this.f9074dating, KeepService.class);
+                if (Build.VERSION.SDK_INT >= 26) {
+                    BackupWorker.this.f9074dating.startForegroundService(intent2);
+                } else {
+                    BackupWorker.this.f9074dating.startService(intent2);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+```
+
+发现，根据根据不同的 SDK 版本，采用不同的方式打开 intent2 
+
+
+
+com.superclean.booster.notification.services.KeepService
 
 
 

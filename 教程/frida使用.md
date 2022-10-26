@@ -558,3 +558,212 @@ function zhudongtanchuang()
 ## 自动化之RPC
 
 就是使用Python对JavaScript脚本进行操作
+
+​			
+
+新建demo		
+
+```java
+package com.example.demo2;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.util.Log;
+
+import java.util.Locale;
+
+public class MainActivity extends AppCompatActivity {
+
+    private String total = "hello";
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        while(true)
+        {
+            try{
+                Thread.sleep(1000);
+            }
+            catch (InterruptedException e)
+            {
+                e.printStackTrace();
+            }
+            fun(50,30);
+            Log.d("chongzai",fun("LoWeRcAsE Me Hello"));
+            //secret();
+            //staticsecret();z
+        }
+    }
+    void fun (int x,int y){
+        Log.d("sum：",String.valueOf(x+y));
+    }
+    String fun(String x){
+        return x.toLowerCase();
+    }
+    String secret()
+    {
+        total += " secretFunc";
+        return total;
+    }
+    static void staticsecret()
+    {
+        Log.d("secret","这是一个静态方法");
+    }
+}
+```
+
+我们的目的是获取total这个实例变量的值			
+
+在主动调用时需要注意的是，Java中的变量也存在是否使用 static修饰的区别。在用Frida对Java中的变量进行处理时也要区分 是否使用static修饰:类变量，使用static修饰，可以直接通过类进行 获取;实例变量，不使用static修饰，和特定的对象绑定在一起				
+
+ 			
+
+js 代码
+
+```javascript
+function CallSecretFunc()
+{
+    Java.perform(function()
+    {
+        Java.choose(
+            "com.example.demo2.MainActivity",
+            {
+                onMatch:function(instance)
+                {
+                    console.log(instance.secret()) 
+                },
+                onComplete:function()
+                {
+                    console.log("frida 执行完成 ... ")
+                }
+            }
+            )
+    })
+}
+
+
+
+
+function getTotalValue()
+{
+    console.log("打开脚本 ... ")
+    Java.perform(function()
+    {
+        var MainActivity = Java.use("com.example.demo2.MainActivity")
+
+        Java.choose(
+            "com.example.demo2.MainActivity",
+        {
+            onMatch:function(instance)
+            {
+                console.log("total value = ",instance.total.value)
+            },
+            onComplete:function()
+            {
+                console.log("获取完成")
+            }
+        })
+    })
+}
+
+setTimeout(CallSecretFunc)
+```
+
+​			
+
+两个代码的实现的功能不一样，确保我们的 js 代码没有问题之后，将这个函数导出				
+
+```javascript
+function CallSecretFunc()
+{
+    Java.perform(function()
+    {
+        Java.choose(
+            "com.example.demo2.MainActivity",
+            {
+                onMatch:function(instance)
+                {
+                    console.log(instance.secret()) 
+                },
+                onComplete:function()
+                {
+                    console.log("frida 执行完成 ... ")
+                }
+            }
+            )
+    })
+}
+
+
+function getTotalValue()
+{
+    console.log("打开脚本 ... ")
+    Java.perform(function()
+    {
+        var MainActivity = Java.use("com.example.demo2.MainActivity")
+
+        Java.choose(
+            "com.example.demo2.MainActivity",
+        {
+            onMatch:function(instance)
+            {
+                console.log("total value = ",instance.total.value)
+            },
+            onComplete:function()
+            {
+                console.log("获取完成")
+            }
+        })
+    })
+}
+
+rpc.exports = {
+    callsecretfunc:CallSecretFunc,
+    gettotalvalue:getTotalValue
+}
+```
+
+这 部 分 代 码 实 现 的 功 能 就 是 将 CallSecretFunc() 函 数 和 getTotalValue()函数分别导出为callsecretfunc和gettotalvalue。需 要注意的是，导出名**不可以有大写字母或者下划线**
+
+​			
+
+Python代码				
+
+注意：这个地方获取进程名的时候，应该是frida识别到的进程名称，而不是包名或者是进程列表当中的进程的名称
+
+```python
+import frida,sys
+
+def on_messgae(message,data):
+    if message["type"] == "send":
+        print("[*] {0}".format(message["playload"]))
+    else:
+        print(message)
+
+
+device = frida.get_usb_device() # 获取设备的句柄
+process = device.attach("demo2") # 注入进程
+
+with open("test.js") as f:
+    jscode = f.read()
+
+script = process.create_script(jscode) # 加载了编写的 js 代码
+
+script.on("message",on_messgae) # 注册了消息对应函数
+script.load()
+
+command = ""
+while 1 == 1:
+    command = input("\输入指令：\n1：退出\n2：获取 callsecretfunc 函数\n3：获取 gettotalvalue() 函数")
+    if command == "1":
+        break
+    elif command == "2":
+        script.exports.callsecretfunc() # 调用 js 的代码
+    elif command == "3":
+        script.exports.gettotalvalue()
+
+```
+
+
+

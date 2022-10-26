@@ -247,5 +247,48 @@ start开启的service，调用者退出后service仍然存在。bind开启的ser
 1. Service的调用者client与Service在同一个App中； 
 2. Service的调用者client是App1中的一个Activity，而Service是App2中的Service，client与service分属两个App，这种情形下主要用于实现跨进程的通信。
 
+---
+
+### 进程优先级
+
+查看 oom_adj 的办法			
+
+首先 `adb shell ps` 查看对应的进程，
+
+然后 `adb shell`  进入 shell 			
+
+在 shell  当中，cat /proc/[pid]/oom_adj			
+
+​				
+
+OOM_ADJ常量的定义以及解释				
+
+| oom_adj                | 值   | 释义                                                         |
+| ---------------------- | ---- | ------------------------------------------------------------ |
+| UNKNOWN_ADJ            | 16   | 一般指进程将要被缓存，但是不知道将要被赋予缓存区间的具体的值 |
+| CACHED_APP_MAX_ADJ     | 15   | 缓存进程的最大值                                             |
+| CACHED_APP_MIN_ADJ     | 9    | 缓存进程的最小值                                             |
+| SERVICE_B_ADJ          | 8    | SERVICE_ADJ的B list，里面都是年老的Service，没有A list中的有趣 |
+| PREVIOUS_APP_ADJ       | 7    | 上一个App的进程                                              |
+| HOME_APP_ADJ           | 6    | 桌面进程                                                     |
+| SERVICE_ADJ            | 5    | 服务进程                                                     |
+| HEAVY_WEIGHT_APP_ADJ   | 4    | 重量级后台进程，在`system/rootdir/init.rc`中设置             |
+| BACKUP_APP_ADJ         | 3    | 正在进行备份操作                                             |
+| PERCEPTIBLE_APP_ADJ    | 2    | 用户有感进程，例如后台音乐播放                               |
+| VISIBLE_APP_ADJ        | 1    | 可见进程                                                     |
+| FOREGROUND_APP_ADJ     | 0    | 前台进程                                                     |
+| PERSISTENT_SERVICE_ADJ | -11  | 系统进程或persistent进程已绑定的进程                         |
+| PERSISTENT_PROC_ADJ    | -12  | 系统persistent进程，比如telephony                            |
+| SYSTEM_ADJ             | -16  | 系统进程                                                     |
+| NATIVE_ADJ             | -17  | native进程（不被系统管理）                                   |
+
+​			
+
+---
+
+### ACTIVITY
+
+
+
 
 
