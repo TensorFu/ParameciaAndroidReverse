@@ -765,5 +765,100 @@ while 1 == 1:
 
 ```
 
+---
+
+### objection的使用
+
+他是一个基于 frida 的一个工具			
+
+Objection可以快速完成诸如内存搜索、类和 模块搜索、方法Hook以及打印参数、返回值、调用栈等常用功能    
+
+objection 的安装的条件：			
+
+1. Python的版本大于3.4
+2. Python包管理软件pip的版本大于9.0
+3. 注意 objection 的版本要比 frida 的版本小一点，能够避免 objection 需要的功能，frida 还不支持，但是我使用的是 frida 15.1.14，发布于2021年的12月9号，目前的objection 在，2021年4月份就停止更新了。所以可以直接使用 `pip3 install -U objection` 进行下载，（如果不是我这样的情况，可以指定下载的 objection的版本 pip3 insatll objection==你要指定的版本号）
+4. 安装好了之后，可以使用 `objection version` 查看是否安装成功，以及，安装的版本
+
+​				
+
+#### objection 的使用
+
+主要通过-g 参数指定注入的进程并通过explore命令进入REPL模式。在进入REPL模式后便可以使用Objection进行Hook的常用命令				
+
+Objection支持通过-N参数来指定网络中 的设备并通过-h参数和-p参数来指定对应设备的IP和端口以进行连 接，从而完成对网络设备的注入与Hook。除此之外还可以通过 patchapk命令将frida-gadget.so打包进App			
+
+​			
+
+以 设置 这个应用为例			
+
+1. 在确认手机使用USB线连接上手机 后
+2. 运行相应版本的frida-server
+3. 运行“设置”应用以通过frida-ps 找到对应的App及其包名
+
+<img src="./assets/image-20221027104922948.png" alt="image-20221027104922948" style="zoom:30%;" />
+
+4. 通过 `objection -g 设 置  explore`  进入到 REPL 模式当中
+5. 当不记得完整的命令的时候可以通过，空格来进行提示
+6. 当是不知道命令的作用的时候，可以在命令前面加上 help 可以对命令进行释义
+
+
+
+#### 常用命令
+
+1. `jobs list` 查看和管理当前所执行 Hook的任务，因为可以同时运行多项Hook作业
+
+2. `jobs kill [task_id]` 关闭任务
+
+   
+
+   **内存漫游相关命令**，Objection可以快速便捷地打印出内存 中的各种类的相关信息，这对App快速定位有着无可比拟的优势			
+
+3. `android hooking list classes` 可以使用以下命令列出内存中的所有类（当然这种方式找到的类很多，所以介绍下面的筛选的方式）
+
+4. `android hooking search classes <key>` 表示搜索包含，比方说包含 display 关键字的类
+
+5. `android hooking search methods <key>` 表示 从内存中搜索所有包含关键词key的方法
+
+6. `android hooking list class_methods <类名>` 表示的是，查看一个类下面的所有的方法，比方说对`com.android.settings.fuelgauge.BatteryInfo` 这个类感兴趣  ->     `android hooking list class_methods com.android.settings.fuelgauge.BatteryInfo` 比方说，有一个类是一个内部类，那么，查看的方式就是 加一个 **$** 表示后面的这个类名是一个内部类比方说这样： `android hooking list class_methods com.super.clean.booster.notification.services.BackupWorker$dating` 
+
+7. `android hooking list activities` 表示的是列出加载到内存当中所有的 activity 
+
+8. `android hooking list receivers`  表示的是列出加载到内存当中所有的 广播接收器
+
+9. `android hooking list providers` 表示的是列出加载到内存当中所有的 内容提供者
+
+   ​				
+
+   **通过 objection 对 app 进行 hook**
+
+10. `android hooking watch class_method com.super.clean.booster.notification.services.BackupWorker$dating.run --dump-backtrace` 这个表示对 run() 这个方法进行 hook ，并且打印 调用堆栈，开启了以后，就去触发这个函数，然后就会自动的生成调用堆栈，并且他的调用顺序是从下向上，还能够看得到，参数信息，以及返回值。
+
+![image-20221027172337819](./assets/image-20221027172337819.png)
+
+1. `memory list modules` 打印内存当中加载的库
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

@@ -275,7 +275,9 @@ ACTION_BOOT_COMPLETED 开机广播 , ACTION_USER_INITIALIZE 用户账户添加�
 
 ## 提升进程优先级（1 像素 Activity 提高进程优先级）
 
-[【Android 进程保活】提升进程优先级 ( 1 像素 Activity 提高进程优先级 | taskAffinity 亲和性说明 | 运行效果 | 源码资源 )](https://hanshuliang.blog.csdn.net/article/details/115482010)
+[【Android 进程保活】提升进程优先级 ( 1 像素 Activity 提高进程优先级 | taskAffinity 亲和性说明 | 运行效果 | 源码资源 )	](https://hanshuliang.blog.csdn.net/article/details/115482010)	
+
+实现原理：
 
 使用 Activity 可以提升进程的 oom_adj 值
 
@@ -286,12 +288,11 @@ APP 进入后台后 , 使用 BroadcastReceiver 广播接收者 , 监听 Android 
 
 ​		
 
-实现逻辑：
+实现步骤：
 
 1. 注册一个 广播接受者
 2. 设置成一个像素的 activity 
 3. 监听 android.intent.action.SCREEN_ON 和 android.intent.action.SCREEN_OFF , 两个广播 , 再锁屏时启动 1 像素 Activity , 在解除锁屏时 , 关闭 1 像素 Activity 
-   1. 【通过搜索 android.intent.action.SCREEN_ON定位到，检测开屏广播的函数，但是在判断开屏广播的函数当中，没有找到任何一个判断，通过 startactivity() 函数打开 activity 】
 4. 新建管理类，该管理类负责 Activity 组件与 BroadcastReceiver 组件的耦合，在里面实现，注册广播和接触注册广播，开启activity 界面和关闭activity界面。
 5. Androidmanifest.xml 文件配置，配置 1 像素 Activity 的亲和性设置 , 不要把这个 Activity 放在与主 Activity 相同的任务栈中 , 否则在解除锁定时 , 会拉起后台的无关任务栈 ，不要把 1 像素 Activity 展示到用户眼前 , 对用户透明即可
    1. 通过 android:excludeFromRecents="true" 将该 activity 组件在最近任务当中不可见
@@ -367,11 +368,25 @@ public final void run() {
         }
 ```
 
-发现，根据根据不同的 SDK 版本，采用不同的方式打开 intent2 
+BackupWorker.this.f9074dating.startActivity(intent); 打开一个像素的保活			
+
+​		
+
+---
+
+## 提升进程优先级-使用前台 Service
+
+[【Android 进程保活】提升进程优先级 ( 使用前台 Service 提高应用进程优先级 | 效果展示 | 源码资源 )（一）](https://developer.aliyun.com/article/863800)
+
+实现原理：
+
+前台进程中除了前台显示的 Activity 之外 , 还有前台服务 , 即调用 startForeground 方法启动的服务 ;
+
+按下 Home 键后 , 通过前台服务 , 让后台进程仍然是前台进程 ;			
+
+​			
 
 
-
-com.superclean.booster.notification.services.KeepService
 
 
 
