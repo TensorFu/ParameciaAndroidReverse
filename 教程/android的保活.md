@@ -46,23 +46,35 @@ JobScheduler（Android 5.0后引入，8.0后失效）
 
 ### 【Android 进程保活】应用进程拉活-账户同步拉活
 
+[【Android 进程保活】应用进程拉活 ( 账户同步拉活 | 账户同步 | 源码资源 )（一）](https://developer.aliyun.com/article/863807?spm=a2c6h.14164896.0.0.14ef59bbV3quE4)			
+
+
+
 账户同步的作用 : 如果应用的数据发生了改变 , 可以通过账户进行同步 , 进而与服务器进行数据同步操作 , 执行同步时 , 系统会拉活对应的应用进程 ;			
 
 进程拉活只是账户同步的附带作用 ;			
 
-账户同步需要在 账户同步服务 Service 中进行 , 定义一个 Service 进行账户同步 , 其 onBind 方法必须返回 AbstractThreadedSyncAdapter 的 getSyncAdapterBinder() 值 ;				
+**账户同步需要在 账户同步服务 Service 中进行 , 定义一个 Service 进行账户同步 , 其 onBind 方法必须返回 AbstractThreadedSyncAdapter 的 getSyncAdapterBinder() 值** ;				
 
 账户同步需要自定义一个 AbstractThreadedSyncAdapter 类 , 并在 Service 中维护一个该类对象 ;
+
+
+
+**示例代码：**
 
 ```java
 class ThreadSyncAdapter extends AbstractThreadedSyncAdapter{
         public ThreadSyncAdapter(Context context, boolean autoInitialize) {
             super(context, autoInitialize);
         }
+  
+  
         public ThreadSyncAdapter(Context context, boolean autoInitialize,
                                  boolean allowParallelSyncs) {
             super(context, autoInitialize, allowParallelSyncs);
         }
+  
+  
         @Override
         public void onPerformSync(Account account, Bundle extras, String authority,
                                   ContentProviderClient provider, SyncResult syncResult) {
@@ -71,6 +83,161 @@ class ThreadSyncAdapter extends AbstractThreadedSyncAdapter{
         }
     }
 ```
+
+​					
+
+系统在进行账户同步的时候 , 会获取该 账户同步 Service 的 IBinder , 拿到该 IBinder 后 , 会调用 AbstractThreadedSyncAdapter 子类对象中的 onPerformSync 方法 , 执行同步操作 ;			
+
+该 onPerformSync 函数是系统在执行同步时执行的函数 , 但是这里我们的目的是为了拉活应用进程 , 并不是为了进行账户同步 , 这里空着就可以 ;				
+
+​				
+
+最后还要在清单文件中注册该同步 Service 
+
+```xml
+<!-- 账户同步服务 -->
+        <service
+            android:name=".account_service.AccountSyncService"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.content.SyncAdapter" />
+            </intent-filter>
+            <meta-data
+                android:name="android.content.SyncAdapter"
+                android:resource="@xml/sync_adapter" />
+        </service>
+```
+
+​				
+
+除了同步 Service 组件之外 , 还必须有一个 ContentProvider 组件 , 系统进行账户同步时 , 会查找对应账户的 ContentProvider , 需要在应用中注册 ContentProvider , 还要与同步 Service 进行关联 ;					
+
+关联的方法就是在 同步 Service 注册的清单文件中添加元数据 meta-data , 在 meta-data 标签下的 android:resource 属性中 , 指定账户同步的相关资源数据 sync-adapter , sync-adapter 标签中的 android:contentAuthority 属性就是指定的该 ContentProvider ;			
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<sync-adapter
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accountType="keep_progress_alive.account"
+    android:contentAuthority="kim.hsl.keep_progress_alive.provider"
+    android:allowParallelSyncs="false"
+    android:isAlwaysSyncable="true"
+    android:userVisible="false"/>
+```
+
+sync-adapter 标签的 android:accountType 就是账户类型 , 与之前在 【Android 进程保活】应用进程拉活 ( 账户同步拉活 | 账号服务注册 | 源码资源 ) 博客注册的 account-authenticator 标签的 android:accountType 是一个值 				
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<account-authenticator
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accountType="keep_progress_alive.account"
+    android:icon="@mipmap/ic_launcher"
+    android:label="@string/app_name" />
+```
+
+sync-adapter 标签的 android:isAlwaysSyncable 属性 , 表示该账户同步操作 , 是否总是同步 , 这里设置 true , 账户拉活 , 越频繁越好 ;    
+
+sync-adapter 标签的 android:userVisible 属性 , 表示是否在 " 设置 -> 账号 " 界面 , 展示一个账户同步开关 , 这里选择 false , 不给用户展示 , 万一用户给关了 , 就无法进行账户拉活应用进程操作 ;       
+
+创建 ContentProvider , 然后在清单文件中注册 , 其中 provider 标签的 android:authorities 就是上述 sync-adapter 标签中的 android:contentAuthority 属性值 ;    
+
+
+
+ContentProvider , 并在清单文件中注册 
+
+```xml
+<!-- 账户同步 ContentProvider -->
+        <provider
+            android:authorities="kim.hsl.keep_progress_alive.provider"
+            android:name=".account_service.AccountSyncContentProvider" />
+```
+
+​			
+
+最后调用 ContentResolver 的 setIsSyncable 方法 , 设置账户同步开启 
+
+```java
+//创建账户
+        Account account = new Account("kim.hsl", ACCOUNT_TYPE);
+        // 设置账户同步开启
+        // 注意 : 该操作西药权限 android.permission.WRITE_SYNC_SETTINGS
+        ContentResolver.setIsSyncable(account, "kim.hsl.keep_progress_alive.provider", 1);
+```
+
+​				
+
+调用 ContentResolver 的 setSyncAutomatically 方法 , 设置账户自动同步 , 注意 : 该操作需要权限 android.permission.WRITE_SYNC_SETTINGS ;
+
+```java
+// 设置账户自动同步
+        ContentResolver.setSyncAutomatically(account, "kim.hsl.keep_progress_alive.provider", true);
+```
+
+​				
+
+设置账户自动同步 , 最后一个参数是同步周期，系统并不会严格按照该值执行 , 一般情况下同步的间隔 10 分钟 ~ 1 小时 ;
+
+```java
+// 设置账户同步周期
+        // 最后一个参数是同步周期 , 这个值只是参考值, 系统并不会严格按照该值执行
+        // 一般情况下同步的间隔 10 分钟 ~ 1 小时
+        ContentResolver.addPeriodicSync(account, "kim.hsl.keep_progress_alive.provider", new Bundle(), 1);
+```
+
+
+
+**分析代码** 
+
+找到了 AbstractThreadedSyncAdapter 的子类 dating 
+
+```java
+/* loaded from: classes3.dex */
+    public class dating extends AbstractThreadedSyncAdapter {
+        public dating(Context context) {
+            super(context, true);
+        }
+
+        @Override // android.content.AbstractThreadedSyncAdapter
+        public final void onPerformSync(Account account, Bundle bundle, String str, ContentProviderClient contentProviderClient, SyncResult syncResult) {
+            uni.dating datingVar = acre.f13524tied;
+            if (datingVar != null) {
+                datingVar.f14580dating.startKeepService(); // KeepService
+            }
+        }
+    }
+```
+
+
+
+注册的Service
+
+并且，通过 meta-data android:name="android.content.SyncAdapter" android:resource="@xml/up" 将
+
+```xml
+        <service android:name="io.github.crius.dae.auth.InfoService" android:enabled="true" android:exported="true">
+            <intent-filter>
+                <action android:name="android.content.SyncAdapter"/>
+            </intent-filter>
+            <meta-data android:name="android.content.SyncAdapter" android:resource="@xml/up"/>
+        </service>
+```
+
+​				
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<sync-adapter xmlns:android="http://schemas.android.com/apk/res/android" android:accountType="com.superclean.booster.accounttype" android:contentAuthority="com.superclean.booster_provider" android:userVisible="true" android:supportsUploading="false" android:allowParallelSyncs="false" android:isAlwaysSyncable="true"/>
+```
+
+​				
+
+
+
+
+
+
 
 ---
 
@@ -192,6 +359,10 @@ addPeriodicSync 函数
 
 [【Android 进程保活】应用进程拉活 ( 应用进程拉活简介 | 广播拉活 | 显示广播与隐式广播 | 全家桶拉活 )](https://developer.aliyun.com/article/863802?spm=a2c6h.14164896.0.0.763962521zPATr)
 
+​			
+
+
+
 只要进行进程拉活 , 都会或多或少占用系统的资源 , 尤其是内存资源 , 因此 Android 官方对这种操作进行了各种限制 , 从 Android 7.0 开始限制 , 到 Android 8.0 之后 , 基本无法进行应用拉活操作 ;			
 
 二、 广播拉活
@@ -209,6 +380,16 @@ ACTION_LOCKED_BOOT_COMPLETED
 ACTION_BOOT_COMPLETED 开机广播 , ACTION_USER_INITIALIZE 用户账户添加广播 , ACTION_LOCALE_CHANGED 时间区域改变广播 				
 
 这些隐式广播发出来的情况很特殊 , 有可能一天也发不出一条广播 , 用于拉活应用进程不太合适 
+
+
+
+
+
+
+
+
+
+
 
 ---
 
@@ -272,6 +453,10 @@ ACTION_BOOT_COMPLETED 开机广播 , ACTION_USER_INITIALIZE 用户账户添加�
 ​				
 
 ----
+
+---
+
+实际有效
 
 ## 提升进程优先级（1 像素 Activity 提高进程优先级）
 
@@ -376,7 +561,21 @@ BackupWorker.this.f9074dating.startActivity(intent); 打开一个像素的保活
 
 ## 提升进程优先级-使用前台 Service
 
+参考链接：
+
 [【Android 进程保活】提升进程优先级 ( 使用前台 Service 提高应用进程优先级 | 效果展示 | 源码资源 )（一）](https://developer.aliyun.com/article/863800)
+
+​			
+
+[如何保活后台服务	](https://www.cnblogs.com/renhui/p/8575299.html)		
+
+​			
+
+```
+package com.superclean.booster.notification.services;
+```
+
+没有找到这样的处理方式，可能是在其他的地方进行处理	
 
 实现原理：
 
@@ -384,15 +583,142 @@ BackupWorker.this.f9074dating.startActivity(intent); 打开一个像素的保活
 
 按下 Home 键后 , 通过前台服务 , 让后台进程仍然是前台进程 ;			
 
+1. 提高Service的优先级：为防止Service被系统回收，可以尝试通过提高服务的优先级解决，android:priority="1000" ，1000是最高优先级，数字越小，优先级越低。
+2. 把service写成系统服务，将不会被回收：在Manifest.xml文件中设置persistent属性为true，则可使该服务免受out-of-memory killer的影响。但是这种做法一定要谨慎，系统服务太多将严重影响系统的整体运行效率。 
+3. 将服务改成前台服务 Foreground service：重写onStartCommand方法，使用StartForeground(int,Notification)方法来启动service。  对于通过startForeground启动的service，onDestory方法中需要通过stopForeground(true)来取消前台运行状态。 
+4. 利用Android的系统广播：利用Android的系统广播检查Service的运行状态，如果被杀掉，就再起来，系统广播是Intent.ACTION_TIME_TICK，这个广播每分钟发送一次，我们可以每分钟检查一次Service的运行状态，如果已经被结束了，就重新启动Service。 
+
 ​			
 
+**实现步骤**
+
+示例代码部分
+
+```java
+private void startForeground() {
+        String channelId = null;
+        // 8.0 以上需要特殊处理
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            channelId = createNotificationChannel("kim.hsl", "ForegroundService");
+        } else {
+            channelId = "";
+        }
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, channelId);
+        Notification notification = builder.setOngoing(true)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setPriority(PRIORITY_MIN)
+                .setCategory(Notification.CATEGORY_SERVICE)
+                .build();
+        startForeground(1, notification);
+    }
+```
+
+​			
+
+```java
+/**
+     * 创建通知通道
+     * @param channelId
+     * @param channelName
+     * @return
+     */
+    @RequiresApi(Build.VERSION_CODES.O)
+    private String createNotificationChannel(String channelId, String channelName){
+        NotificationChannel chan = new NotificationChannel(channelId,
+                channelName, NotificationManager.IMPORTANCE_NONE);
+        chan.setLightColor(Color.BLUE);
+        chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+        NotificationManager service = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        service.createNotificationChannel(chan);
+        return channelId;
+    }
+```
+
+​			
+
+```xml
+<service
+            android:name=".foreground_service.ForegroundService"
+            android:enabled="true"
+            android:exported="true"/>
+```
 
 
 
+```java
+package kim.hsl.keep_progress_alive;
+import androidx.appcompat.app.AppCompatActivity;
+import android.content.Intent;
+import android.os.Bundle;
+import kim.hsl.keep_progress_alive.foreground_service.ForegroundService;
+import kim.hsl.keep_progress_alive.one_pixel_activity.KeepProgressAliveManager;
+public class MainActivity extends AppCompatActivity {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        // 通过前台 Service 提升应用权限
+        // 启动普通 Service , 但是在该 Service 的 onCreate 方法中执行了 startForeground
+        // 变成了前台 Service 服务
+        startService(new Intent(this, ForegroundService.class));
+    }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // 取消注册广播接收者, 也可以不取消注册
+        //KeepProgressAliveManager.getmInstance().registerReceiver(this);
+    }
+}
+```
+
+​			
+
+Ultra cleaner 代码分析
+
+带 run() 函数当中，打开了
+
+```java
+package com.superclean.booster.notification.services;
+
+@Override // java.lang.Runnable
+        public final void run() {
+            try {
+                Intent intent = new Intent(BackupWorker.this.f9074dating, HoActivity.class);
+                intent.addFlags(268435456);
+                BackupWorker.this.f9074dating.startActivity(intent);
+                Intent intent2 = new Intent(BackupWorker.this.f9074dating, KeepService.class); // 设置 Widget
+                if (Build.VERSION.SDK_INT >= 26) {
+                    BackupWorker.this.f9074dating.startForegroundService(intent2);
+                } else {
+                    BackupWorker.this.f9074dating.startService(intent2);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+```
 
 
 
+**如果是通过广播，监测服务是不是存在，并且拉活**
 
+分析频率，通过，监听 `android.intent.action.TIME_TICK"` 这个广播每一分钟检测一次		
+
+<!-- 找到了时间检测的广播但是在这里面的操作是，更新 widget 和发送通知 -->		
+
+​				
+
+通过 `if("so.xxxx.WidgetUpdateService".equals(service.service.getClassName())) ` 判断是不是存活		
+
+<!-- 在keepService 没有找到这个 WidgetUpdateService -->			
+
+​			
+
+如果没有存活就通过`context.startService(intent); ` 重启服务				
+
+ <!-- 没有找到这个startService 说明没有拉活的动作 -->					
+
+---
 
 
 
