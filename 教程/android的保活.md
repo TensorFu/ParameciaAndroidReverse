@@ -1,9 +1,6 @@
-「保活」基本上是两条路：
+[TOC]
 
-- 提升自己进程的优先级，让系统不要轻易弄死自己；
-- App 之间互相结盟，一个兄弟死了其他兄弟把它拉起来。
-
-
+---
 
 一般来说，系统杀进程有两种方法，这两个方法都通过 ActivityManagerService 提供：
 
@@ -20,8 +17,6 @@ http://www.520monkey.com/archives/1303
 
 
 
-开启前台Service（效果好，推荐） 
-
 Service中循环播放一段无声音频（效果较好，但耗电量高，谨慎使用） 
 
 双进程守护（Android 5.0前有效） 
@@ -36,19 +31,17 @@ JobScheduler（Android 5.0后引入，8.0后失效）
 
 ---
 
-[双进程守护+Jobshcedule 保活](https://developer.aliyun.com/article/863811?spm=a2c6h.14164896.0.0.4dbe59bb5PyOhA)
-
 [保活方案-知乎](https://zhuanlan.zhihu.com/p/79324310)
 
 [NDK 轮询实现保活](https://cloud.tencent.com/developer/article/1655131)
 
 ---
 
-### 【Android 进程保活】应用进程拉活-账户同步拉活
+## 【android进程保活】应用进程拉活(账户同步拉活)
 
 [【Android 进程保活】应用进程拉活 ( 账户同步拉活 | 账户同步 | 源码资源 )（一）](https://developer.aliyun.com/article/863807?spm=a2c6h.14164896.0.0.14ef59bbV3quE4)			
 
-
+[【Android 进程保活】应用进程拉活 ( 账户同步拉活 | 账户同步 | 源码资源 )（二）](https://developer.aliyun.com/article/863809?spm=a2c6h.14164896.0.0.19056252WOIdUn)         
 
 账户同步的作用 : 如果应用的数据发生了改变 , 可以通过账户进行同步 , 进而与服务器进行数据同步操作 , 执行同步时 , 系统会拉活对应的应用进程 ;			
 
@@ -137,13 +130,13 @@ sync-adapter 标签的 android:accountType 就是账户类型 , 与之前在 【
     android:label="@string/app_name" />
 ```
 
-sync-adapter 标签的 android:isAlwaysSyncable 属性 , 表示该账户同步操作 , 是否总是同步 , 这里设置 true , 账户拉活 , 越频繁越好 ;    
+* sync-adapter 标签的 **android:isAlwaysSyncable** 属性 , 表示该账户同步操作 , 是否总是同步 , 这里设置 true , 账户拉活 , 越频繁越好 ;    
 
-sync-adapter 标签的 android:userVisible 属性 , 表示是否在 " 设置 -> 账号 " 界面 , 展示一个账户同步开关 , 这里选择 false , 不给用户展示 , 万一用户给关了 , 就无法进行账户拉活应用进程操作 ;       
-
-创建 ContentProvider , 然后在清单文件中注册 , 其中 provider 标签的 android:authorities 就是上述 sync-adapter 标签中的 android:contentAuthority 属性值 ;    
+* sync-adapter 标签的 **android:userVisible** 属性 , 表示是否在 " 设置 -> 账号 " 界面 , 展示一个账户同步开关 , 这里选择 false , 不给用户展示 , 万一用户给关了 , 就无法进行账户拉活应用进程操作 ;       
 
 
+
+创建 ContentProvider , 然后在清单文件中注册 , 其中 provider 标签的 **android:authorities** 就是上述 sync-adapter 标签中的 android:contentAuthority 属性值 ;    
 
 ContentProvider , 并在清单文件中注册 
 
@@ -213,7 +206,7 @@ ContentProvider , 并在清单文件中注册
 
 注册的Service
 
-并且，通过 meta-data android:name="android.content.SyncAdapter" android:resource="@xml/up" 将
+并且，通过 meta-data android:name="android.content.SyncAdapter" android:resource="@xml/up" 将Service 和 ContentProvider
 
 ```xml
         <service android:name="io.github.crius.dae.auth.InfoService" android:enabled="true" android:exported="true">
@@ -226,142 +219,50 @@ ContentProvider , 并在清单文件中注册
 
 ​				
 
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<sync-adapter xmlns:android="http://schemas.android.com/apk/res/android" android:accountType="com.superclean.booster.accounttype" android:contentAuthority="com.superclean.booster_provider" android:userVisible="true" android:supportsUploading="false" android:allowParallelSyncs="false" android:isAlwaysSyncable="true"/>
-```
+在contentprovider注册当中
 
-​				
+android:accountType="com.superclean.booster.accounttype"   账户类型
 
+android:userVisible="true"  界面，用户可见
 
-
-
-
-
-
----
-
-## 应用拉活进程-账户同步拉活
-
-[【Android 进程保活】应用进程拉活 ( 账户同步拉活 | 账户同步 | 源码资源 )（一）](https://developer.aliyun.com/article/863808?spm=a2c6h.14164896.0.0.84c859bbFaVtRy)
-
-[【Android 进程保活】应用进程拉活 ( 账户同步拉活 | 账户同步 | 源码资源 )（二）](https://developer.aliyun.com/article/863809?spm=a2c6h.14164896.0.0.19056252WOIdUn)
-
-这是通过，账户同步数据的方式进行，拉起，然后实现保活
-
-找到了 AbstractThreadedSyncAdapter 类 的子类，
-
-有 onPerformSync 函数 是系统在执行同步时执行的函数
-
-```java
-public class InfoService extends Service {
-
-    /* renamed from: designated  reason: collision with root package name */
-    public dating f11620designated;
-
-    /* loaded from: classes3.dex */
-    public class dating extends AbstractThreadedSyncAdapter {
-        public dating(Context context) {
-            super(context, true);
-        }
-
-        @Override // android.content.AbstractThreadedSyncAdapter
-        public final void onPerformSync(Account account, Bundle bundle, String str, ContentProviderClient contentProviderClient, SyncResult syncResult) {
-            uni.dating datingVar = acre.f13524tied;
-            if (datingVar != null) {
-                datingVar.f14580dating.startKeepService();
-            }
-        }
-    }
-
-    @Override // android.app.Service
-    public final IBinder onBind(Intent intent) {
-        return this.f11620designated.getSyncAdapterBinder();
-    }
-
-    @Override // android.app.Service
-    public final void onCreate() {
-        super.onCreate();
-        this.f11620designated = new dating(getApplicationContext());
-    }
-}
-```
-
-
-
-
-
-在 xml 文件当中找到了 注册的该 Service 的区块				
-
-还有 meta-data  -> ContentProvider 与 同步 Service 进行关联 			
-
-账户同步的相关资源数据   up			
-
-```xml
- <service android:name="io.github.crius.dae.auth.InfoService" android:enabled="true" android:exported="true">
-            <intent-filter>
-                <action android:name="android.content.SyncAdapter"/>
-            </intent-filter>
-            <meta-data android:name="android.content.SyncAdapter" android:resource="@xml/up"/>
-        </service>
-```
-
-
-
-在 xml/up.xml 文件当中
+android:isAlwaysSyncable="true"/> 总是同步
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
-<sync-adapter xmlns:android="http://schemas.android.com/apk/res/android" android:accountType="com.superclean.booster.accounttype" android:contentAuthority="com.superclean.booster_provider" android:userVisible="true" android:supportsUploading="false" android:allowParallelSyncs="false" android:isAlwaysSyncable="true"/>
+<sync-adapter xmlns:android="http://schemas.android.com/apk/res/android" android:accountType="com.superclean.booster.accounttype"  android:contentAuthority="com.superclean.booster_provider" android:userVisible="true" android:supportsUploading="false" android:allowParallelSyncs="false" android:isAlwaysSyncable="true"/>
 ```
 
-android:contentAuthority 属性就是指定的该 ContentProvider ："com.superclean.booster_provider"			
 
-android:accountType 就是账户类型
 
-android:isAlwaysSyncable 属性 , 表示该账户同步操作 , 是否总是同步 , 这里设置 true , 账户拉活 , 越频繁越好	
-
-android:userVisible 属性 , 表示是否在 " 设置 -> 账号 " 界面 , 展示一个账户同步开关 , 这里选择 false , 不给用户展示 , 万一用户给关了 , 就无法进行账户拉活应用进程操作（但是ultra cleaner 设置的 可见）			
-
-​			
-
-创建 ContentProvider , 然后在清单文件中注册			
-
-其中 provider 标签的 android:authorities 就是上述 sync-adapter 标签中的 android:contentAuthority 属性值：com.superclean.booster_provider			
+contentProvider 的注册信息
 
 ```xml
 <provider android:name="io.github.crius.dae.auth.FreshInfoProvicer" android:exported="false" android:authorities="com.superclean.booster_provider" android:syncable="true"/>
 ```
 
-​			
 
-根据教程最后
 
-通过 调用 ContentResolver 的 setIsSyncable 方法 , 设置账户同步开启 
+**但是最后没有在全局搜索当中找到如下信息**
 
-调用 ContentResolver 的 setSyncAutomatically 方法 , 设置账户自动同步 , 注意 : 该操作需要权限 android.permission.WRITE_SYNC_SETTINGS （这个权限在 manifest.xml 当中找到了）
+调用 ContentResolver 的 setIsSyncable 方法 , 设置账户同步开启 <!-- 搜索的内容是setIsSyncable -->    
 
-调用 ContentResolver 的 setSyncAutomatically 方法 , 设置账户自动同步 , 最后一个参数是同步周期 , 这个值只是参考值
+调用 ContentResolver 的 setSyncAutomatically 方法 , 设置账户自动同步 <!-- 搜索的内容是setSyncAutomatically -->   
 
-​		
+<!-- 但是找到了 <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS"/>这个权限 -->   
 
-但是在代码部分 **没有找到**
+调用 ContentResolver 的 setSyncAutomatically 方法 , 设置账户自动同步 <!-- 搜索的内容是setSyncAutomatically -->
 
-setIsSyncable 函数
 
-setSyncAutomatically 函数
 
-addPeriodicSync 函数
+**所以判断 ultra cleaner 没有采用，账户拉活的方式，进行保活**
 
 ---
 
-## Android 进程保活】应用进程拉活 ( 应用进程拉活简介 | 广播拉活 | 显示广播与隐式广播 | 全家桶拉活 )
+## 应用进程拉活 ( 应用进程拉活简介 | 广播拉活 | 显示广播与隐式广播 | 全家桶拉活 )
 
 [【Android 进程保活】应用进程拉活 ( 应用进程拉活简介 | 广播拉活 | 显示广播与隐式广播 | 全家桶拉活 )](https://developer.aliyun.com/article/863802?spm=a2c6h.14164896.0.0.763962521zPATr)
 
 ​			
-
-
 
 只要进行进程拉活 , 都会或多或少占用系统的资源 , 尤其是内存资源 , 因此 Android 官方对这种操作进行了各种限制 , 从 Android 7.0 开始限制 , 到 Android 8.0 之后 , 基本无法进行应用拉活操作 ;			
 
@@ -375,9 +276,9 @@ Android 8.0 ( API Level 26 ) 限制更严格 , 基本就禁止了这种做法 ; 
 
 特例：
 
-ACTION_LOCKED_BOOT_COMPLETED
-
-ACTION_BOOT_COMPLETED 开机广播 , ACTION_USER_INITIALIZE 用户账户添加广播 , ACTION_LOCALE_CHANGED 时间区域改变广播 				
+* ACTION_BOOT_COMPLETED 开机广播
+* ACTION_USER_INITIALIZE 用户账户添加广播
+* CTION_LOCALE_CHANGED 时间区域改变广播 				
 
 这些隐式广播发出来的情况很特殊 , 有可能一天也发不出一条广播 , 用于拉活应用进程不太合适 
 
@@ -393,30 +294,526 @@ ACTION_BOOT_COMPLETED 开机广播 , ACTION_USER_INITIALIZE 用户账户添加�
 
 ---
 
-## 应用进程拉活 ( 双进程守护保活 )
+## 【android进程保活】应用进程拉活 ( 双进程守护保活+AIDL互相通信方案 )
 
 [【Android 进程保活】应用进程拉活 ( 双进程守护保活 )](https://blog.csdn.net/shulianghan/article/details/115604667)					
 
-" 远程前台进程 " 与 " 本地前台进程 " 实现了相同的功能 , 代码基本一致 , 这两个进程都是前台进程 , 都进行了提权 , 并且互相绑定 , 当监听到绑定的另外一个进程突然断开连接 , 则本进程再次开启前台进程提权 , 并且重新绑定对方进程 , 以达到拉活对方进程的目的 ;
+
+
+在应用中 , 运行了一个主进程 , 除此之外 , 还运行了一个 " 本地前台进程 " , 运行该 " 本地前台进程 " 时 , 开启前台进程 , 用于提权 , 并绑定 " 远程前台进程 " ;					
+
+" 远程前台进程 " 与 " 本地前台进程 " 实现了相同的功能 , 代码基本一致 , 这两个进程都是前台进程 , 都进行了提权 , 并且互相绑定 , 当监听到绑定的另外一个进程突然断开连接 , 则本进程再次开启前台进程提权 , 并且重新绑定对方进程 , 以达到拉活对方进程的目的 ;			
 					
 
-这两个进程之间需要绑定，每个服务中都需要定义继承 IMyAidlInterface.Stub 的 Binder 类
+这两个进程之间需要绑定 , 这里就需要定义AIDL 接口 IMyAidlInterface , 每个服务中都需要定义继承 IMyAidlInterface.Stub 的 Binder 类 , 作为进程间通信的桥梁 
 
-但是		
+```java
+   /**
+     * AIDL 远程调用接口
+     * 其它进程调与该 RemoteForegroundService 服务进程通信时 , 可以通过 onBind 方法获取该 myBinder 成员
+     * 通过调用该成员的 basicTypes 方法 , 可以与该进程进行数据传递
+     */
+    class MyBinder extends IMyAidlInterface.Stub {
+        @Override
+        public void basicTypes(
+                int anInt, long aLong, boolean aBoolean, float aFloat,
+                double aDouble, String aString) throws RemoteException {
+            // 通信内容
+        }
+    }
+```
 
-没有找到 IMyAidlInterface.Stub，搜索的方式：IMyAidlInterface.Stub				
+​				
+
+本地前台进程 " LocalForegroundService 在 onCreate 方法中开启前台服务
+
+```java
+    /**
+     * 远程调用 Binder 对象
+     */
+    private MyBinder myBinder;
+    
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        // 创建 Binder 对象
+        myBinder = new MyBinder();
+
+        // 启动前台进程
+        startService();
+    }
+```
+
+​			
+
+" 本地前台进程 " LocalForegroundService , 在 onBind 方法中返回 onCreate 方法中创建的 Binder 对象 
+
+```java
+  @Override
+    public IBinder onBind(Intent intent) {
+        return myBinder;
+    }
+```
+
+onBind主要是负责给 Service 发送消息的				
+
+​				
+
+" 本地前台进程 " LocalForegroundService 中 , 绑定远程进程时 , 需要使用到 ServiceConnection 类 , 在服务绑定成功时回调 onServiceConnected , 服务断开时回调 onServiceDisconnected 方法 ; 这里就在 onServiceDisconnected 方法中再次对本服务进行提权 , 并且再次绑定 " 远程前台进程 " RemoteForegroundService ;
+```java
+class Connection implements ServiceConnection {
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            // 服务绑定成功时回调
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            // 再次启动前台进程
+            startService();
+            // 绑定另外一个远程进程
+            bindService();
+        }
+    }
+```
 
 
 
-未完 。。。。
+完整代码
+
+本地前台服务 Service
+
+```java
+package kim.hsl.two_process_alive;
+
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.Service;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
+import android.graphics.Color;
+import android.os.Build;
+import android.os.IBinder;
+import android.os.RemoteException;
+
+import androidx.core.app.NotificationCompat;
+
+import static androidx.core.app.NotificationCompat.PRIORITY_MIN;
+
+/**
+ * 前台服务提权
+ */
+public class LocalForegroundService extends Service {
+
+    /**
+     * 远程调用 Binder 对象
+     */
+    private MyBinder myBinder;
+
+    /**
+     * 连接对象
+     */
+    private Connection connection;
+
+    /**
+     * AIDL 远程调用接口
+     * 其它进程调与该 RemoteForegroundService 服务进程通信时 , 可以通过 onBind 方法获取该 myBinder 成员
+     * 通过调用该成员的 basicTypes 方法 , 可以与该进程进行数据传递
+     */
+    class MyBinder extends IMyAidlInterface.Stub {
+        @Override
+        public void basicTypes(
+                int anInt, long aLong, boolean aBoolean, float aFloat,
+                double aDouble, String aString) throws RemoteException {
+            // 通信内容
+        }
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return myBinder;
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        // 创建 Binder 对象
+        myBinder = new MyBinder();
+
+        // 启动前台进程
+        startService();
+    }
+
+    private void startService(){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            // startForeground();
+
+            // 创建通知通道
+            NotificationChannel channel = new NotificationChannel("service",
+                    "service", NotificationManager.IMPORTANCE_NONE);
+            channel.setLightColor(Color.BLUE);
+            channel.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+            NotificationManager service = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            // 正式创建
+            service.createNotificationChannel(channel);
+
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "service");
+            Notification notification = builder.setOngoing(true)
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setPriority(PRIORITY_MIN)
+                    .setCategory(Notification.CATEGORY_SERVICE)
+                    .build();
+
+            // 开启前台进程 , API 26 以上无法关闭通知栏
+            startForeground(10, notification);
+
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2){
+            startForeground(10, new Notification());
+            // API 18 ~ 25 以上的设备 , 启动相同 id 的前台服务 , 并关闭 , 可以关闭通知
+            startService(new Intent(this, CancelNotificationService.class));
+
+        } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2){
+            // 将该服务转为前台服务
+            // 需要设置 ID 和 通知
+            // 设置 ID 为 0 , 就不显示已通知了 , 但是 oom_adj 值会变成后台进程 11
+            // 设置 ID 为 1 , 会在通知栏显示该前台服务
+            // 8.0 以上该用法报错
+            startForeground(10, new Notification());
+        }
+    }
+
+    /**
+     * 绑定 另外一个 服务
+     * LocalForegroundService 与 RemoteForegroundService 两个服务互相绑定
+     */
+    private void bindService(){
+        // 绑定 另外一个 服务
+        // LocalForegroundService 与 RemoteForegroundService 两个服务互相绑定
+
+        // 创建连接对象
+        connection = new Connection();
+
+        // 创建本地前台进程组件意图
+        Intent bindIntent = new Intent(this, RemoteForegroundService.class);
+        // 绑定进程操作
+        bindService(bindIntent, connection, BIND_AUTO_CREATE);
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        // 绑定另外一个服务
+        bindService();
+        return super.onStartCommand(intent, flags, startId);
+    }
+
+    class Connection implements ServiceConnection {
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            // 服务绑定成功时回调
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            // 再次启动前台进程
+            startService();
+            // 绑定另外一个远程进程
+            bindService();
+        }
+    }
+
+    /**
+     * API 18 ~ 25 以上的设备, 关闭通知到专用服务
+     */
+    public static class CancelNotificationService extends Service {
+        public CancelNotificationService() {
+        }
+
+        @Override
+        public void onCreate() {
+            super.onCreate();
+            startForeground(10, new Notification());
+            stopSelf();
+        }
+
+        @Override
+        public IBinder onBind(Intent intent) {
+            return null;
+        }
+    }
+}
+```
+
+​				
+
+远程前台服务 Service
+
+```java
+package kim.hsl.two_process_alive;
+
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.Service;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
+import android.graphics.Color;
+import android.os.Build;
+import android.os.IBinder;
+import android.os.RemoteException;
+
+import androidx.core.app.NotificationCompat;
+
+import static androidx.core.app.NotificationCompat.PRIORITY_MIN;
+
+/**
+ * 前台服务提权
+ */
+public class RemoteForegroundService extends Service {
+
+    /**
+     * 远程调用 Binder 对象
+     */
+    private MyBinder myBinder;
+
+    /**
+     * 连接对象
+     */
+    private Connection connection;
+
+    /**
+     * AIDL 远程调用接口
+     * 其它进程调与该 RemoteForegroundService 服务进程通信时 , 可以通过 onBind 方法获取该 myBinder 成员
+     * 通过调用该成员的 basicTypes 方法 , 可以与该进程进行数据传递
+     */
+    class MyBinder extends IMyAidlInterface.Stub {
+        @Override
+        public void basicTypes(
+                int anInt, long aLong, boolean aBoolean, float aFloat,
+                double aDouble, String aString) throws RemoteException {
+            // 通信内容
+        }
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return myBinder;
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        // 创建 Binder 对象
+        myBinder = new MyBinder();
+
+        // 启动前台进程
+        startService();
+    }
+
+    private void startService(){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            // startForeground();
+
+            // 创建通知通道
+            NotificationChannel channel = new NotificationChannel("service",
+                    "service", NotificationManager.IMPORTANCE_NONE);
+            channel.setLightColor(Color.BLUE);
+            channel.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+            NotificationManager service = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            // 正式创建
+            service.createNotificationChannel(channel);
+
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "service");
+            Notification notification = builder.setOngoing(true)
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setPriority(PRIORITY_MIN)
+                    .setCategory(Notification.CATEGORY_SERVICE)
+                    .build();
+
+            // 开启前台进程 , API 26 以上无法关闭通知栏
+            startForeground(10, notification);
+
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2){
+            startForeground(10, new Notification());
+            // API 18 ~ 25 以上的设备 , 启动相同 id 的前台服务 , 并关闭 , 可以关闭通知
+            startService(new Intent(this, CancelNotificationService.class));
+
+        } else if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR2){
+            // 将该服务转为前台服务
+            // 需要设置 ID 和 通知
+            // 设置 ID 为 0 , 就不显示已通知了 , 但是 oom_adj 值会变成后台进程 11
+            // 设置 ID 为 1 , 会在通知栏显示该前台服务
+            // 8.0 以上该用法报错
+            startForeground(10, new Notification());
+        }
+    }
+
+    /**
+     * 绑定 另外一个 服务
+     * LocalForegroundService 与 RemoteForegroundService 两个服务互相绑定
+     */
+    private void bindService(){
+        // 绑定 另外一个 服务
+        // LocalForegroundService 与 RemoteForegroundService 两个服务互相绑定
+
+        // 创建连接对象
+        connection = new Connection();
+
+        // 创建本地前台进程组件意图
+        Intent bindIntent = new Intent(this, LocalForegroundService.class);
+        // 绑定进程操作
+        bindService(bindIntent, connection, BIND_AUTO_CREATE);
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        // 绑定另外一个服务
+        bindService();
+        return super.onStartCommand(intent, flags, startId);
+    }
+
+    class Connection implements ServiceConnection {
+
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            // 服务绑定成功时回调
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            // 再次启动前台进程
+            startService();
+            // 绑定另外一个远程进程
+            bindService();
+        }
+    }
+
+    /**
+     * API 18 ~ 25 以上的设备, 关闭通知到专用服务
+     */
+    public static class CancelNotificationService extends Service {
+        public CancelNotificationService() {
+        }
+
+        @Override
+        public void onCreate() {
+            super.onCreate();
+            startForeground(10, new Notification());
+            stopSelf();
+        }
+
+        @Override
+        public IBinder onBind(Intent intent) {
+            return null;
+        }
+    }
+}
+```
+
+​				
+
+xml 清单
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="kim.hsl.two_process_alive">
+
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Two_Process_Alive">
+        <activity android:name=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- 本地提权前台服务 Service -->
+        <service
+            android:name=".LocalForegroundService"
+            android:enabled="true"
+            android:exported="true"></service>
+
+        <!-- 本地服务 , API 18 ~ 25 以上的设备, 关闭通知到专用服务 -->
+        <service
+            android:name=".LocalForegroundService$CancelNotificationService"
+            android:enabled="true"
+            android:exported="true"></service>
+
+        <!-- 远程提权前台服务 Service -->
+        <service
+            android:name=".RemoteForegroundService"
+            android:enabled="true"
+            android:exported="true"
+            android:process=":remote"></service>
+
+        <!-- 远程服务 , API 18 ~ 25 以上的设备, 关闭通知到专用服务 -->
+        <service
+            android:name=".RemoteForegroundService$CancelNotificationService"
+            android:enabled="true"
+            android:exported="true"
+            android:process=":remote"></service>
+
+    </application>
+
+</manifest>
+```
+
+​				
+
+启动两个服务
+
+```java
+package kim.hsl.two_process_alive;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
+import android.os.Bundle;
+
+public class MainActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        // 通过前台 Service 提升应用权限
+        // 启动普通 Service , 但是在该 Service 的 onCreate 方法中执行了 startForeground
+        // 变成了前台 Service 服务
+        startService(new Intent(this, LocalForegroundService.class));
+        startService(new Intent(this, RemoteForegroundService.class));
+    }
+}
+```
 
 
 
+分析：
 
+想通过搜索 IMyAidlInterface.Stub 找到程间通信的桥梁，<!--但是没有找到 IMyAidlInterface.Stub -->
+
+想搜索 android:process=":remote" 找到指定为远程进程的Service的的位置 <!-- 但是在xml文件当中没有找到这个，没有指定远程进程-->
+
+**所以判断没有通过这样的方式进行保活**		
 
 ---
 
-## 应用进程拉活 双进程守护+JobScheduler
+## 【android进程保活】应用进程拉活(双进程守护+JobScheduler)
 
 [【Android 进程保活】应用进程拉活 ( 双进程守护 + JobScheduler 保活 | 成功率最高 | 推荐使用 )（一)](https://developer.aliyun.com/article/863811?spm=a2c6h.14164896.0.0.3513403aUKWlu5)    
 
@@ -426,39 +823,146 @@ ACTION_BOOT_COMPLETED 开机广播 , ACTION_USER_INITIALIZE 用户账户添加�
 
 ​			
 
-在 JobService 的 onStartJob 方法中 , 判定 " 双进程守护保活 " 中的双进程是否挂了 , 如果这两个进程挂了 , 就重新将挂掉的进程重启 ;
+这是在原来的双进程保活的基础之上的整合方法
+
+在 JobService 的 onStartJob 方法中 , 判定 " 双进程守护保活 " 中的双进程是否挂了 , 如果这两个进程挂了 , 就重新将挂掉的进程重启 ;				
+
+判断服务是不是在进行
+
+```java
+public static boolean isServiceRunning(Context context, String serviceName){
+        if(TextUtils.isEmpty(serviceName)) return false;
+        ActivityManager activityManager =
+                (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        // 最多获取 200 个正在运行的 Service
+        List<ActivityManager.RunningServiceInfo> infos =
+                activityManager.getRunningServices(200);
+        // 遍历当前运行的 Service 信息, 如果找到相同名称的服务 , 说明某进程正在运行
+        for (ActivityManager.RunningServiceInfo info: infos){
+            if (TextUtils.equals(info.service.getClassName(), serviceName)){
+                return true;
+            }
+        }
+       
+        return false;
+    }
+```
 
 ​			
 
+**JobService 代码**
+
+在 onStartJob() 函数当中判断本地前台服务是不是存活，如果没有存活，就通过 startService() 拉活			
+
+在 onStopJob() 函数当中返回 false ，停止 JobService 
+
+```java
+package kim.hsl.two_progress_alive;
+import android.app.job.JobInfo;
+import android.app.job.JobParameters;
+import android.app.job.JobScheduler;
+import android.app.job.JobService;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Build;
+import android.util.Log;
+import androidx.annotation.RequiresApi;
+@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+public class KeepAliveJobService extends JobService {
+    @Override
+    public boolean onStartJob(JobParameters params) {
+        Log.i("KeepAliveJobService", "JobService onStartJob 开启");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
+            // 如果当前设备大于 7.0 , 延迟 5 秒 , 再次执行一次
+            startJob(this);
+        }
+        // 判定本地前台进程是否正在运行
+        boolean isLocalServiceRunning =
+                ServiceUtils.isServiceRunning(this, LocalForegroundService.class.getName());
+        if (!isLocalServiceRunning){
+            startService(new Intent(this, LocalForegroundService.class));
+        }
+        // 判定远程前台进程是否正在运行
+        boolean isRemoteServiceRunning =
+                ServiceUtils.isServiceRunning(this, RemoteForegroundService.class.getName());
+        if (!isRemoteServiceRunning){
+            startService(new Intent(this, RemoteForegroundService.class));
+        }
+        return false;
+    }
+    @Override
+    public boolean onStopJob(JobParameters params) {
+        Log.i("KeepAliveJobService", "JobService onStopJob 关闭");
+        return false;
+    }
+    public static void startJob(Context context){
+        // 创建 JobScheduler
+        JobScheduler jobScheduler =
+                (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        // 第一个参数指定任务 ID
+        // 第二个参数指定任务在哪个组件中执行
+        // setPersisted 方法需要 android.permission.RECEIVE_BOOT_COMPLETED 权限
+        // setPersisted 方法作用是设备重启后 , 依然执行 JobScheduler 定时任务
+        JobInfo.Builder jobInfoBuilder = new .Builder(10,
+                new ComponentName(context.getPackageName(), KeepAliveJobService.class.getName()))
+                .setPersisted(true);
+        // 7.0 以下的版本, 可以每隔 5000 毫秒执行一次任务
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N){
+            jobInfoBuilder.setPeriodic(5_000);
+        }else{
+            // 7.0 以上的版本 , 设置延迟 5 秒执行
+            // 该时间不能小于 JobInfo.getMinLatencyMillis 方法获取的最小值
+            jobInfoBuilder.setMinimumLatency(5_000);
+        }
+        // 开启定时任务
+        jobScheduler.schedule(jobInfoBuilder.build());
+    }
+```
+
+​					
+
+在 Activity里面的代码实现
+
+除了开启两个服务进程之外
+
+还通过 KeepAliveJobService.startJob(this); 开启了 Jobschedule 对两个进程的监测
+
+```java 
+package kim.hsl.two_progress_alive;
+import android.content.Intent;
+import android.os.Build;
+import android.os.Bundle;
+import androidx.appcompat.app.AppCompatActivity;
+public class MainActivity extends AppCompatActivity {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        // 通过前台 Service 提升应用权限
+        // 启动普通 Service , 但是在该 Service 的 onCreate 方法中执行了 startForeground
+        // 变成了前台 Service 服务
+        startService(new Intent(this, LocalForegroundService.class));
+        startService(new Intent(this, RemoteForegroundService.class));
+        // JobScheduler 拉活
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            KeepAliveJobService.startJob(this);
+        }
+    }
+}
+```
 
 
-未完 。。。
+
+
+
+分析：
+
+**因为 ultra cleaner 这个软件没有采用双进程守护的方式进行保活，所以也不存存在**
 
 ---
 
-提高进程优先级
-
-开机之后能够自启动软件，oom_adj 的值是 3
-
-当打开的时候软件的 oom_adj = 0 
-
-切换后台的时候，oom_adj 3
-
-手动关闭软件之后还是 3
-
-可能是通过 3 的优先级，进行保活（但是感觉这个优先级也不是很高）也可能没有用优先级保活，
-
-分析：没有采用 一个像素 activity 的保活策略			
-
-​				
-
-----
-
----
-
-实际有效
-
-## 提升进程优先级（1 像素 Activity 提高进程优先级）
+## 【android进程保活】提升进程优先级（1 像素 Activity 提高进程优先级）
 
 [【Android 进程保活】提升进程优先级 ( 1 像素 Activity 提高进程优先级 | taskAffinity 亲和性说明 | 运行效果 | 源码资源 )	](https://hanshuliang.blog.csdn.net/article/details/115482010)	
 
@@ -559,34 +1063,15 @@ BackupWorker.this.f9074dating.startActivity(intent); 打开一个像素的保活
 
 ---
 
-## 提升进程优先级-使用前台 Service
+## 【android进程保活】应用进程拉活(广播监测 Service 是否存活的方式进行拉活)
 
 参考链接：
 
-[【Android 进程保活】提升进程优先级 ( 使用前台 Service 提高应用进程优先级 | 效果展示 | 源码资源 )（一）](https://developer.aliyun.com/article/863800)
 
-​			
-
-[如何保活后台服务	](https://www.cnblogs.com/renhui/p/8575299.html)		
-
-​			
-
-```
-package com.superclean.booster.notification.services;
-```
-
-没有找到这样的处理方式，可能是在其他的地方进行处理	
 
 实现原理：
 
-前台进程中除了前台显示的 Activity 之外 , 还有前台服务 , 即调用 startForeground 方法启动的服务 ;
-
-按下 Home 键后 , 通过前台服务 , 让后台进程仍然是前台进程 ;			
-
-1. 提高Service的优先级：为防止Service被系统回收，可以尝试通过提高服务的优先级解决，android:priority="1000" ，1000是最高优先级，数字越小，优先级越低。
-2. 把service写成系统服务，将不会被回收：在Manifest.xml文件中设置persistent属性为true，则可使该服务免受out-of-memory killer的影响。但是这种做法一定要谨慎，系统服务太多将严重影响系统的整体运行效率。 
-3. 将服务改成前台服务 Foreground service：重写onStartCommand方法，使用StartForeground(int,Notification)方法来启动service。  对于通过startForeground启动的service，onDestory方法中需要通过stopForeground(true)来取消前台运行状态。 
-4. 利用Android的系统广播：利用Android的系统广播检查Service的运行状态，如果被杀掉，就再起来，系统广播是Intent.ACTION_TIME_TICK，这个广播每分钟发送一次，我们可以每分钟检查一次Service的运行状态，如果已经被结束了，就重新启动Service。 
+1. 利用Android的系统广播：利用Android的系统广播检查Service的运行状态，如果被杀掉，就再起来，系统广播是Intent.ACTION_TIME_TICK，这个广播每分钟发送一次，我们可以每分钟检查一次Service的运行状态，如果已经被结束了，就重新启动Service。 
 
 ​			
 
@@ -716,9 +1201,855 @@ package com.superclean.booster.notification.services;
 
 如果没有存活就通过`context.startService(intent); ` 重启服务				
 
- <!-- 没有找到这个startService 说明没有拉活的动作 -->					
+ <!-- 没有找到这个startService 说明没有拉活的动作 -->				
+
+
+
+**说明没有通过 广播监测 Service 是否存活的方式进行拉活**	
 
 ---
+
+## 【android进程保活】提高进程优先级（前台服务+关掉通知的方式进行保活）
+
+[【Android 进程保活】提升进程优先级 ( 使用前台 Service 提高应用进程优先级 | 效果展示 | 源码资源 )（一）](https://developer.aliyun.com/article/863800)
+
+​			
+
+[如何保活后台服务	](https://www.cnblogs.com/renhui/p/8575299.html)		
+
+​			
+
+实现原理：
+
+在 **新的进程** 里开启一个被提高优先级的Service即可。 
+
+提高Service优先级需要增加startForeground(SERVICE_ID, new Notification());用于开启前台 
+
+进程。 			
+
+就已经完成了Service的优先级提升。不过在通知栏会出现“XXX”正在运行。的字样，取消他也很 
+
+简单。再开启一个Service用来和当前的通知栏上XXX共用，然后关闭当前的Service，可以通知栏“XXX” 
+
+正在运行消失。关闭这个Service不会影响ForegroundService的优先级以及存活状态。	
+
+
+
+1. 需要两个前台服务，共享同一个Notification ID。
+2. 一个服务启动完毕之后，马上停止自己，会去掉通知栏的通知。
+3. 而之前已经借助这个ID保持前台的服务，依然会处于前台的状态不变。
+
+​			
+
+注：这个SubsidiaryService 需要和ForegroundService 在同一个进程中，不然会出现通知栏先显示一 
+
+下，然后在关闭的情况。
+
+
+
+**实现步骤**			
+
+实力部分代码			
+
+```java 
+public class ForegroundService extends Service { 
+  /*** 前台进程的NotificationId 不可为0 */ 
+  private final static int SERVICE_ID = 1001; 
+  @Override 
+  public int onStartCommand(Intent intent, int flags, int startId) 
+  { 
+    startForeground(SERVICE_ID, new Notification()); return START_STICKY; 
+  } 
+}
+```
+
+​				
+
+```java
+//用来关闭通知栏的
+Service public static class SubsidiaryService extends Service { 
+  @Override 
+  public int onStartCommand(Intent intent, int flags, int startId) 
+  { 
+    startForeground(KEEP_SERVICE_ID, new Notification()); 
+    stopForeground(true); 
+    stopSelf(); 
+    return super.onStartCommand(intent, flags, startId); 
+  }
+}
+```
+
+
+
+ultra cleaner代码分析
+
+因为要前台服务，并且不显示通知，所以需要两个服务绑定同一个 notification 的ID，并且需要一个服务打开了以后马上关掉自己<!-- 搜索 stopSelf() 这个函数的使用 -->
+
+定位到
+
+```
+package io.github.crius.dae;
+public class CriusHoService extends Service
+{
+	...
+}
+```
+
+​			
+
+
+
+```java
+ /* loaded from: classes3.dex */
+    public static class SecondService extends Service {
+        @Override // android.app.Service
+        public final IBinder onBind(Intent intent) {
+            return null;
+        }
+
+        @Override // android.app.Service
+        public final void onDestroy() {
+            super.onDestroy();
+        }
+
+        // 开启了以后马上停掉
+        @Override // android.app.Service
+        public final int onStartCommand(Intent intent, int i, int i2) {
+            startForeground(1000, new Notification());
+            stopForeground(true);
+            stopSelf();
+            return super.onStartCommand(intent, i, i2);
+        }
+    }
+```
+
+​			
+
+通过搜索上面的 secondService 绑定的notification ID
+
+定位到了第一个开启的 Service		
+
+```java
+public final void dating() {
+        Notification notification;
+        if (Build.VERSION.SDK_INT >= 26) {
+            NotificationChannel notificationChannel = new NotificationChannel("crius_channel_id", "crius_channel_name", 2);
+            NotificationManager notificationManager = (NotificationManager) getSystemService("notification");
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(notificationChannel);
+            }
+            notification = null;
+        } else {
+            notification = new Notification();
+        }
+        if (notification == null) {
+            return;
+        }
+        startForeground(1000, notification);
+        TimeUnit timeUnit = TimeUnit.SECONDS;
+        Math.max(0, 3);
+        Math.max(0, 3);
+        if (!this.f11617tied) {
+            if (this.f11616designated == null) {
+                this.f11616designated = new ScreenReceiver();
+            }
+            IntentFilter intentFilter = new IntentFilter();
+            intentFilter.addAction("android.intent.action.SCREEN_OFF");
+            intentFilter.addAction("android.intent.action.SCREEN_ON");
+            registerReceiver(this.f11616designated, intentFilter);
+            this.f11617tied = true;
+        }
+        JobInfo.Builder builder = new JobInfo.Builder(1001, new ComponentName((Context) null, CriusJobService.class));
+        builder.setPeriodic(360000);
+        builder.setPeriodic(JobInfo.getMinPeriodMillis(), JobInfo.getMinFlexMillis());
+        builder.setPersisted(true);
+        ((JobScheduler) getSystemService("jobscheduler")).schedule(builder.build());
+    }
+```
+
+
+
+**所以采用了通过打开前台服务，关掉通知的方式进行保活**
+
+---
+
+## 【android进程保活】应用进程拉活(通过JobScheduler的方式复活Service)
+
+[通过JobScheduler的方式复活Service](https://blog.csdn.net/andrexpert/article/details/75174586)
+
+​			
+
+实现的逻辑
+
+首先在一个实现了JobService的子类的onStartJob方法中执行这项任务		
+
+使用JobInfo的Builder方法来设定条件并和实现了JobService的子类的组件名绑定		
+
+然后调用系统服务JobScheduler的schedule方法。			
+
+这样，即便在执行任务之前应用程序进程被杀，也不会导致任务不会执行，因为系统服务JobScheduler会使用bindServiceAsUser的方法把实现了JobService的子类服务启动起来，并执行它的onStartJob方法
+
+​			
+
+**AliveJobService.java**
+
+```java
+/**JobService，支持5.0以上forcestop依然有效
+ *
+ * Created by jianddongguo on 2017/7/10.
+ */
+@TargetApi(21)
+public class AliveJobService extends JobService {
+    private final static String TAG = "KeepAliveService";
+    // 告知编译器，这个变量不能被优化
+    private volatile static Service mKeepAliveService = null;
+ 
+    public static boolean isJobServiceAlive(){
+        return mKeepAliveService != null;
+    }
+ 
+    private static final int MESSAGE_ID_TASK = 0x01;
+ 
+    private Handler mHandler = new Handler(new Handler.Callback() {
+        @Override
+        public boolean handleMessage(Message msg) {
+            // 具体任务逻辑
+            if(SystemUtils.isAPPALive(getApplicationContext(), Contants.PACKAGE_NAME)){
+                Toast.makeText(getApplicationContext(), "APP活着的", Toast.LENGTH_SHORT)
+                        .show();
+            }else{
+                Intent intent = new Intent(getApplicationContext(), SportsActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+                Toast.makeText(getApplicationContext(), "APP被杀死，重启...", Toast.LENGTH_SHORT)
+                        .show();
+            }
+            // 通知系统任务执行结束
+            jobFinished( (JobParameters) msg.obj, false );
+            return true;
+        }
+    });
+ 
+    @Override
+    public boolean onStartJob(JobParameters params) {
+        if(Contants.DEBUG)
+            Log.d(TAG,"KeepAliveService----->JobService服务被启动...");
+        mKeepAliveService = this;
+        // 返回false，系统假设这个方法返回时任务已经执行完毕；
+        // 返回true，系统假定这个任务正要被执行
+        Message msg = Message.obtain(mHandler, MESSAGE_ID_TASK, params);
+        mHandler.sendMessage(msg);
+        return true;
+    }
+ 
+ 
+    @Override
+    public boolean onStopJob(JobParameters params) {
+        mHandler.removeMessages(MESSAGE_ID_TASK);
+        if(Contants.DEBUG)
+            Log.d(TAG,"KeepAliveService----->JobService服务被关闭");
+        return false;
+    }
+}
+```
+
+​		
+
+**JobSchedulerManager.java**
+
+```java
+/**JobScheduler管理类，单例模式
+ * 执行系统任务
+ *
+ * Created by jianddongguo on 2017/7/10.
+ * http://blog.csdn.net/andrexpert
+ */
+public class JobSchedulerManager {
+    private static final int JOB_ID = 1;
+    private static JobSchedulerManager mJobManager;
+    private JobScheduler mJobScheduler;
+    private static Context mContext;
+ 
+    private JobSchedulerManager(Context ctxt){
+        this.mContext = ctxt;
+        mJobScheduler = (JobScheduler)ctxt.getSystemService(Context.JOB_SCHEDULER_SERVICE);
+    }
+    public final static JobSchedulerManager getJobSchedulerInstance(Context ctxt){
+        if(mJobManager == null){
+            mJobManager = new JobSchedulerManager(ctxt);
+        }
+        return mJobManager;
+    }
+    @TargetApi(21)
+    public void startJobScheduler(){
+        // 如果JobService已经启动或API<21，返回
+        if(AliveJobService.isJobServiceAlive() || isBelowLOLLIPOP()){
+            return;
+        }
+        // 构建JobInfo对象，传递给JobSchedulerService
+        JobInfo.Builder builder = new JobInfo.Builder(JOB_ID,new ComponentName(mContext, AliveJobService.class));
+        // 设置每3秒执行一下任务
+        builder.setPeriodic(3000);
+        // 设置设备重启时，执行该任务
+        builder.setPersisted(true);
+        // 当插入充电器，执行该任务
+        builder.setRequiresCharging(true);
+        JobInfo info = builder.build();
+        //开始定时执行该系统任务
+        mJobScheduler.schedule(info);
+    }
+    @TargetApi(21)
+    public void stopJobScheduler(){
+        if(isBelowLOLLIPOP())
+            return;
+        mJobScheduler.cancelAll();
+    }
+    private boolean isBelowLOLLIPOP(){
+        // API< 21
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP;
+    }
+}
+```
+
+​				
+
+```xml
+<--! AliveJobService需要BIND_JOB_SERVICE权限-->
+ <service
+         android:name=".service.AliveJobService"
+          android:permission="android.permission.BIND_JOB_SERVICE"/>
+
+```
+
+
+
+分析 ultra cleaner		
+
+* 通过 xml 的 android.permission.BIND_JOB_SERVICE 定位使用了 JobScheduler 的服务，并且在服务当中执行了 startForegroundService/startService 开启前台服务
+
+  ```java
+  package io.github.crius.dae;
+  
+  import android.app.job.JobParameters;
+  import android.app.job.JobService;
+  import so.acre;
+  import uni.dating;
+  
+  /* loaded from: classes3.dex */
+  public class CriusJobService extends JobService {
+      @Override // android.app.job.JobService
+      public final boolean onStartJob(JobParameters jobParameters) {
+          dating datingVar = acre.f13524tied;
+          if (datingVar != null) {
+              datingVar.f14580dating.startKeepService();
+              return false;
+          }
+          return false;
+      }
+  
+      @Override // android.app.job.JobService
+      public final boolean onStopJob(JobParameters jobParameters) {
+          return false;
+      }
+  }
+  ```
+
+​			
+
+使用过 JobScheduler 进行复活 Service 的是需要，使用JobInfo的Builder方法来设定条件并和实现了JobService的子类的组件名绑定
+
+```java
+package io.github.crius.dae;
+public class CriusHoService extends Service 
+{
+ public final void dating() {
+        Notification notification;
+        if (Build.VERSION.SDK_INT >= 26) {
+            NotificationChannel notificationChannel = new NotificationChannel("crius_channel_id", "crius_channel_name", 2);
+            NotificationManager notificationManager = (NotificationManager) getSystemService("notification");
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(notificationChannel);
+            }
+            notification = null;
+        } else {
+            notification = new Notification();
+        }
+        if (notification == null) {
+            return;
+        }
+        startForeground(1000, notification);
+        TimeUnit timeUnit = TimeUnit.SECONDS;
+        Math.max(0, 3);
+        Math.max(0, 3);
+        if (!this.f11617tied) {
+            if (this.f11616designated == null) {
+                this.f11616designated = new ScreenReceiver();
+            }
+            IntentFilter intentFilter = new IntentFilter();
+            intentFilter.addAction("android.intent.action.SCREEN_OFF");
+            intentFilter.addAction("android.intent.action.SCREEN_ON");
+            registerReceiver(this.f11616designated, intentFilter);
+            this.f11617tied = true;
+        }
+        JobInfo.Builder builder = new JobInfo.Builder(1001, new ComponentName((Context) null, CriusJobService.class)); // 新建 JobInfo.builder 并且绑定
+        builder.setPeriodic(360000); // 每隔六分钟执行一次
+        builder.setPeriodic(JobInfo.getMinPeriodMillis(), JobInfo.getMinFlexMillis());//SDK 版本不一样的设置
+        builder.setPersisted(true); // 设备重启时重启该任务
+        ((JobScheduler) getSystemService("jobscheduler")).schedule(builder.build());
+    }
+}
+```
+
+​			
+
+所以 ultra cleaner 采用了，通过JobScheduler的方式复活Service的方式进行保活
+
+---
+
+## 【android进程保活】提高进程优先级(持续播放无声音乐)
+
+实现的逻辑
+
+伪装成音乐播放器的应用程序，一直在后台进行播放无声的音乐 `setLooping(true);` 。实现保活
+
+```java
+public class MusicService extends Service { 
+  private final static String TAG = MusicService.class.getSimpleName(); 
+  private MediaPlayer mMediaPlayer; 
+  @Nullable 
+  @Override 
+  public IBinder onBind(Intent intent) 
+  { 
+    return null; 
+  }
+  @Override 
+  public void onCreate() 
+  { 
+    super.onCreate(); 
+    Log.e(TAG, "MusicService启动服务"); 
+    mMediaPlayer = MediaPlayer.create(getApplicationContext(), R.raw.canon);
+    mMediaPlayer.setLooping(true);//无线循环 
+  }
+  @Override 
+  public int onStartCommand(Intent intent, int flags, int startId) 
+  { 
+    new Thread(new Runnable() { 
+      @Override public void run() { 
+        if (mMediaPlayer != null) 
+        { 
+          Log.e(TAG, "启动播放无声音乐 "); 
+          mMediaPlayer.start(); 
+        } 
+      } 
+    }).start(); 
+    return START_STICKY; 
+  }
+  @Override 
+  public void onDestroy() { 
+    super.onDestroy(); 
+    if (mMediaPlayer != null) { 
+      Log.e(TAG, "关闭播放无声音乐 "); 
+      mMediaPlayer.stop(); 
+    }
+    Log.e(TAG, "MusicService停止服务"); // 重启自己 
+    Intent intent = new Intent(getApplicationContext(), MusicService.class);
+    startService(intent); 
+  } 
+}
+```
+
+​			
+
+并且有人反应问题
+
+**问题：初次打开app时，没有音乐在播放，直接设置setLooping(true)，用isLooping()得到的仍是flase。**
+
+**解决：记录当前操作，播放时重新设置setLooping(true)**
+
+```java
+        *******
+        if(mode == REPEAT1)
+        {
+            if(!mPlayer.isLooping()) {
+                mPlayer.setLooping(true);
+ 
+                //打开app当前无音乐播放时，setLooping会无作用，先记录在播放时重新setLooping
+                if(!mPlayer.isLooping())
+                {
+                    setRepeat1 = true;
+                }
+                else {
+                    setRepeat1 = false;
+                }
+            }
+            btn_order.setImageResource(R.drawable.music_repeat1);
+            play_mode = REPEAT1;
+        }
+        ********
+ 
+        public void play(String path) {
+            mPlayer.reset();
+            //调用方法传进播放地址
+            mPlayer.setDataSource(path);
+            //异步准备资源，防止卡顿
+            mPlayer.prepareAsync();
+            //调用音频的监听方法，音频准备完毕后响应该方法进行音乐播放
+            mPlayer.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+                @Override
+                public void onPrepared(MediaPlayer mediaPlayer) {
+                    mediaPlayer.start();
+                }
+            });
+ 
+            if(setRepeat1)
+            {
+                mPlayer.setLooping(true);
+            }
+        }
+
+```
+
+
+
+```xml
+<service android:name=".service.MusicService" 
+         android:enabled="true" 
+         android:exported="true" 
+         android:process=":music_service" />
+```
+
+
+
+分析 ultra cleaner
+
+因为循环播放会执行，`mPlayer.setLooping(true);` 的方法，搜索 setLooping  <!-- 全局只发现了 designatedVar.origin.setLooping(false); --> 
+
+
+
+所以 ultra cleaner 没有采用无限循环播放无声音乐的方式进行保活
+
+----
+
+## Android WorkManager让app保活
+
+
+
+
+
+---
+
+## 双App相互拉活方案
+
+
+
+
+
+## NDK双进程守护
+
+
+
+
+
+
+
+
+
+---
+
+## android进程保活应用进程拉活 ( 双进程守护保活+AIDL互相通信+中转方案 )
+
+[github实例](https://github.com/zywudev/AndroidKeepAlive)		
+
+![168695d727fda12c~tplv-t2oaga2asx-zoom-in-crop-mark-4536-0-0-0.image](./assets/168695d727fda12c~tplv-t2oaga2asx-zoom-in-crop-mark-4536-0-0-0.image-7550094.png)
+
+
+
+原理就是利用 Binder 的讣告机制，如果 Service Binder 实体的进程被杀，系统会向 Client 发送讣告，这个时机就是保活的空子了。所以可以通过两个进程启动两个 Binder 服务，互为 C/S，一旦一个进程挂掉，另一个进程就会收到 Binder 讣告，这时可以拉起另一个进程。
+
+一个是 AIDLServer，相当于服务端；一个是 AIDLClient，相当于客户端。而两个进程之间的通信采用 AIDL 方式。
+
+注意两个应用的 AIDL 文件必须一致，包括包名
+
+​			
+
+IMyAidlInterface.aidl
+
+```java
+// IMyAidlInterface.aidl
+package com.wuzy.aidlserver;
+
+// Declare any non-default types here with import statements
+
+interface IMyAidlInterface {
+
+   void bindSuccess();
+
+   void unbind();
+
+}
+```
+
+
+
+​			
+
+RemoteService.java
+
+```java
+public class RemoteService extends Service {
+
+    private static final String TAG = "RemoteService";
+    
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        Log.e(TAG, "onCreate: 创建 RemoteService");
+        bindLocalService();
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return stub;
+    }
+    
+    private IMyAidlInterface.Stub stub = new IMyAidlInterface.Stub() {
+        @Override
+        public void bindSuccess() throws RemoteException {
+            Log.e(TAG, "bindSuccess: LocalService 绑定 RemoteService 成功");
+        }
+
+        @Override
+        public void unbind() throws RemoteException {
+            Log.e(TAG, "unbind: 此处解除 RemoteService 与 LocalService 的绑定");
+            getApplicationContext().unbindService(connection);
+        }
+    };
+
+    /**
+     * 绑定 LocalService
+     */
+    private void bindLocalService() {
+        Intent intent = new Intent();
+        intent.setComponent(new ComponentName("com.wuzy.aidlclient", "com.wuzy.aidlclient.LocalService"));
+        if (!getApplicationContext().bindService(intent, connection, Context.BIND_AUTO_CREATE)) {
+            Log.e(TAG, "bindLocalService: 绑定 LocalService 失败");
+            stopSelf();
+        }
+    }
+
+    private ServiceConnection connection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+        
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            // bindRemoteService();
+            createTransferActivity();
+        }
+    };
+
+    private void createTransferActivity() {
+        Intent intent = new Intent(this, TransferActivity.class);
+        intent.setAction(TransferActivity.ACTION_FROM_SELF);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+    }
+}
+```
+
+​				
+
+
+
+```java
+public class LocalService extends Service {
+
+    private static final String TAG = "LocalService";
+    
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        Log.e(TAG, "onCreate: 创建 LocalService");
+        bindRemoteService();
+
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        Log.e(TAG, "onBind: 绑定 LocalService");
+        return stub;
+    }
+
+    private IMyAidlInterface.Stub stub = new IMyAidlInterface.Stub() {
+        @Override
+        public void bindSuccess() throws RemoteException {
+            Log.e(TAG, "bindSuccess: RemoteService 绑定 LocalService 成功");
+        }
+
+        @Override
+        public void unbind() throws RemoteException {
+            getApplicationContext().unbindService(connection);
+        }
+    };
+
+    private ServiceConnection connection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+       
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            // bindRemoteService();
+            createTransferActivity();
+        }
+    };
+
+    private void createTransferActivity() {
+        Intent intent = new Intent(this, TransferActivity.class);
+        intent.setAction(TransferActivity.ACTION_FROM_SELF);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+    }
+
+    private void bindRemoteService() {
+        Intent intent = new Intent();
+        intent.setComponent(new ComponentName("com.wuzy.aidlserver", "com.wuzy.aidlserver.RemoteService"));
+        if (!getApplicationContext().bindService(intent, connection, Context.BIND_AUTO_CREATE)) {
+            Log.e(TAG, "bindRemoteService: 绑定 RemoteService 失败");
+            stopSelf();
+        }
+    }
+}
+```
+
+​		
+
+**android应用程序中启动另一个应用程序**
+
+```java
+前名一个参数是应用程序的包名,后一个是这个应用程序的主Activity名  
+ Intent intent=new Intent();  
+ intent.setComponent(new ComponentName("com.droidnova.android.games.vortex",                                                   "com.droidnova.android.games.vortex.Vortex"));  
+ startActivity(intent); 
+```
+
+
+
+
+
+在 onCreate 的时候相互绑定，并在 onServiceDisconnected 收到讣告的时候，重新启动服务绑定彼此即可。
+
+但是我在系统是 8.0 的华为机器上是无效的，也就是当 LocalService 所在进程被杀后，RemoteService 无法启动LocalService，反过来也是如此。
+
+所以，这里只能采取 “曲线救国” 的方式。通过 TransferActivity 中转下，先启动守护进程的 TransferActivity，再从守护进程的 TransferActivity 中启动保活进程的 TransferActivity，这是没有问题的，再从保活进程的 TransferActivity 中启动 LocalService，重新绑定服务即可，反过来也是一样的。当然，TransferActivity 要用户无感知，不然会很突兀，所以这里的 TransferActivity 都是 1 个像素，做完任务及时销毁即可。
+
+​			
+
+TransferActivity.java
+
+```java
+package com.wuzy.aidlclient;
+
+import android.app.ActivityManager;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.Gravity;
+import android.view.Window;
+import android.view.WindowManager;
+
+import java.util.ArrayList;
+
+public class TransferActivity extends AppCompatActivity {
+
+    public static final String ACTION_FROM_SELF = "com.wuzy.aidlclient.TransferActivity.FROM_SELF";
+    public static final String ACTION_FROM_OTHER = "com.wuzy.aidlclient.TransferActivity.FROM_OTHER";
+
+    private static final String TAG = "TransferActivity";
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        Log.e(TAG, "onCreate: 创建中转 Activity");
+
+        Window window = getWindow();
+        window.setGravity(Gravity.START | Gravity.TOP);
+        WindowManager.LayoutParams attributes = window.getAttributes();
+        attributes.width = attributes.height = 1;
+        attributes.x = attributes.y = 0;
+
+        if (getIntent() != null) {
+            Intent intent;
+            if (ACTION_FROM_OTHER.equals(getIntent().getAction())) {
+                intent = new Intent(this, LocalService.class);
+                startService(intent);
+            } else if (ACTION_FROM_SELF.equals(getIntent().getAction())) {
+                intent = new Intent("com.wuzy.aidlserver.TransferActivity.FROM_OTHER");
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                intent.setComponent(new ComponentName("com.wuzy.aidlserver", "com.wuzy.aidlserver.TransferActivity"));
+                startActivity(intent);
+            }
+        }
+        finish();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.e(TAG, "onDestroy: 销毁中转 Activity");
+    }
+
+    //判断Service是否在运行
+
+    private boolean isServiceRunning(Context context, String serviceName) throws ClassNotFoundException {
+
+        if (("").equals(serviceName) || serviceName == null) {
+            return false;
+        }
+        ActivityManager myManager = (ActivityManager) context
+                .getSystemService(Context.ACTIVITY_SERVICE);
+        ArrayList<ActivityManager.RunningServiceInfo> runningService = (ArrayList<ActivityManager.RunningServiceInfo>) myManager
+                .getRunningServices(Integer.MAX_VALUE);
+        for (int i = 0; i < runningService.size(); i++) {
+            if (runningService.get(i).service.getClassName().toString()
+                    .equals(serviceName)) {
+                return true;
+            }
+        }
+        return false;
+
+    }
+
+}
+```
+
+​			
+
+分析 ultra clean 
+
+因不存在双进程守护，所以没有使用，双进程守护+AIDL通信+中转Activity的方案		
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
