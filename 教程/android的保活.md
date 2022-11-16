@@ -1756,7 +1756,7 @@ public class MusicService extends Service {
 
 ---
 
-## android进程保活应用进程拉活 ( 双进程守护保活+AIDL互相通信+中转方案 )
+## 【andorid进程保活】应用进程拉活 ( 双进程守护保活+AIDL互相通信+中转方案 )
 
 [github实例](https://github.com/zywudev/AndroidKeepAlive)		
 
@@ -2037,13 +2037,81 @@ public class TransferActivity extends AppCompatActivity {
 
 ---
 
+## 通过JNI实现守护进程
 
+在一个APP里面，开启一个子线程，在主线程被干掉了之后，子线程通过监听、轮询等方式去判断服务是否存在，不存在的话则开启服务。答案自然是肯定的，通过JNI的方式，fork()出一个子线程作为守护进程，轮询监听服务状态。守护进程（Daemon）是运行在后台的一种特殊进程。它独立于控制终端并且周期性地执行某种任务或等待处理某些发生的事件。而守护进程的会话组和当前目录，文件描述符都是独立的。后台运行只是终端进行了一次fork，让程序在后台执行，这些都没有改变
 
+​			
 
+让子进程脱离出来，不要受到主进程的影响
 
-
-
-
+```C++
+/** 
+ * srvname  进程名 
+ * sd 之前创建子进程的pid写入的文件路径 
+ */  
+int start(int argc, char srvname, char sd) {  
+    pthread_t id;  
+    int ret;  
+    struct rlimit r;  
+  
+    int pid = fork();  
+    LOGI(”fork pid: %d”, pid);  
+    if (pid < 0) {  
+        LOGI(”first fork() error pid %d,so exit”, pid);  
+        exit(0);  
+    } else if (pid != 0) {  
+        LOGI(”first fork(): I’am father pid=%d”, getpid());  
+        //exit(0);  
+    } else { //  第一个子进程  
+        LOGI(”first fork(): I’am child pid=%d”, getpid());  
+        setsid();  
+        LOGI(”first fork(): setsid=%d”, setsid());  
+        umask(0); //为文件赋予更多的权限，因为继承来的文件可能某些权限被屏蔽  
+  
+        int pid = fork();  
+        if (pid == 0) { // 第二个子进程  
+            // 这里实际上为了防止重复开启线程，应该要有相应处理  
+  
+            LOGI(”I’am child-child pid=%d”, getpid());  
+            chdir(”/”); //修改进程工作目录为根目录，chdir(“/”)  
+            //关闭不需要的从父进程继承过来的文件描述符。  
+            if (r.rlim_max == RLIM_INFINITY) {  
+                r.rlim_max = 1024;  
+            }  
+            int i;  
+            for (i = 0; i < r.rlim_max; i++) {  
+                close(i);  
+            }  
+  
+            umask(0);  
+            ret = pthread_create(&id, NULL, (void ) thread, srvname); // 开启线程，轮询去监听启动服务  
+            if (ret != 0) {  
+                printf(”Create pthread error!\n”);  
+                exit(1);  
+            }  
+            int stdfd = open (“/dev/null”, O_RDWR);  
+            dup2(stdfd, STDOUT_FILENO);  
+            dup2(stdfd, STDERR_FILENO);  
+        } else {  
+            exit(0);  
+        }  
+    }  
+    return 0;  
+}  
+  
+/** 
+ * 启动Service 
+ */  
+void Java_com_yyh_fork_NativeRuntime_startService(JNIEnv* env, jobject thiz,  
+        jstring cchrptr_ProcessName, jstring sdpath) {  
+    char  rtn = jstringTostring(env, cchrptr_ProcessName); // 得到进程名称  
+    char  sd = jstringTostring(env, sdpath);  
+    LOGI(”Java_com_yyh_fork_NativeRuntime_startService run….ProcessName:%s”, rtn);  
+    a = rtn;  
+    start(1, rtn, sd);  
+}  
+```
 
 
 

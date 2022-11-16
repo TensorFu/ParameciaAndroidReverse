@@ -852,7 +852,7 @@ Objection支持通过-N参数来指定网络中 的设备并通过-h参数和-p�
 
 * 主动调用
 
-首先要获取句柄，通过 `android heap search <类名>` 比方说 `android heap search instances java.io.File `   
+首先要获取句柄，通过 `android heap search instances <类名>` 比方说 `android heap search instances java.io.File `   
 
 ![image-20221031103012278](./assets/image-20221031103012278.png)
 

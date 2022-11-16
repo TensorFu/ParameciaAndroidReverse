@@ -1802,6 +1802,10 @@ class Outer {
 }
 ```
 
+---
+
+### instanceof
+
 
 
 
