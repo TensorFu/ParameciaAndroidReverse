@@ -98,6 +98,12 @@ APK文件 就是 Android 的安装包，它本身也是一个压缩包，我们�
 
 ---
 
+## Android 开发教程
+
+[android开发教程](教程/android开发教程.md)
+
+---
+
 ## android的保活
 
 [android的保活](教程/android的保活.md)
