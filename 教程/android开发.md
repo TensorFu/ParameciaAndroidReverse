@@ -251,7 +251,7 @@ public class MainActivity extends AppCompatActivity {
 
 `OnClickListener()` 他的作用是给 button 做一个监听器，他的作用是监听 button 的按键事件
 
-`setOnClickListener()` 他的作用就是将我们的 监听器 附加到我们的按键
+`setOnClickListener()` 他的作用就是将我们的 监听器 附加到我们的按键，他接受一个参数就是 `OnClickListener()` 这个接口实现的类
 
 `onClick()` 这个就是点击了 button 之后的一些操作，比方说在里面打开打一个 activity 或者是显示一个提示等等 ... 
 
@@ -264,6 +264,220 @@ public class MainActivity extends AppCompatActivity {
 OnClickListener就能够执行 onClick 里面的代码
 
 ​			
+
+如果将这个拆分来写可以是这个样子
+
+```java
+public class MainActivity extends AppCompatActivity {
+    // 创建一个实现了OnClickListener接口的类
+    private class MyButtonClickListener implements View.OnClickListener {
+        @Override
+        public void onClick(View v) {
+            // 在这里处理点击事件
+            Toast.makeText(MainActivity.this, "Button clicked!", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        // 找到按钮
+        Button myButton = findViewById(R.id.my_button);
+
+        // 创建一个MyButtonClickListener实例
+        MyButtonClickListener listener = new MyButtonClickListener();
+
+        // 使用setOnClickListener方法将监听器附加到按钮上
+        myButton.setOnClickListener(listener);
+    }
+}
+```
+
+1. `Toast.makeText()`: 这是一个静态方法，用于创建一个 Toast 对象。Toast 是 Android 中一种用于显示短暂消息的小型弹出窗口。它在屏幕上持续显示几秒钟，然后自动消失，不干扰用户操作。
+2. `MainActivity.this`: 这是一个对当前 `MainActivity` 实例的引用。因为我们在 `MyButtonClickListener` 类中使用了这段代码，所以需要明确地引用外部类（即 `MainActivity`）的实例。`MainActivity.this` 表示我们希望使用 `MainActivity` 的当前实例作为上下文（Context）参数。上下文是一个抽象类，代表应用程序环境的信息，通常用于访问与应用程序相关的资源和操作。
+3. `Toast.LENGTH_SHORT`: 这是一个预定义的常量，表示 Toast 消息显示的持续时间。`Toast.LENGTH_SHORT`表示 Toast 消息显示的时间较短。另一个可选值是`Toast.LENGTH_LONG`，表示 Toast 消息显示的时间较长。`
+4. `show()`: 这是一个 Toast 对象的方法，用于将 Toast 消息显示在屏幕上。在使用 `makeText()` 创建 Toast 对象后，必须调用 `show()` 方法才能将其显示给用户。
+
+
+
+```java
+package com.fu.tt;
+import android.widget.Button;
+import android.view.View;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.widget.Toast;
+
+public class MainActivity extends AppCompatActivity {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        Button firstButton = findViewById(R.id.first_button);
+        firstButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(MainActivity.this,"o1111111",Toast.LENGTH_LONG).show();
+            }
+        });
+        Toast.makeText(this,"o1111111",Toast.LENGTH_LONG).show();
+    }
+}
+```
+
+这个代码，就是使用的匿名内部类的方式进行的，但是也是内部类，所以要通过 `MainActivity.this` 的方式对当前实例 context 引用
+
+如果不是在里面，就可以直接使用 this 进行引用，比方说这样 `Toast.makeText(this,"o1111111",Toast.LENGTH_LONG).show();` 
+
+​		
+
+下面两个代码增加，对 MainAcitivity.this 的理解
+
+```java
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        Button firstButton = findViewById(R.id.first_button);
+        firstButton.setOnClickListener(this);
+    }
+
+    @Override
+    public void onClick(View v) {
+        Toast.makeText(this, "o1111111", Toast.LENGTH_LONG).show();
+    }
+}
+```
+
+​				
+
+```java
+package com.fu.tt;
+import android.widget.Button;
+import android.view.View;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.widget.Toast;
+
+public class MainActivity extends AppCompatActivity {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        Button firstButton = findViewById(R.id.first_button);
+        firstButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(v.getContext(),"o1111111",Toast.LENGTH_LONG).show();
+            }
+        });
+
+        Toast.makeText(this,"？？、、、",Toast.LENGTH_LONG).show();
+    }
+
+}
+```
+
+​			
+
+### @Override
+
+@Override 是一个 Java 注解，用于表示一个方法是重写了父类或接口中的方法。当你在一个子类或实现了某个接口的类中编写一个方法时，如果该方法是重写父类或接口中已有的方法，建议使用 `@Override` 注解 
+
+​			
+
+### 关于注解
+
+android 当中有一些直接调用的注解，比方说 @Override 他表示这个函数是一个重写
+
+* @Override
+
+注 解 用 于 标 记 一 个 方 法 ， 该 方 法 覆 盖 了 其 父 类 中 的 方 法 ，如果你的覆盖了一个，父类当中不存在的方法，就会报错
+
+```java
+@Override
+public void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+}
+```
+
+​			
+
+*  @Nullable 和  @NonNull
+
+  `@Nullable` 和  `@NonNull` 注 解 用 于 标 记 一 个 方 法 的 参 数 、 返 回 值 或 字 段 的 可 空 性 。 如 果 你 使 用  `@Nullable` 注 解 标 记 了 一 个 参 数 、 返 回 值 或 字 段 ， 那 么 它 可 以 为  null。 如 果 你 使 用  `@NonNull`注 解 标 记 了 一 个 参 数 、 返 回 值 或 字 段 ， 那 么 它 不 可 以 为  null。  
+
+```java
+@Nullable
+public void setName(@Nullable String name) {
+    this.name = name;
+}
+
+@NonNull
+public String getName() {
+    return name;
+}
+
+@NonNull
+private String name;
+```
+
+​				
+
+* @SuppressLint
+
+解 用 于 禁 用  Lint 检 查 器 中 的 某 些 警 告 或 错 误 。 如 果 你 使 用  `@SuppressLint` 注 解 标 记 了 一 个 类 、 方 法 或 字 段 ， 那 么  Lint 检 查 器 将 不 会 对 该 类 、 方 法 或 字 段 进 行 检 查 
+
+```java
+@SuppressLint("SetTextI18n")
+private void initUI() {
+    // Set the text of the button
+    Button firstButton = findViewById(R.id.first_button);
+    firstButton.setText("Click me!");
+}
+```
+
+Lint 检 查 器 是  Android 开 发 工 具 中 的 一 个 静 态 代 码 分 析 工 具 ， 它 可 以 帮 助 开 发 者 发 现 代 码 中 的 潜 在 问 题 		
+
+`@SuppressLint("SetTextI18n")` 是 一 个 注 解 ， 它 用 于 禁 止  Lint 检 查 器 中 的  `SetTextI18n` 警 告 。 这 个 警 告 是 关 于  Android 应 用 程 序 中 的 国 际 化 问 题 ， 它 表 示 应 该 使 用 字 符 串 资 源 来 设 置  UI 元 素 
+
+的 文 本 ， 而 不 是 直 接 在 代 码 中 设 置 文 本 。 		
+
+​		
+
+类似的还有很多
+
+`@SuppressLint("UnusedCode")` 
+
+该 警 告 表 示 应 用 程 序 中 存 在 未 使 用 的 代 码 ， 例 如 未 使 用 的 方 法 、 变 量 等 等 
+
+​			
+
+`@SuppressLint("UnusedreSources")` 
+
+警 告 表 示 应 用 程 序 中 存 在 未 使 用 的 资 源 ， 例 如 布 局 文 件 、 字 符 串 资 源 等 等 
+
+
+
+翻译		
+
+Suppress 本身就是抑制，压制的意思，还通常指的是针对错误的抑制，让一些错误不出现。
+
+---
+
+
 
 
 
