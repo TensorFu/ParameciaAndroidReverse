@@ -379,7 +379,7 @@ public class MainActivity extends AppCompatActivity {
         firstButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(v.getContext(),"o1111111",Toast.LENGTH_LONG).show();
+                ##Toast.makeText(v.getContext(),"o1111111",Toast.LENGTH_LONG).show();##
             }
         });
 
@@ -477,17 +477,117 @@ Suppress 本身就是抑制，压制的意思，还通常指的是针对错误�
 
 ---
 
-### 通过一个 activity 开启另一个 activity
+### 如何使用 Intents 在 Android 应用中进行页面跳转
 
+Intents 是 Android 系统中用于描述应用间或应用内组件间通信的一种机制，Intents 可以用于启动 `Activity`、服务或发送广播等
 
+以下是一个简单的示例，我们将创建两个 Activity，`MainActivity` 和 `SecondActivity`，并在 `MainActivity` 中添加一个按钮，用于跳转到 `SecondActivity`
 
+* 首先在 app/res/layout 当中新建一个 secondactivity 的布局界面，activity_second.xml
 
+ ```xml
+ <?xml version="1.0" encoding="utf-8"?>
+ <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+     xmlns:app="http://schemas.android.com/apk/res-auto"
+     xmlns:tools="http://schemas.android.com/tools"
+     android:layout_width="match_parent"
+     android:layout_height="match_parent"
+     tools:context=".SecondActivity">
+ 
+     <TextView
+         android:id="@+id/textView2"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:text="Welcome to Second Activity!"
+         android:textSize="24sp"
+         app:layout_constraintBottom_toBottomOf="parent"
+         app:layout_constraintEnd_toEndOf="parent"
+         app:layout_constraintStart_toStartOf="parent"
+         app:layout_constraintTop_toTopOf="parent" />
+ 
+ </androidx.constraintlayout.widget.ConstraintLayout>
+ ```
 
+​			
 
+* 在代码当中新建一个 SecondActicity.java 的类文件
 
+```java
+package com.fu.tt;
 
+import androidx.appcompat.app.AppCompatActivity;
 
+import android.os.Bundle;
 
+public class SecondActivity extends AppCompatActivity{
+    @Override
+    protected  void onCreate(Bundle savedInstanceState)
+    {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_second);
+    }
+}
+
+```
+
+继承自 `AppCompatActivity`，并在 `onCreate` 方法中设置 `activity_second.xml` 为其布局
+
+​				
+
+* 还需要将这个 activity 的这个类注册到 androidmanifest.xml 当中让系统知道
+
+```xml
+<manifest ...>
+    ...
+    <application ...>
+        ...
+        <activity android:name=".SecondActivity" />
+    </application>
+</manifest>
+
+```
+
+​				
+
+* 添加按钮，然后跳转
+
+需要在 `MainActivity` 的布局文件 `activity_main.xml` 中添加一个按钮，用于跳转到 `SecondActivity`。添加如下代码：
+
+```xml
+    <Button
+        android:id="@+id/go_to_second_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Go to Second Activity"
+        app:layout_constraintBottom_toTopOf="@+id/textView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.764" />
+```
+
+​			
+
+* 最后，在 `MainActivity` 类中，为按钮设置一个 `OnClickListener`，并使用 `Intent` 跳转到 `SecondActivity`
+
+```java
+        Button goToSecondActivityBUtton = findViewById(R.id.go_to_second_button);
+        goToSecondActivityBUtton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this,SecondActivity.class);
+                startActivity(intent);
+            }
+        });
+```
+
+1. `new Intent(MainActivity.this, SecondActivity.class)`: 这是创建一个新的 `Intent` 对象的构造函数。它需要两个参数：
+2. `MainActivity.this`: 这是当前 `Activity` 的上下文（Context）。因为我们在 `MainActivity` 的内部类（`OnClickListener`）中创建了 `Intent`，所以需要使用 `MainActivity.this` 来引用外部类的实例。
+3. `SecondActivity.class`: 这是我们要跳转到的目标 `Activity` 的类名。这里我们传递了 `SecondActivity` 的类对象（`SecondActivity.class`），告诉 `Intent` 我们希望启动这个 `Activity`。
+
+---
+
+### 如何在 Android 应用中保存和读取数据
 
 
 
