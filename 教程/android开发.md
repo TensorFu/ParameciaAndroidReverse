@@ -589,11 +589,67 @@ public class SecondActivity extends AppCompatActivity{
 
 ### 如何在 Android 应用中保存和读取数据
 
+翻译
+
+Share_Preferences 共享偏好设置
+
+​		
+
+可以在用户更改设置或输入内容时调用 `saveData` 方法，并在 `Activity` 启动或恢复时调用 `loadData` 方法来显示先前保存的数据
+
+```java
+private void saveData(String key, String value) {
+    SharedPreferences sharedPreferences = getSharedPreferences("MySharedPreferences", MODE_PRIVATE);
+    SharedPreferences.Editor editor = sharedPreferences.edit();
+    editor.putString(key, value);
+    editor.apply();
+}
+```
+
+```java
+    private String loadData(String key) {
+        SharedPreferences sharedPreferences = getSharedPreferences("MySharedPreferences", MODE_PRIVATE);
+        return sharedPreferences.getString(key, "default_value");
+    }
+```
+
+这两个函数，一个写入，一个读取
+
+`SharedPreferences`，这是一种轻量级的数据存储方式，适用于存储少量简单的数据
+
+* `getSharedPreferences` 方法获取 `SharedPreferences` 实例
+* `SharedPreferences.Editor` 对象并使用 `putString` 方法将键值对添加到编辑器中
+* 最后，调用 `apply` 方法将更改保存到 `SharedPreferences` 文件
+
+可以在用户更改设置或输入内容时调用 `saveData` 方法，并在 `Activity` 启动或恢复时调用 `loadData` 方法来显示先前保存的数据。直到卸载软件或者是，手动删除，这些数据才会消失。
+
+​		
+
+`SharedPreferences sharedPreferences = getSharedPreferences("MySharedPreferences", MODE_PRIVATE);` 这里是打开/创建一个 SharedPreferences 的对象，并且设置这个文件的名字MySharedPreferences，和他的访问属性`MODE_PRIVATE` 这个表示，只能够本程序的代码能够访问这个存储的数据。进程间的通信多是使用 `ContentProvider` 
+
+​		
+
+`SharedPreferences.Editor editor = sharedPreferences.edit();` 创建 SharedPreferences 对象的编辑器
+
+`editor.putString(key, value); ` 就是写入键值对		
+
+还有 `putInt` `putBoolean` ...
 
 
 
+`editor.apply();` 
+
+保存写入数据
+
+当你调用 `apply()` 方法时，应用程序可以继续执行其他任务，而不需要等待数据保存操作完成。由于 `apply()` 方法是异步的，通常推荐使用它而不是 `commit()` 方法，后者是同步的并可能阻塞当前线程
 
 
 
+我们可以看到，在访问的时候，和创建的时候，都设置了属性但是实际上，大多数的情况，MODE_PRIVATE，直接设置这个属性就行，无论是在读取的时候还是在
 
+​		
+
+`sharedPreferences.getString(key, "default_value");` 这个函数在执行的时候，如果没有找到对应的键值对，就会弹出 default_value（这个是自定的）		
+
+----
 
