@@ -1,17 +1,24 @@
 - [Android 体系结构](#android-体系结构)
 - [四大组件](#四大组件)
-  - [活动](#活动)
-  - [服务](#服务)
-    - [服务的两种启动方式](#服务的两种启动方式)
-  - [广播接受者](#广播接受者)
-  - [内容提供者](#内容提供者)
+- [活动](#活动)
+- [服务](#服务)
+  - [服务的两种启动方式](#服务的两种启动方式)
+- [广播接受者](#广播接受者)
+- [内容提供者](#内容提供者)
+- [activity\_main](#activity_main)
+- [用户交互\_响应用户操作和更新应用界面](#用户交互_响应用户操作和更新应用界面)
+- [@Override](#override)
+- [关于注解](#关于注解)
+- [如何使用 Intents 在 Android 应用中进行页面跳转](#如何使用-intents-在-android-应用中进行页面跳转)
+- [如何在 Android 应用中保存和读取数据](#如何在-android-应用中保存和读取数据)
+- [Fragments](#fragments)
 
 
 
 
 
 
-## Android 体系结构
+### Android 体系结构
 Android系统采用分层架构，从高到低分为四层，分别是
 1. 应用程序层
      提供一些核心应用程序包，如短信客户端程序、电话拨号程序，Web浏览器、日历、闹钟，安装在上面的程序
@@ -44,7 +51,7 @@ Android系统采用分层架构，从高到低分为四层，分别是
 
 
 
-## 四大组件
+### 四大组件
 
 ### 活动
 Android 中，Activity是所有程序的根本，所有程序的流程都运行在Activity 之中，Activity可以算是开发者遇到的最频繁，也是Android 当中最基本的模块之一。在Android的程序当中，Activity 一般代表手机屏幕的一屏。如果把手机比作一个浏览器，那么Activity就相当于一个网页。在Activity 当中可以添加一些Button、Check box 等控件。可以看到Activity 概念和网页的概念相当类似。一般一个Android 应用是由多个Activity 组成的。这多个Activity 之间可以进行相互跳转，例如，按下一个Button按钮后，可能会跳转到其他的Activity。和网页跳转稍微有些不一样的是，Activity 之间的跳转有可能返回值，例如，从Activity A 跳转到Activity B，那么当Activity B 运行结束的时候，有可能会给Activity A 一个返回值。这样做在很多时候是相当方便的。当打开一个新的屏幕时，之前一个屏幕会被置为暂停状态，并且压入历史堆栈中。用户可以通过回退操作返回到以前打开过的屏幕。可以选择性的移除一些没有必要保留的屏幕，因为Android会把每个应用的开始到当前的每个屏幕保存在堆栈中
@@ -79,9 +86,11 @@ Content Provider 是Android提供的第三方应用数据的访问方案。
 
 -------
 
-### activity_main
+### 创建一个activity之activity_main
 
 路径 app/res/layout
+
+注意这个布局文件的文件名，只能够小写字母组成的
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -330,7 +339,7 @@ public class MainActivity extends AppCompatActivity {
 }
 ```
 
-这个代码，就是使用的匿名内部类的方式进行的，但是也是内部类，所以要通过 `MainActivity.this` 的方式对当前实例 context 引用
+这个代码，就是使用的匿名内部类的方式进行的，也是内部类，所以要通过 `MainActivity.this` 的方式对当前实例 context 引用
 
 如果不是在里面，就可以直接使用 this 进行引用，比方说这样 `Toast.makeText(this,"o1111111",Toast.LENGTH_LONG).show();` 
 
@@ -379,7 +388,9 @@ public class MainActivity extends AppCompatActivity {
         firstButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ##Toast.makeText(v.getContext(),"o1111111",Toast.LENGTH_LONG).show();##
+              ##
+                Toast.makeText(v.getContext(),"o1111111",Toast.LENGTH_LONG).show();
+              ##
             }
         });
 
@@ -652,4 +663,539 @@ private void saveData(String key, String value) {
 `sharedPreferences.getString(key, "default_value");` 这个函数在执行的时候，如果没有找到对应的键值对，就会弹出 default_value（这个是自定的）		
 
 ----
+
+### Fragments
+
+翻译 
+
+Fragments 分段，块
+
+​			
+
+在大屏的手机上，特别是平板上，我们竖着拿平板，和横着拿平板，我们的显示布局是不一样的		
+
+Fragments的作用就是将一个 activity 的界面，分为好几段，方便管理，他依附于 activity 而存在
+
+1. **灵活性**：Fragments 可以在不同的 Activity 之间重用，这意味着可以在不同的屏幕和场景下共享相同的 UI 逻辑。
+2. **适应性**：Fragments 支持动态调整布局，可以根据屏幕尺寸和方向更好地适应不同的设备。例如，在手机上，您可以使用一个 Fragment 显示列表，然后在用户选择列表项时，启动另一个 Activity 并使用另一个 Fragment 显示详细信息。而在平板电脑上，您可以在同一个 Activity 中并排显示这两个 Fragment。
+3. **生命周期管理**：Fragments 有自己的生命周期，与宿主 Activity 相互关联但又独立于它。这使得在处理与 Fragment 相关的操作时更加灵活，例如在 Activity 运行时动态添加、删除或替换 Fragment。Fragments 的生命周期管理也有助于实现更高效的资源管理。
+
+
+
+* 首先新建一个 fragments 的类
+
+```java
+package com.fu.tt;
+
+import androidx.fragment.app.Fragment;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.ViewGroup;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import android.view.View;
+
+public class OneFragment extends Fragment {
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // 在这里执行您需要在视图创建之前的操作，例如初始化成员变量或设置监听器
+      	// 但是大部分的时候是不需要 Oncreate 函数的，因为大部分的初始化的代码可以在 onCreateView 当中实现，只有如果您需要在视图创建之前执行某些操作
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.onefragment, container, false);
+    }
+}
+
+```
+
+
+
+`LayoutInflater inflater`：用于将 XML 布局文件转换为实际的 View 对象，onCreateView 这个函数一定会返回一个 View 类型的对象，所以需要转换一下
+
+​			
+
+`inflater.inflate` 里面有三个参数
+
+`R.layout.onefragment` 指定我的 fragment 的布局内容
+
+`ViewGroup container`：承载 Fragment 视图的父容器。在将 Fragment 添加到 Activity 时，这通常是一个 FrameLayout 或其他容器，每个 Fragment 都必须要有一个父容器，即它的视图必须要嵌入到另一个视图中。这个父容器在 Fragment 被添加到 Activity 中时被指定	
+
+`Bundle savedInstanceState`：如果 Fragment 在之前的配置更改（如屏幕旋转）中被销毁并重新创建，此参数将包含之前保存的 Fragment 状态。			
+
+`return inflater.inflate(R.layout.fragment_example, container, false);` 		
+
+这行代码使用传入的 `LayoutInflater` 对象将 XML 布局文件（这里是 `R.layout.fragment_example`）转换为一个 View 对象。这个 View 对象随后被添加到 `ViewGroup container` 
+
+
+
+重点关注一下这个 container ，他的类型是 ViewGroup 
+
+​			
+
+
+
+
+
+
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hello from One Fragment!"
+        android:textSize="24sp" />
+</LinearLayout>
+```
+
+
+
+```java
+public class MainActivity extends AppCompatActivity {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        OneFragment exampleFragment = new OneFragment();
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.add(R.id.fragment_container, exampleFragment);
+        fragmentTransaction.commit();
+    }
+}
+```
+
+
+
+### Fragment 的交互
+
+* 首先在 fragment 里面添加按钮
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hello from One Fragment!"
+        android:textSize="24sp" />
+
+    <Button
+        android:id="@+id/button_fragment"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Click me!" />
+
+</LinearLayout>
+```
+
+翻译	
+
+Linear_Layout 线性布局
+
+​		
+
+* class OneFragment
+
+```java
+package com.fu.tt;
+
+import androidx.fragment.app.Fragment;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.ViewGroup;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
+
+public class OneFragment extends Fragment {
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // 在这里执行您需要在视图创建之前的操作，例如初始化成员变量或设置监听器
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.onefragment, container, false);
+        Button button = view.findViewById(R.id.button_fragment);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(getActivity(),"我的fragment",Toast.LENGTH_SHORT).show();
+            }
+        });
+        return view;
+    }
+}
+```
+
+​		
+
+* MainActivity.class
+
+```java
+package com.fu.tt;
+import android.content.Intent;
+import android.widget.Button;
+import android.view.View;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
+
+import android.os.Bundle;
+import android.widget.Toast;
+import android.content.SharedPreferences;
+
+public class MainActivity extends AppCompatActivity {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        OneFragment exampleFragment = new OneFragment();
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.add(R.id.fragment_container, exampleFragment);
+        fragmentTransaction.commit();
+    }
+    }
+}
+```
+
+
+
+需要注意的是，我们知道
+
+```java
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(getActivity(),"我的fragment",Toast.LENGTH_SHORT).show();
+            }
+        });
+```
+
+这一段的代码，我们是通过匿名的内部类的方式实现的
+
+`Toast.makeText(getActivity(),"我的fragment",Toast.LENGTH_SHORT).show();` 		
+
+所以我们要通过这样的方式，指定 context 
+
+在前面的MainActivity我们有三种方式进行指定
+
+1. MainActivity.this
+
+2. v.getContext()
+
+   或者是第三种，通过直接继承的方式
+
+   ```java
+   public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+   
+       @Override
+       public void onClick(View v)
+       {
+           Toast.makeText(this, "o1111111", Toast.LENGTH_LONG).show();
+       }
+     	@Override
+       protected void onCreate(Bundle savedInstanceState) {
+           super.onCreate(savedInstanceState);
+           setContentView(R.layout.activity_main);
+   
+           Button firstButton = findViewById(R.id.first_button);
+           firstButton.setOnClickListener(this);
+       }
+   
+   ```
+
+​		
+
+那在这个地方能够使用 OneFragment.this 嘛，能够使用，第三种方式嘛？（可以使用 v.getContext() ，getActivity（））
+
+都不行，这是因为 `Toast.makeText()` 方法的第一个参数需要一个 `Context` 对象，而不是 `OneFragment` 类的实例。由于 `OneFragment` 类扩展了 `Fragment` 类，Fragment 不是 Context 的子类
+
+而由于 `MainActivity` 类继承自 `AppCompatActivity`，它本身就是一个 `Context` 类的子类。因此，在这种情况下，您可以将 `MainActivity.this` 作为 `Toast.makeText()` 方法的第一个参数
+
+​			
+
+那在 MainActivity 当中能够使用 `getActivity()` 嘛？		
+
+不能因为在 `MainActivity` 类中，您不能使用 `getActivity()` 方法来获取上下文（`Context` 对象）。`getActivity()` 方法只能在 `Fragment` 类中使用，因为它用于获取与 Fragment 关联的 Activity 实例。
+
+​			
+
+### Fragment 的交互_调用activity当中的函数
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hello from One Fragment!"
+        android:textSize="24sp" />
+
+    <Button
+        android:id="@+id/button_fragment"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Click me!" />
+
+</LinearLayout>
+```
+
+​			
+
+```java
+public class MainActivity extends AppCompatActivity {
+    // ...
+    
+    public void onFragmentButtonClicked() {
+        Toast.makeText(this, "Button clicked in Fragment!", Toast.LENGTH_SHORT).show();
+    }
+}
+```
+
+​		
+
+```java
+public class ExampleFragment extends Fragment {
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_example, container, false);
+
+        Button button = view.findViewById(R.id.button_fragment);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+              ## 
+                if (getActivity() instanceof MainActivity) {
+                    ((MainActivity) getActivity()).onFragmentButtonClicked();
+                }
+              ##
+            }
+        });
+        return view;
+    }
+}
+```
+
+​			
+
+### 使用 Fragment 与 Activity 之间的接口通信
+
+假设我们有一个名为 `MainActivity` 的 Activity，它包含一个名为 `ExampleFragment` 的 Fragment。我们希望在 Fragment 中的按钮被点击时，能够在 Activity 中执行一些操作。
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hello from One Fragment!"
+        android:textSize="24sp" />
+
+    <Button
+        android:id="@+id/button_fragment"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Click me!" />
+
+</LinearLayout>
+```
+
+​			
+
+```java
+public class MainActivity extends AppCompatActivity implements OneFragment.OnFragmentButtonClickListener {
+    // ...
+    
+    public void onFragmentButtonClicked() {
+        Toast.makeText(this, "在 Fragment 中的按钮被点击时，在 Activity 中执行的操作", Toast.LENGTH_SHORT).show();
+    }
+}
+```
+
+​			
+
+一个名为 `listener` 的变量，以及重写 `onAttach` 和 `onDetach` 方法
+
+在 `onAttach` 方法中检查是否实现了 `OnFragmentButtonClickListener` 接口，如果实现了，我们将其赋值给 `listener`。当 Fragment 脱离 Activity 时，我们将 `listener` 置为 null，以避免内存泄漏。
+
+```java
+public class ExampleFragment extends Fragment {
+    public interface OnFragmentButtonClickListener {
+        void onFragmentButtonClicked();
+    }
+
+    private OnFragmentButtonClickListener listener;
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        if (context instanceof OnFragmentButtonClickListener) {
+            listener = (OnFragmentButtonClickListener) context;
+        } else {
+            throw new RuntimeException(context.toString() + " must implement OnFragmentButtonClickListener");
+        }
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        listener = null;
+    }
+
+    // ...
+}
+```
+
+​		
+
+最后，修改 `ExampleFragment` 类中的按钮点击监听器，以调用 `listener.onFragmentButtonClicked()`：
+
+```java
+package com.fu.tt;
+
+import androidx.fragment.app.Fragment;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.ViewGroup;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
+import android.content.Context;
+
+public class OneFragment extends Fragment {
+    private OnFragmentButtonClickListener listener;
+
+    public interface OnFragmentButtonClickListener {
+        void onFragmentButtonClicked();
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // 在这里执行您需要在视图创建之前的操作，例如初始化成员变量或设置监听器
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.onefragment, container, false);
+        Button button = view.findViewById(R.id.button_fragment);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (listener != null) {
+                    listener.onFragmentButtonClicked();
+                }
+            }
+        });
+        return view;
+    }
+
+    @Override
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        if (context instanceof OnFragmentButtonClickListener) {
+            listener = (OnFragmentButtonClickListener) context;
+        } else {
+            throw new RuntimeException(context.toString() + " must implement OnFragmentButtonClickListener");
+        }
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        listener = null;
+    }
+}
+```
+
+​		
+
+
+
+---
+
+### Fragment 的生命周期	
+
+1. **onAttach()**: 当 Fragment 与 Activity 关联时，此方法被调用。在这里，您可以获取宿主 Activity 的引用并执行与之相关的初始化操作。
+2. **onCreate()**: 当 Fragment 的实例被创建时，此方法被调用。您可以在这里进行非视图相关的初始化操作，例如初始化变量。
+3. **onCreateView()**: 当 Fragment 需要创建其视图时，此方法被调用。您需要在这里加载 Fragment 的布局并返回视图对象。
+4. **onViewCreated()**: 当 Fragment 的视图被创建后，此方法被调用。在这里，您可以执行与视图相关的初始化操作，如设置监听器和更新视图内容。
+5. **onActivityCreated()**: 当宿主 Activity 的 `onCreate()` 方法执行完成后，此方法被调用。您可以在这里进行与 Activity 相关的初始化操作。
+6. **onStart()**: 当 Fragment 变得可见时，此方法被调用。您可以在这里执行与界面展示相关的操作。
+7. **onResume()**: 当 Fragment 变得可以与用户交互时，此方法被调用。这是 Fragment 生命周期中的最后一个阶段。
+
+从这个阶段开始，Fragment 可能会进入暂停状态。当这种情况发生时，以下方法将被调用：
+
+1. **onPause()**: 当 Fragment 不再与用户交互时，此方法被调用。您可以在这里保存数据和执行其他与暂停状态相关的操作。
+2. **onStop()**: 当 Fragment 变得不可见时，此方法被调用。您可以在这里执行与界面隐藏相关的操作。
+
+接下来，Fragment 可能会重新进入活动状态，或者它可能会被销毁。如果 Fragment 被销毁，以下方法将被调用：
+
+1. **onDestroyView()**: 当 Fragment 的视图被销毁时，此方法被调用。您可以在这里释放与视图相关的资源。
+2. **onDestroy()**: 当 Fragment 的实例被销毁时，此方法被调用。您可以在这里释放与 Fragment 相关的资源。
+3. **onDetach()**: 当 Fragment 与宿主 Activity 分离时，此方法被调用。您可以在这里执行与解除关联相关的操作。
+
+
+
+
+
+1. **onAttach()**: Fragment 和 Activity 建立关联时调用。可以获取 Activity 的引用。
+2. **onCreate()**: Fragment 创建时调用。进行非视图相关的初始化。
+3. **onCreateView()**: Fragment 需要创建视图时调用。加载布局并返回视图对象。
+4. **onViewCreated()**: 视图创建后调用。执行视图相关的初始化操作。
+5. **onActivityCreated()**: Activity 完成创建后调用。进行 Activity 相关的初始化操作。
+6. **onStart()**: Fragment 变得可见时调用。执行与展示相关的操作。
+7. **onResume()**: Fragment 可以与用户交互时调用。此时 Fragment 处于活动状态。
+
+接下来，Fragment 可能暂停、停止或销毁。相应的方法依次为：
+
+1. **onPause()**: 当暂停时调用。保存数据，执行与暂停相关的操作。
+2. **onStop()**: 当不可见时调用。执行与界面隐藏相关的操作。
+3. **onDestroyView()**: 视图销毁时调用。释放视图资源。
+4. **onDestroy()**: 实例销毁时调用。释放 Fragment 资源。
+5. **onDetach()**: 与 Activity 分离时调用。执行与解除关联相关的操作。
+
+---
+
+
 
