@@ -5,13 +5,17 @@
   - [服务的两种启动方式](#服务的两种启动方式)
 - [广播接受者](#广播接受者)
 - [内容提供者](#内容提供者)
-- [activity\_main](#activity_main)
+- [创建一个activity之activity\_main](#创建一个activity之activity_main)
 - [用户交互\_响应用户操作和更新应用界面](#用户交互_响应用户操作和更新应用界面)
 - [@Override](#override)
 - [关于注解](#关于注解)
 - [如何使用 Intents 在 Android 应用中进行页面跳转](#如何使用-intents-在-android-应用中进行页面跳转)
 - [如何在 Android 应用中保存和读取数据](#如何在-android-应用中保存和读取数据)
 - [Fragments](#fragments)
+- [Fragment 的交互](#fragment-的交互)
+- [Fragment 的交互\_调用activity当中的函数](#fragment-的交互_调用activity当中的函数)
+- [使用 Fragment 与 Activity 之间的接口通信](#使用-fragment-与-activity-之间的接口通信)
+- [Fragment 的生命周期](#fragment-的生命周期)
 
 
 
@@ -732,17 +736,53 @@ public class OneFragment extends Fragment {
 
 这行代码使用传入的 `LayoutInflater` 对象将 XML 布局文件（这里是 `R.layout.fragment_example`）转换为一个 View 对象。这个 View 对象随后被添加到 `ViewGroup container` 
 
-
+​			
 
 重点关注一下这个 container ，他的类型是 ViewGroup 
 
+他就是，Activity_main.xml 当中添加的容器
+
 ​			
 
+还有就是关注一下 false 这个参数（通常情况之下，只需要，默认false就行了）
+
+```java
+public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    if (container != null) {
+        inflater.inflate(R.layout.onefragment, container, true);
+        return container.findViewById(R.id.onefragment_root_view);
+    } else {
+        return inflater.inflate(R.layout.onefragment, container, false);
+    }
+}
+```
+
+注意添加了一个 onefragment_root_view 这个是 OneFragment.xml 的根布局的 id 
+
+就是如果你的这个第三个参数设置为 true ，那么还需要添加一步，就是根视图的引用，但是设置为false 这个步骤是自动的，
 
 
+给 OneFragment.xml
 
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/onefragment_root_view"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hello from One Fragment!"
+        android:textSize="24sp" />
+</LinearLayout>
+```
 
+​			
+
+OneFragment.xml
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -759,7 +799,22 @@ public class OneFragment extends Fragment {
 </LinearLayout>
 ```
 
+​		
 
+Activity_main.xml 当中添加
+
+```xml
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+```
+
+​			
 
 ```java
 public class MainActivity extends AppCompatActivity {
@@ -777,7 +832,21 @@ public class MainActivity extends AppCompatActivity {
 }
 ```
 
+1. `OneFragment exampleFragment = new OneFragment();` 创建一个 `OneFragment` 类型的对象 `exampleFragment`，它是我们要添加到 Activity 中的 Fragment 实例。
+2. `FragmentManager fragmentManager = getSupportFragmentManager();` 通过调用 `getSupportFragmentManager()` 方法来获取与当前 Activity 关联的 `FragmentManager` 实例。`FragmentManager` 是一个类，用于管理 Activity 中的 Fragments。
+3. `FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();` 通过 `FragmentManager` 的 `beginTransaction()` 方法，开启一个新的 Fragment 事务。`FragmentTransaction` 类用于执行与 Fragments 相关的一系列操作（如添加、删除、替换等）。
+4. `fragmentTransaction.add(R.id.fragment_container, exampleFragment);` 使用 `add()` 方法将 `exampleFragment` 添加到 `fragment_container` 中。`R.id.fragment_container` 是一个容器（通常是一个 FrameLayout），用于承载 Fragments。这行代码的作用是将 `exampleFragment` 放入指定的容器中。
+5. `fragmentTransaction.commit();` 调用 `commit()` 方法以提交 Fragment 事务。这个方法告诉 `FragmentManager`，我们已完成所有的 Fragment 操作并希望执行这些操作。`FragmentManager` 会在合适的时机将 Fragment 添加到 Activity 中。
 
+翻译
+
+Transaction
+
+事务通常由一系列的操作组成，如果其中任何一个操作失败，则整个事务都将回滚，即撤销之前的所有操作。
+
+
+
+----
 
 ### Fragment 的交互
 
@@ -1148,7 +1217,22 @@ public class OneFragment extends Fragment {
 }
 ```
 
-​		
+​			
+
+需要注意的是，context 其实就是所属的 activity 的实例（MainActivity.this）
+
+```java
+    public void onAttach(@NonNull Context context) {
+        super.onAttach(context);
+        if (context instanceof OnFragmentButtonClickListener) {
+            listener = (OnFragmentButtonClickListener) context;
+        } else {
+            throw new RuntimeException(context.toString() + " must implement OnFragmentButtonClickListener");
+        }
+    }
+```
+
+
 
 
 
@@ -1196,6 +1280,283 @@ public class OneFragment extends Fragment {
 5. **onDetach()**: 与 Activity 分离时调用。执行与解除关联相关的操作。
 
 ---
+
+### 广播接受者（BroadcastReceiver）
+
+广播接收器（BroadcastReceiver）是 Android 系统中一种用于在应用程序之间发送和接收全局消息的组件。它允许你响应系统级事件，例如设备启动、网络状态变化、电池电量变化等。广播接收器还可以用于在应用程序内部发送和接收消息，以实现不同组件之间的通信
+
+* 设置接收到之后的操作
+
+```java
+public class MyBroadcastReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        // 在这里处理接收到的广播
+    }
+}
+```
+
+​			
+
+* 注册广播
+
+```xml
+<application ...>
+    ...
+    <receiver android:name=".MyBroadcastReceiver">
+        <intent-filter>
+            <action android:name="com.example.MY_BROADCAST" />
+        </intent-filter>
+    </receiver>
+    ...
+</application>
+```
+
+​			
+
+* 发送广播
+
+```java
+Intent intent = new Intent("com.example.MY_BROADCAST");
+sendBroadcast(intent);
+```
+
+
+
+### 普通广播和有序广播
+
+1. 普通广播（Normal Broadcasts）：
+
+普通广播是异步发送的，这意味着广播的接收者几乎同时收到广播。这种广播无法被中止，因此所有注册了的接收器都会收到该广播。普通广播使用 `sendBroadcast()` 方法发送。
+
+```java
+Intent intent = new Intent("com.example.MY_BROADCAST");
+sendBroadcast(intent);
+```
+
+​		
+
+2. 有序广播（Ordered Broadcasts）：
+
+有序广播是同步发送的。这意味着在发送广播时，接收器按照优先级顺序依次处理广播。优先级较高的接收器可以拦截广播，阻止优先级较低的接收器接收到广播。有序广播使用 `sendOrderedBroadcast()` 方法发送。
+
+```java
+Intent intent = new Intent("com.example.MY_ORDERED_BROADCAST");
+sendOrderedBroadcast(intent, null);
+```
+
+在发送有序广播时，你可以通过调用 `abortBroadcast()` 方法来阻止后续接收器接收广播。但请注意，这仅适用于具有相同或更低优先级的接收器。
+
+```java
+public class MyHighPriorityReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        // 处理广播
+        abortBroadcast(); // 阻止后续接收器接收广播
+    }
+}
+```
+
+​			
+
+在 AndroidManifest.xml 文件中，你可以使用 `android:priority` 属性为广播接收器设置优先级。优先级的范围为 -1000 到 1000，数值越高，优先级越高。
+
+```java
+<receiver android:name=".MyHighPriorityReceiver">
+    <intent-filter android:priority="1000">
+        <action android:name="com.example.MY_ORDERED_BROADCAST" />
+    </intent-filter>
+</receiver>
+```
+
+​			
+
+### 关于广播的案例_通过监听充电断电广播显示提示（动态注册）
+
+* 继承一个广播接收器的类 PowerConnectionReceiver
+
+```java
+package com.fu.tt;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.widget.Toast;
+
+public class PowerConnectionReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent)
+    {
+        String action = intent.getAction();
+        if (action != null) {
+            if (action.equals(Intent.ACTION_POWER_CONNECTED)) {
+                Toast.makeText(context, "充电器已连接", Toast.LENGTH_SHORT).show();
+            } else if (action.equals(Intent.ACTION_POWER_DISCONNECTED)) {
+                Toast.makeText(context, "充电器已断开", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+}
+```
+
+​			
+
+* 在您的 `MainActivity` 中，创建一个 `PowerConnectionReceiver` 的实例：
+
+```java
+private PowerConnectionReceiver powerConnectionReceiver;
+```
+
+注意，这里的 PowerConnectionReceiver 就是广播接收器的类
+
+​			
+
+* 在 `onCreate` 方法中初始化并注册广播接收器：
+
+```java
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+
+    powerConnectionReceiver = new PowerConnectionReceiver();
+    IntentFilter filter = new IntentFilter();
+    filter.addAction(Intent.ACTION_POWER_CONNECTED);
+    filter.addAction(Intent.ACTION_POWER_DISCONNECTED);
+    registerReceiver(powerConnectionReceiver, filter);
+}
+```
+
+1. `IntentFilter filter = new IntentFilter();`
+
+   这里创建了一个 `IntentFilter` 实例。`IntentFilter` 类是用于指定广播接收器需要接收哪些类型的广播事件的工具。在创建 `IntentFilter` 之后，可以通过 `addAction()` 方法添加要监听的广播事件。
+
+2. `filter.addAction(Intent.ACTION_POWER_CONNECTED);`这一行将 `ACTION_POWER_CONNECTED` 动作添加到了 `filter` 中。`ACTION_POWER_CONNECTED` 是一个系统广播，当设备连接到电源时触发。这意味着 `PowerConnectionReceiver` 将会在设备开始充电时收到广播。
+
+​			
+
+* 在 `onDestroy` 方法中注销广播接收器：
+
+```java
+@Override
+protected void onDestroy() {
+    super.onDestroy();
+    unregisterReceiver(powerConnectionReceiver);
+}
+```
+
+​			
+
+### 关于广播的案例_（静态注册）
+
+有的广播是不能够进行静态广播的注册的
+
+比方说。。。
+
+1. `android.intent.action.SCREEN_ON`
+2. `android.intent.action.SCREEN_OFF`
+3. `android.intent.action.USER_PRESENT`
+4. `android.intent.action.TIME_TICK`
+5. `android.intent.action.PACKAGE_ADDED`
+6. `android.intent.action.PACKAGE_REMOVED`
+7. `android.intent.action.BATTERY_CHANGED`
+8. `android.intent.action.ACTION_POWER_CONNECTED`
+9. `android.intent.action.ACTION_POWER_DISCONNECTED`
+10. `android.intent.action.ACTION_SHUTDOWN`
+11. `android.intent.action.ACTION_PACKAGE_NEEDS_VERIFICATION`
+12. `android.intent.action.ACTION_PACKAGE_VERIFIED`
+13. `android.intent.action.ACTION_PACKAGE_FIRST_LAUNCH`
+14. `android.intent.action.ACTION_PACKAGE_FULLY_REMOVED`
+15. `android.intent.action.ACTION_PACKAGE_INSTALL`
+16. `android.intent.action.ACTION_PACKAGE_REPLACED`
+17. `android.intent.action.ACTION_PACKAGE_RESTARTED`
+18. `android.intent.action.ACTION_PACKAGE_DATA_CLEARED`
+19. `android.intent.action.ACTION_PACKAGE_CHANGED`
+20. `android.intent.action.ACTION_PACKAGE_REMOVED`
+21. `android.intent.action.ACTION_PACKAGE_ADDED`
+22. `android.intent.action.ACTION_PACKAGE_SUSPENDED`
+23. `android.intent.action.ACTION_PACKAGE_UNSUSPENDED`
+24. `android.intent.action.ACTION_MY_PACKAGE_SUSPENDED`
+25. `android.intent.action.ACTION_MY_PACKAGE_UNSUSPENDED`
+26. `android.intent.action.ACTION_MANAGE_APP_PERMISSION`
+27. `android.intent.action.ACTION_MANAGE_APP_PERMISSIONS`
+28. `android.intent.action.ACTION_LOCATION_SOURCE_SETTINGS`
+29. `android.intent.action.ACTION_BUG_REPORT`
+
+.....
+
+1. 可以静态注册的广播：
+   - 显式广播（即指定了特定组件的广播）。
+   - 部分隐式广播（没有指定特定组件，而是基于 Intent Filter 的广播），这些广播通常与系统启动、设备启动、网络状态变化等事件有关。官方文档中会明确说明哪些广播可以静态注册。
+2. 只能动态注册的广播：
+   - 隐式广播，从 Android 8.0（API 级别 26）开始，许多系统广播事件不能使用静态注册。这类广播主要是那些频繁发生且与应用程序的实时状态相关的广播，例如电池状态、Wi-Fi状态、屏幕状态等。
+
+​			
+
+
+
+```xml
+<application
+    ...
+    >
+    ...
+    <receiver
+        android:name=".TimeZoneChangeReceiver"
+        android:exported="false">
+        <intent-filter>
+            <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+        </intent-filter>
+    </receiver>
+</application>
+
+```
+
+​				
+
+```java
+package com.example.yourapp;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.widget.Toast;
+
+public class TimeZoneChangeReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        if (intent.getAction() != null && intent.getAction().equals(Intent.ACTION_TIMEZONE_CHANGED)) {
+            Toast.makeText(context, "时区已更改", Toast.LENGTH_SHORT).show();
+        }
+    }
+}
+```
+
+
+
+
+
+
+
+---
+
+### 广播的生命周期
+
+播接收器（BroadcastReceiver）没有像 Activity、Service 或 Fragment 那样的典型生命周期。广播接收器的生命周期非常简短，因为它们的主要目的是接收应用程序之间或系统组件之间发送的广播消息，并对其进行响应。
+
+当广播接收器接收到匹配的 Intent 时，系统会调用其 `onReceive()` 方法。在 `onReceive()` 方法内，可以处理接收到的 Intent，例如，检查 Intent 的操作、读取携带的数据等。在处理完广播后，广播接收器的实例会被销毁。
+
+广播接收器的生命周期可以总结为以下步骤：
+
+1. 注册：通过在 AndroidManifest.xml 中静态注册或在代码中动态注册，订阅特定的广播事件。
+2. 接收：当广播事件发生时，系统会创建广播接收器的实例，并调用其 `onReceive()` 方法。
+3. 处理：在 `onReceive()` 方法内处理接收到的 Intent。
+4. 销毁：处理完广播后，广播接收器实例会被销毁。
+
+需要注意的是，广播接收器不应执行耗时操作，因为在 `onReceive()` 方法中，有一个很短的执行时间限制（约 10 秒）。如果需要执行耗时操作，可以考虑在广播接收器内启动一个 Service 来处理。
+
+
+
+
 
 
 
