@@ -1447,7 +1447,7 @@ protected void onDestroy() {
 
 ​			
 
-### 关于广播的案例_（静态注册）
+### 关于广播的案例_时区更改（静态注册）
 
 有的广播是不能够进行静态广播的注册的
 
@@ -1493,7 +1493,7 @@ protected void onDestroy() {
 
 ​			
 
-
+下面的这个
 
 ```xml
 <application
@@ -1531,7 +1531,438 @@ public class TimeZoneChangeReceiver extends BroadcastReceiver {
 }
 ```
 
+​			
 
+### 关于广播的案例_Intent.ACTION_BATTERY_CHANGED显示电量（动态注册）
+
+`ACTION_BATTERY_CHANGED` 是一个系统广播，当设备的电池状态、电量、充电方式等发生变化时，它会被触发。这个广播会提供一系列有关电池信息的额外数据，包括电池状态、充电方式、电池剩余电量等。
+
+​			
+
+```java
+public class MainActivity extends AppCompatActivity {
+    private BatteryStatusReceiver batteryStatusReceiver;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        batteryStatusReceiver = new BatteryStatusReceiver();
+        IntentFilter filter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+        registerReceiver(batteryStatusReceiver, filter);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (batteryStatusReceiver != null) {
+            unregisterReceiver(batteryStatusReceiver);
+        }
+    }
+}
+```
+
+​				
+
+```java
+package com.example.yourapp;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.os.BatteryManager;
+import android.widget.Toast;
+
+public class BatteryStatusReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        String action = intent.getAction();
+        if (action != null && action.equals(Intent.ACTION_BATTERY_CHANGED)) {
+            int status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
+            int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+            int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+
+            Toast.makeText(context, "电池电量：" + level + "，最大电量：" + scale, Toast.LENGTH_SHORT).show();
+        }
+    }
+}
+```
+
+`status` 变量用于存储电池的当前状态。`BatteryManager.EXTRA_STATUS` 是从 `Intent` 中获取电池状态的键。`-1` 是默认值，当获取失败时返回。
+
+- BatteryManager.BATTERY_STATUS_UNKNOWN：表示电池状态未知（值为1）。
+- BatteryManager.BATTERY_STATUS_CHARGING：表示电池正在充电（值为2）。
+- BatteryManager.BATTERY_STATUS_DISCHARGING：表示电池正在放电（值为3）。
+- BatteryManager.BATTERY_STATUS_NOT_CHARGING：表示电池未充电（值为4）。
+- BatteryManager.BATTERY_STATUS_FULL：表示电池已充满（值为5）。
+
+
+
+### 动态注册的广播再来一个例子
+
+在Activity中注册广播，可以正常监听电量状态，但随着Activity生命周期变化，不能持续监听电量
+
+常见的不能静态注册的
+
+　　android.intent.action.SCREEN_ON
+
+　　android.intent.action.SCREEN_OFF
+
+　　android.intent.action.BATTERY_CHANGED
+
+　　android.intent.action.CONFIGURATION_CHANGED 	
+
+​			`android.intent.action.CONFIGURATION_CHANGED` 是一个系统广播，它在设备的配置发生变化时触发。例如，当屏幕方向发生变化、用户切换语言、更改系统字体大小等情况下，此广播会被触发。
+
+　　android.intent.action.TIME_TICK （每一分钟发送一次，类似于打点计时器）
+
+​			
+
+动态注册不能放到activity中，因为动态注册必须要在activity消亡的时候调用unregisterReceiver，会随着activity的解锁消失而不能再接收广播。一般的办法是在activity起来后马上start一个service,这个service里动态注册一个broadcastreceiver，service必须常驻在系统内，我在切换时区的广播当中添加，打开服务的代码
+
+```java
+package com.fu.tt;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.os.BatteryManager;
+import android.widget.Toast;
+
+public class BootBroadcastReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        String timeZone_action = "android.intent.action.TIMEZONE_CHANGED";
+        if(timeZone_action.equals(intent.getAction())){
+            Toast.makeText(context,"BOOT_COMPLETED",Toast.LENGTH_SHORT).show();
+            Intent batteryServiceIntent = new Intent(context, BatteryService.class);
+            context.startService(batteryServiceIntent);
+        }
+    }
+}
+```
+
+​		
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.TT"
+        tools:targetApi="31">
+...
+
+        <receiver
+            android:name=".BootBroadcastReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
+      ...
+        <service android:name=".BatteryService" />
+    </application>
+</manifest>
+```
+
+
+
+
+
+```java
+package com.fu.tt;
+
+import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.BatteryManager;
+import android.os.Environment;
+import android.os.IBinder;
+import android.util.Log;
+import android.widget.Toast;
+import android.os.Handler;
+import android.os.Looper;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+
+public class BatteryService extends Service {
+
+    private static final String TAG = "BatteryReceiver";
+    private static final long LOG_INTERVAL = 5000; // 5秒
+    private Handler logHandler;
+
+    private Runnable logRunnable = new Runnable() {
+        @Override
+        public void run() {
+            Log.i(TAG, "Service is running");
+            logHandler.postDelayed(this, LOG_INTERVAL);
+        }
+    };
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        Log.i(TAG, "onCreate--------------");
+        IntentFilter batteryfilter = new IntentFilter();
+        batteryfilter.addAction(Intent.ACTION_BATTERY_CHANGED);
+        registerReceiver(batteryReceiver, batteryfilter);
+    }
+
+    @Override
+    public void onStart(Intent intent, int startId) {
+        super.onStart(intent, startId);
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.i(TAG, "onStartCommand--------------");
+        logHandler = new Handler(Looper.getMainLooper());
+        logHandler.post(logRunnable);
+        return Service.START_STICKY; //
+    }
+
+    @Override
+    public void onDestroy() {
+        Log.i(TAG, "onDestroy--------------");
+        super.onDestroy();
+        logHandler.removeCallbacks(logRunnable);
+        this.unregisterReceiver(batteryReceiver);
+    }
+
+    // 接收电池信息更新的广播
+    private BroadcastReceiver batteryReceiver = new BroadcastReceiver()
+    {
+        @Override
+        public void onReceive(Context context, Intent intent)
+        {
+            Toast.makeText(context,"执行了",Toast.LENGTH_SHORT).show();
+            Log.i(TAG, "BatteryReceiver--------------");
+            String action = intent.getAction();
+            Log.i(TAG, " 0 action:"+ action);
+            Log.i(TAG, "ACTION_BATTERY_CHANGED");
+            int status = intent.getIntExtra("status", 0);
+            int health = intent.getIntExtra("health", 0);
+            boolean present = intent.getBooleanExtra("present", false);
+            int level = intent.getIntExtra("level", 0);
+            int scale = intent.getIntExtra("scale", 0);
+            int icon_small = intent.getIntExtra("icon-small", 0);
+            int plugged = intent.getIntExtra("plugged", 0);
+            int voltage = intent.getIntExtra("voltage", 0);
+            int temperature = intent.getIntExtra("temperature", 0);
+            String technology = intent.getStringExtra("technology");
+
+            String statusString = "";
+            switch (status)
+            {
+                case BatteryManager.BATTERY_STATUS_UNKNOWN:
+                    statusString = "unknown";
+                    break;
+                case BatteryManager.BATTERY_STATUS_CHARGING:
+                    statusString = "charging";
+                    break;
+                case BatteryManager.BATTERY_STATUS_DISCHARGING:
+                    statusString = "discharging";
+                    break;
+                case BatteryManager.BATTERY_STATUS_NOT_CHARGING:
+                    statusString = "not charging";
+                    break;
+                case BatteryManager.BATTERY_STATUS_FULL:
+                    statusString = "full";
+                    break;
+            }
+            String acString = "";
+
+            switch (plugged)
+            {
+                case BatteryManager.BATTERY_PLUGGED_AC:
+                    acString = "plugged ac";
+                    break;
+                case BatteryManager.BATTERY_PLUGGED_USB:
+                    acString = "plugged usb";
+                    break;
+            }
+
+            SimpleDateFormat sDateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss:SSS ");
+            String date = sDateFormat.format(new java.util.Date());
+
+            Log.i(TAG, "battery: date=" + date + ",status " + statusString
+                    + ",level=" + level +",scale=" + scale
+                    + ",voltage=" + voltage +",acString=" + acString );
+        }
+    };
+    private static void writeLogtoFile(String logTypename, String mylogtype,
+                                       String tag, String text) {// 新建或打开日志文件
+        Log.i("zjq", "mylog----------");
+        File path = Environment.getExternalStorageDirectory();
+        Date nowtime = new Date();
+        String needWriteMessage = text;
+        File file = new File(path, "needWriteFiel" + logTypename);
+        try {
+            FileWriter filerWriter = new FileWriter(file, true);// 后面这个参数代表是不是要接上文件中原来的数据，不进行覆盖
+            BufferedWriter bufWriter = new BufferedWriter(filerWriter);
+            bufWriter.write(needWriteMessage);
+            bufWriter.newLine();
+            bufWriter.close();
+            filerWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+​			
+
+### 隐式广播和显式广播
+
+在前面的广播当中，我们发现，发送的时候，都是系统的行为，我们在接受的时候，只能够匹配上就能够接受这个广播，需要注意的是，有些系统的广播，不单单要注册，还需要你的权限 `<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />` 比方说这样。这种在发送的时候没有指定接受的类的时候
+
+但是我们可以主动的发送广播。发送广播的时候，如果我们指定了接受的 class ，那么就是显式广播
+
+如果我们发送的时候没有指定接受的 class 就是隐式的广播
+
+​			
+
+### 显式_静态注册广播的例子
+
+```java
+package com.fu.tt;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.widget.Toast;
+
+public class CustomBroadcastReceiver extends BroadcastReceiver {
+
+    @Override
+    public void onReceive(Context context, Intent intent)
+    {
+        Toast.makeText(context,"显式广播",Toast.LENGTH_SHORT).show();
+    }
+}
+```
+
+
+
+```xml
+        <receiver android:name=".CustomBroadcastReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.example.CUSTOM_BROADCAST"/>
+            </intent-filter>
+        </receiver>
+
+```
+
+
+
+```java
+package com.fu.tt;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.widget.Button;
+import android.view.View;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
+
+import android.os.Bundle;
+import android.widget.Toast;
+import android.content.SharedPreferences;
+
+public class MainActivity extends AppCompatActivity implements OneFragment.OnFragmentButtonClickListener  {
+
+    private BatteryStatusReceiver batteryStatusReceiver;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        // 显式广播
+        Button btnSendBroadcast = findViewById(R.id.btn_send_broadcast);
+        btnSendBroadcast.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sendCustomBroadcast();
+            }
+        });
+
+    }
+
+    @Override
+    protected void onDestroy()
+    {
+        super.onDestroy();
+//        unregisterReceiver(powerConnectionReceiver);
+        if (batteryStatusReceiver != null) {
+            unregisterReceiver(batteryStatusReceiver);
+        }
+    }
+
+
+    private void sendCustomBroadcast() {
+        Intent customBroadcast = new Intent(this, CustomBroadcastReceiver.class);
+        customBroadcast.setAction("com.out.CUSTOM_BROADCAST");
+        sendBroadcast(customBroadcast);
+    }
+
+}
+```
+
+
+
+### 显式_动态注册的案例
+
+
+
+
+
+### Activity 间通信广播：
 
 
 
