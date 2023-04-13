@@ -1947,10 +1947,9 @@ public class MainActivity extends AppCompatActivity implements OneFragment.OnFra
 
     private void sendCustomBroadcast() {
         Intent customBroadcast = new Intent(this, CustomBroadcastReceiver.class);
-        customBroadcast.setAction("com.out.CUSTOM_BROADCAST");
+        customBroadcast.setAction("com.example.CUSTOM_BROADCAST");
         sendBroadcast(customBroadcast);
     }
-
 }
 ```
 
@@ -1958,11 +1957,624 @@ public class MainActivity extends AppCompatActivity implements OneFragment.OnFra
 
 ### 显式_动态注册的案例
 
+我们将创建两个 Activity：`MainActivity` 和 `SecondActivity`。`MainActivity` 将动态注册一个广播接收器，而 `SecondActivity` 将发送一个显式广播，通知 `MainActivity` 更新 UI
 
+BroadcastReceiver.java
+
+```java
+package com.fu.tt;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.widget.Toast;
+
+public class MyBroadcastReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        String message = intent.getStringExtra("message");
+        if (context instanceof MainActivity) {
+            ((MainActivity) context).updateUI(message);
+        }
+    }
+}
+```
+
+在这个方法中，我们需要更新 `MainActivity` 的 UI，但是我们需要首先确保 `context` 是一个 `MainActivity` 实例。
+
+1. 首先，我们将 `context` 强制转换为 `MainActivity` 类型。这是因为 `context` 是一个更通用的类型，而我们需要访问 `MainActivity` 中的 `updateUI` 方法。强制转换确保我们可以调用这个特定的方法。
+2. 接下来，我们调用 `updateUI(message)` 方法。这个方法是在 `MainActivity` 类中定义的，并且接收一个字符串作为参数。在这个例子中，`message` 参数是从广播的 `Intent` 中获取的。
+
+
+
+MainActivity.java 并且定义 updateUI 
+
+```java
+public class MainActivity extends AppCompatActivity {
+    private MyBroadcastReceiver myBroadcastReceiver;
+    private TextView textView;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textView);
+        myBroadcastReceiver = new MyBroadcastReceiver();
+      
+      	IntentFilter filter = new IntentFilter("com.example.UPDATE_UI");
+        registerReceiver(myBroadcastReceiver, filter);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(myBroadcastReceiver);
+    }
+
+    public void updateUI(String message) {
+        textView.setText(message);
+    }
+
+    public void goToSecondActivity(View view) {
+        Intent intent = new Intent(this, SecondActivity.class);
+        startActivity(intent);
+    }
+}
+```
+
+
+
+SecondActivity.java
+
+```java
+public class SecondActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_second);
+    }
+
+    public void sendMessageToMainActivity(View view) {
+        Intent intent = new Intent("com.example.UPDATE_UI");
+        intent.setPackage(getPackageName());
+        intent.putExtra("message", "Hello from SecondActivity!");
+        sendBroadcast(intent);
+    }
+}
+```
+
+`intent.setPackage(getPackageName());` 这行代码设置了 Intent 的目标包名。这意味着，只有这个包名下的应用程序才能接收到这个 Intent。在这个例子中，`getPackageName()` 返回当前应用的包名。
+
+这一行代码的主要目的是将 Intent 的范围限制在当前应用程序内。这样，你可以确保 Intent 只会发送给你自己的应用，而不会泄露到其他应用中。
+
+​			
+
+SecondActivity.xml
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".SecondActivity">
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Welcome to Second Activity!"
+        android:textSize="24sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/button_send_broadcast"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="sendBroadcast"
+        android:text="send2 Broadcast"
+        app:layout_constraintBottom_toTopOf="@+id/textView2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/button2_send_broadcast"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="60dp"
+        android:onClick="sendMessageToMainActivity"
+        android:text="send Broadcast"
+        app:layout_constraintBottom_toTopOf="@+id/textView2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.497"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+```
+
+​			
+
+### 隐式_静态广播
+
+已经关闭大部分这样的操作，能够写，不报错，但是不发送。
+
+少量的系统广播，主要就是触发比较少的 比方说，开机广播，还有就是切换时区广播
+
+
+
+AndroidManifest.xml
+
+```xml
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.timezonechange">
+
+    <application
+        ...>
+        
+        <receiver android:name=".TimeZoneChangeReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
+        
+    </application>
+
+</manifest>
+```
+
+​			
+
+MyBroadcastReceiverYin.java
+
+```java
+package com.fu.tt;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.widget.Toast;
+
+public class MyBroadcastReceiverYin extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        if ("android.intent.action.TIMEZONE_CHANGED".equals(intent.getAction())) {
+            String message = "收到切换时区的，隐式静态广播";
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+        }
+    }
+}
+```
+
+
+
+### 隐式_动态广播
+
+Activity_main.xml
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hello, World!"
+        android:textSize="24sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+
+    <Button
+        android:id="@+id/send_broadcast_yin_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="420dp"
+        android:text=" 隐式静态广播 "
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/broadcast_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="500dp"
+        android:text=" 隐式动态广播 "
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+
+```
+
+​			
+
+Mainactivity.java
+
+```java
+private CustomBroadcastReceiver customBroadcastReceiver;
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+  
+  	Button broadcastButton = findViewById(R.id.broadcast_button);
+    broadcastButton.setOnClickListener(new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            Intent intent = new Intent("com.example.CUSTOM_ACTION");
+            intent.putExtra("message", "Hello from MainActivity!");
+            sendBroadcast(intent);
+        }
+    });
+
+
+    customBroadcastReceiver = new CustomBroadcastReceiver();
+    IntentFilter intentFilter = new IntentFilter("com.example.CUSTOM_ACTION"); // 如果想添加广播就用 intentFilter.addAction("com.example.CUSTOM_ACTION"); 
+    registerReceiver(customBroadcastReceiver, intentFilter);
+}
+
+@Override
+protected void onDestroy() {
+    super.onDestroy();
+    unregisterReceiver(customBroadcastReceiver);
+}
+
+```
+
+​			
+
+CustomBroadcastReceiver.java
+
+```java
+package com.fu.tt;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.widget.Toast;
+
+public class CustomBroadcastReceiver extends BroadcastReceiver {
+
+    @Override
+    public void onReceive(Context context, Intent intent)
+    {
+        if (intent.getAction().equals("com.example.CUSTOM_ACTION"))
+        {
+            Toast.makeText(context, "收到隐式动态广播： " , Toast.LENGTH_SHORT).show();
+        }
+        else
+        {
+            Toast.makeText(context, "收到广播： " , Toast.LENGTH_SHORT).show();
+        }
+    }
+}
+```
 
 
 
 ### Activity 间通信广播：
+
+简单来说就是一个 activity 进行注册（一般来说注册在前，至少同时），另一个 activity 进行发送，然后激活广播接收器。显示内容
+
+
+
+```java
+package com.fu.tt;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.widget.Button;
+import android.view.View;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
+
+import android.os.Bundle;
+import android.widget.Toast;
+import android.content.SharedPreferences;
+
+public class MainActivity extends AppCompatActivity implements OneFragment.OnFragmentButtonClickListener  {
+
+  	// 客制化广播接收器
+    private CustomBroadcastReceiver customBroadcastReceiver;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        // 通信，广播注册
+        customBroadcastReceiver = new CustomBroadcastReceiver();
+        IntentFilter intentFilter = new IntentFilter("com.out.CUSTOM_BROADCAST");
+        registerReceiver(customBroadcastReceiver, intentFilter);
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        Toast.makeText(MainActivity.this,"已经执行了onDestory",Toast.LENGTH_SHORT).show();
+        super.onDestroy();
+        unregisterReceiver(customBroadcastReceiver);
+    }
+}
+```
+
+​			
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
+
+public class SecondActivity extends AppCompatActivity{
+    @Override
+    protected  void onCreate(Bundle savedInstanceState)
+    {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_second);
+        
+        // 显式广播
+        Button btnSendBroadcast = findViewById(R.id.btn_send_broadcast);
+        btnSendBroadcast.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sendCustomBroadcast();
+            }
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+  // 附带一个信息，发送了一个广播 com.out.CUSTOM_BROADCAST
+    private void sendCustomBroadcast() {
+        Intent customBroadcast = new Intent("com.out.CUSTOM_BROADCAST");
+        customBroadcast.putExtra("message", "来自MainActivity的消息");
+        sendBroadcast(customBroadcast);
+    }
+}
+```
+
+​				
+
+```java
+package com.fu.tt;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.widget.Toast;
+
+public class CustomBroadcastReceiver extends BroadcastReceiver {
+
+    @Override
+    public void onReceive(Context context, Intent intent)
+    {
+        String message = intent.getStringExtra("message");
+        Toast.makeText(context, "收到广播： " + message , Toast.LENGTH_SHORT).show();
+    }
+}
+```
+
+
+
+### SecondActivity 通过广播修改 MainActivity 的展示效果
+
+1. MainActivity对应的（activity_main.xml）：
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hello, World!"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/go_to_second_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="goToSecondActivity" <! 设置了这个，就不用设置按钮监听器，也不需要，将监听器的内容附加到按钮上，按下这个按钮之后，就会自动的执行 goToSecondActivity 这个函数>
+        android:text="Go to Second Activity"
+        app:layout_constraintBottom_toTopOf="@+id/textView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>
+
+```
+
+​			
+
+MainActivity.java：
+
+```java
+import androidx.appcompat.app.AppCompatActivity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.TextView;
+
+public class MainActivity extends AppCompatActivity {
+
+    private TextView textView; // 全局变量，获得更新的数据
+  
+  // 声明在 MainActivity 当中的广播接收器，在里面能够接受来自 intent 的携带信息
+    private BroadcastReceiver updateUIReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String newText = intent.getStringExtra("new_text");
+            textView.setText(newText); // 这个就是用来设置  textView = findViewById(R.id.textView); 的文本信息
+        }
+    };
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        textView = findViewById(R.id.textView);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        IntentFilter filter = new IntentFilter("com.example.UPDATE_UI");
+        registerReceiver(updateUIReceiver, filter);
+    }
+
+		@Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(updateUIReceiver);
+    }
+
+    public void goToSecondActivity(View view) {
+        Intent intent = new Intent(this, SecondActivity.class);
+        startActivity(intent);
+    }
+}
+
+```
+
+​			
+
+SecondActivity（activity_second.xml）
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".SecondActivity">
+
+    <Button
+        android:id="@+id/button_send_broadcast"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="sendBroadcast"
+        android:text="Send Broadcast"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>
+```
+
+​			
+
+SecondActivity.java：
+
+```java
+import androidx.appcompat.app.AppCompatActivity;
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+
+public class SecondActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_second);
+    }
+
+  // 发送一条广播，并且携带一条信息
+    public void sendBroadcast(View view) {
+        Intent intent = new Intent("com.example.UPDATE_UI");
+        intent.putExtra("new_text", "Text updated from Second Activity!");
+        sendBroadcast(intent);
+    }
+}
+```
+
+​			
+
+### Activity之间的通信startActivityForResult_onActivityResult
+
+在前面的介绍当中，我们知道，广播能够做到两个Activity之间的通信，onActivityResult和startActivityForResult 同样的能够做到
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1987,7 +2599,31 @@ public class MainActivity extends AppCompatActivity implements OneFragment.OnFra
 
 
 
+---
+
+### Activity 的生命周期
+
+1. 创建（onCreate）：当 Activity 实例被创建时调用。在这个阶段，您可以初始化组件、设置布局、注册事件监听器等。
+2. 启动（onStart）：当 Activity 变为可见时调用。此时，Activity 还不能与用户进行交互，但可以执行准备工作。
+3. 恢复（onResume）：当 Activity 准备好与用户进行交互时调用。此时，Activity 处于前台并获取到焦点。
+4. 暂停（onPause）：当 Activity 失去焦点时调用。此时，Activity 仍然可见，但无法与用户进行交互。
+5. 停止（onStop）：当 Activity 完全不可见时调用。例如，用户切换
+6. 重启（onRestart）：当 Activity 从完全不可见状态重新变为可见时调用。在 onStop 之后，onRestart 会被触发，然后是 onStart。
+
+1. 销毁（onDestroy）：当 Activity 实例被销毁时调用。此时，您应该释放资源、注销广播接收器等。在 Activity 结束或系统回收资源时，onDestroy 会被触发。
 
 
 
+以一个简单的应用为例，该应用包含两个 Activity：Activity1 和 Activity2。我们将详细描述用户在这个应用中执行的操作以及对应的 Activity 生命周期阶段。
+
+1. 用户打开应用：这时，Activity1 的 onCreate、onStart 和 onResume 方法依次被调用。Activity1 处于运行状态。
+2. 用户点击按钮跳转到 Activity2：此时，Activity1 的 onPause 方法被调用，因为它失去了焦点。接着，Activity2 的 onCreate、onStart 和 onResume 方法被调用，进入运行状态。此外，Activity1 的 onStop 方法会被调用，因为它已完全不可见。
+3. 用户点击返回按钮，返回到 Activity1：这时，Activity2 的 onPause 方法被调用。然后，Activity1 的 onRestart、onStart 和 onResume 方法被调用，重新回到运行状态。接下来，Activity2 的 onStop 和 onDestroy 方法被调用，因为用户已经离开了 Activity2。
+4. 用户按下 Home 键，将应用放到后台：此时，Activity1 的 onPause 和 onStop 方法被调用，因为它失去了焦点并完全不可见。
+5. 用户通过最近应用列表重新打开应用：这时，Activity1 的 onRestart、onStart 和 onResume 方法被调用，重新回到运行状态。
+6. 用户按下返回键或通过其他方式退出应用：此时，Activity1 的 onPause、onStop 和 onDestroy 方法被调用，完成整个生命周期。
+
+
+
+---
 
