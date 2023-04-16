@@ -16,6 +16,26 @@
 - [Fragment 的交互\_调用activity当中的函数](#fragment-的交互_调用activity当中的函数)
 - [使用 Fragment 与 Activity 之间的接口通信](#使用-fragment-与-activity-之间的接口通信)
 - [Fragment 的生命周期](#fragment-的生命周期)
+- [广播接受者（BroadcastReceiver）](#广播接受者broadcastreceiver)
+- [普通广播和有序广播](#普通广播和有序广播)
+- [关于广播的案例\_通过监听充电断电广播显示提示（动态注册）](#关于广播的案例_通过监听充电断电广播显示提示动态注册)
+- [关于广播的案例\_时区更改（静态注册）](#关于广播的案例_时区更改静态注册)
+- [关于广播的案例\_Intent.ACTION\_BATTERY\_CHANGED显示电量（动态注册）](#关于广播的案例_intentaction_battery_changed显示电量动态注册)
+- [动态注册的广播再来一个例子](#动态注册的广播再来一个例子)
+- [隐式广播和显式广播](#隐式广播和显式广播)
+- [显式\_静态注册广播的例子](#显式_静态注册广播的例子)
+- [显式\_动态注册的案例](#显式_动态注册的案例)
+- [隐式\_静态广播](#隐式_静态广播)
+- [隐式\_动态广播](#隐式_动态广播)
+- [Activity 间通信广播：](#activity-间通信广播)
+- [SecondActivity 通过广播修改 MainActivity 的展示效果](#secondactivity-通过广播修改-mainactivity-的展示效果)
+- [一个最简单的有序广播](#一个最简单的有序广播)
+- [带权限的广播](#带权限的广播)
+  - [权限的申请](#权限的申请)
+  - [一个关于权限的code案例](#一个关于权限的code案例)
+- [Activity之间的通信startActivityForResult\_onActivityResult](#activity之间的通信startactivityforresult_onactivityresult)
+- [广播的生命周期](#广播的生命周期)
+- [Activity 的生命周期](#activity-的生命周期)
 
 
 
@@ -1896,7 +1916,7 @@ public class CustomBroadcastReceiver extends BroadcastReceiver {
 
 ```
 
-
+​			
 
 ```java
 package com.fu.tt;
@@ -1923,7 +1943,7 @@ public class MainActivity extends AppCompatActivity implements OneFragment.OnFra
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // 显式广播
+        // 发送广播
         Button btnSendBroadcast = findViewById(R.id.btn_send_broadcast);
         btnSendBroadcast.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -1931,7 +1951,6 @@ public class MainActivity extends AppCompatActivity implements OneFragment.OnFra
                 sendCustomBroadcast();
             }
         });
-
     }
 
     @Override
@@ -2540,31 +2559,650 @@ public class SecondActivity extends AppCompatActivity {
 
 ​			
 
+
+
+### 一个最简单的有序广播
+
+有序广播（Ordered Broadcast）是一种特殊类型的广播，允许多个广播接收器按照优先级顺序接收和处理广播。在传统的广播中，所有注册的广播接收器几乎是同时收到广播，但在有序广播中，系统会按照接收器的优先级顺序依次发送广播。每个接收器在处理完广播后，可以决定是否传递给下一个接收器，还可以修改广播数据。
+
+
+
+如果我们没有写优先级，那么这个优先级就是 0 。
+
+如果大家都是 0 那么顺序就是注册的顺序，接近同步 。 
+
+
+
+MainActivity.java
+
+```java
+package com.fu.tt;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.util.Log;
+import android.widget.Button;
+import android.view.View;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
+
+import android.os.Bundle;
+import android.widget.TextView;
+import android.widget.Toast;
+import android.content.SharedPreferences;
+
+public class MainActivity extends AppCompatActivity   {
+
+
+    private HighPriorityReceiver highPriorityReceiver;
+    private LowPriorityReceiver lowPriorityReceiver;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+      // 按钮调用我发送广播
+        Button broadcastButton = findViewById(R.id.broadcast_button);
+        broadcastButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                sendOrderedBroadcast();
+            }
+        });
+
+      // 调用注册广播
+        highPriorityReceiver = new HighPriorityReceiver();
+        lowPriorityReceiver = new LowPriorityReceiver();
+        registerOrderedReceivers();
+    }
+
+  // 注销广播
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        unregisterReceiver(highPriorityReceiver);
+        unregisterReceiver(lowPriorityReceiver);
+    }
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
+
+  // 注册广播，设置优先级
+    private void registerOrderedReceivers() {
+        IntentFilter highPriorityFilter = new IntentFilter("com.example.ORDERED_BROADCAST");
+        highPriorityFilter.setPriority(100);
+        registerReceiver(highPriorityReceiver, highPriorityFilter);
+
+        IntentFilter lowPriorityFilter = new IntentFilter("com.example.ORDERED_BROADCAST");
+        lowPriorityFilter.setPriority(999);
+        registerReceiver(lowPriorityReceiver, lowPriorityFilter);
+    }
+
+  // 发送广播
+    private void sendOrderedBroadcast() {
+        Intent intent = new Intent("com.example.ORDERED_BROADCAST");
+        sendOrderedBroadcast(intent, null);
+    }
+}
+```
+
+​			
+
+LowPriorityReceiver.java
+
+```java
+package com.fu.tt;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+import android.widget.Toast;
+
+public class LowPriorityReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        Toast.makeText(context, "LowPriorityReceiver 接收到广播", Toast.LENGTH_SHORT).show();
+    }
+}
+
+```
+
+​				
+
+HighPriorityReceiver.java
+
+```java
+package com.fu.tt;
+
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+import android.widget.Toast;
+
+public class HighPriorityReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        Toast.makeText(context, "HighPriorityReceiver 接收到广播", Toast.LENGTH_SHORT).show();
+    }
+}
+
+```
+
+​			
+
+### 带权限的广播
+
+首先我们要知道，我们的某一次的广播并不是想每一个都收到，在之前，我们的做法是显示广播，但是显式管理起来，在比较多的情况之下，就很难维护了
+
+给我们的广播上加上权限也是为了安全。特别是比较高的权限，需要签名才能够执行广播接收器。
+
+他能够限制广播发送者，我给广播接收器设置了权限，只有发送者跟我有一样的权限，才能够执行广播接收器
+
+他能够限制广播接受者，我给广播发送这设置了权限，只有接受者跟我一样的权限才能够，接受我发送的广播
+
+​				
+
+#### 权限的申请
+
+```xml
+<permission
+    android:name="com.example.permission.MY_BROADCAST_PERMISSION"
+    android:protectionLevel="normal" />
+
+<uses-permission android:name="com.example.permission.MY_BROADCAST_PERMISSION" />
+```
+
+`<permission>`：用于声明自定义权限。当您想创建一个自己的权限，以便其他应用程序使用时，您需要在 Manifest 文件中声明 `<permission>`。这里您可以设置权限的名称、保护级别等属性
+
+​			
+
+`<uses-permission>`：用于声明您的应用程序需要使用的权限。当您的应用程序需要使用某个权限（无论是 Android 系统权限还是其他应用程序提供的自定义权限）时，需要在 Manifest 文件中使用 `<uses-permission>` 标签，标签用于告诉系统您的应用程序需要使用某个权限。这可以是您自己定义的权限（通过 `<permission>` 标签声明的权限），也可以是 Android 系统中的预定义权限（如访问网络、访问存储等）				
+
+​		
+
+`<permission>` 用于声明您的应用程序提供的自定义权限，而 `<uses-permission>` 用于声明您的应用程序要要用哪些权限			
+
+​			
+
+```xml
+android:protectionLevel="normal"
+```
+
+`android:protectionLevel` 是用于定义一个自定义权限的安全级别。它决定了其他应用程序在请求使用该权限时需要满足的条件。对于 `android:protectionLevel="normal"`，这是最低的安全级别，表示任何应用程序只需在其 AndroidManifest.xml 文件中使用 `<uses-permission>` 标签请求这个权限，就可以获得这个权限。
+
+除了 "normal" 之外，还有其他几种 protectionLevel：
+
+1. `dangerous`：表示权限可能会影响用户隐私或设备操作。请求此类权限的应用程序需要在运行时向用户请求权限，用户可以选择允许或拒绝。
+2. `signature`：表示只有与声明此权限的应用程序具有相同签名的应用程序才能获得此权限。这意味着只有由相同开发者签名的应用程序才能共享这个权限。
+3. `signatureOrSystem`：表示只有具有相同签名的应用程序或系统级应用程序才能获得此权限。这意味着只有由相同开发者签名的应用程序或者已经预安装在设备上的系统应用才能使用这个权限。
+
+
+
+简而言之，`android:protectionLevel="normal"` 意味着这个自定义权限相对容易获得，任何应用程序只要在其 manifest 文件中声明对该权限的需求
+
+
+
+AndroidManifest.xml
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+  <! 声明一个权限 >
+  <! 使用权限 >
+    <permission
+        android:name="com.example.permission.MY_BROADCAST_PERMISSION"
+        android:protectionLevel="normal" />
+
+    <uses-permission android:name="com.example.permission.MY_BROADCAST_PERMISSION" />
+
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.TT"
+        tools:targetApi="31">
+
+      
+      ....
+      
+      
+     
+
+    </application>
+</manifest>
+```
+
+
+
+
+
+MainActivity.java
+
+```java
+package com.fu.tt;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.util.Log;
+import android.widget.Button;
+import android.view.View;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
+
+import android.os.Bundle;
+import android.widget.TextView;
+import android.widget.Toast;
+import android.content.SharedPreferences;
+
+import android.content.ComponentName;
+
+public class MainActivity extends AppCompatActivity   {
+
+    private CustomBroadcastReceiver customBroadcastReceiver;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+      // 注册广播，设置权限
+        customBroadcastReceiver = new CustomBroadcastReceiver();
+        IntentFilter filter = new IntentFilter("com.example.CUSTOM_ACTION");
+        registerReceiver(customBroadcastReceiver, filter,"com.example.permission.MY_BROADCAST_PERMISSION",null);
+
+
+        Button broadcastButton = findViewById(R.id.broadcast_button);
+        broadcastButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                sendCustomBroadcast();
+            }
+        });
+    }
+
+  // 发送广播，设置权限
+    private void sendCustomBroadcast() {
+        Intent intent = new Intent("com.example.CUSTOM_ACTION");
+        sendBroadcast(intent,"com.example.permission.MY_BROADCAST_PERMISSION");
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(customBroadcastReceiver);
+    }
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
+}
+```
+
+​			
+
+CustomBroadcastReceiver.java
+
+```java
+package com.fu.tt;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+import android.widget.Toast;
+
+public class CustomBroadcastReceiver extends BroadcastReceiver {
+    private static final String TAG = "CustomBroadcastReceiver";
+
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        Toast.makeText(context, "接受到权限广播", Toast.LENGTH_SHORT).show();
+        Log.i(TAG, "Received custom broadcast.");
+    }
+}
+```
+
+​			
+
+#### 一个关于权限的code案例
+
+这是一个请求联系人权限的demo
+
+Androidmanifest.xml
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+<!-- 这就是我们想要申请的权限 -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.TT"
+        tools:targetApi="31">
+
+      
+      
+。。。
+      
+      
+     
+
+    </application>
+</manifest>
+```
+
+​			
+
+```java
+package com.fu.tt;
+import android.content.pm.PackageManager;
+import android.widget.Button;
+import android.view.View;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import android.os.Bundle;
+import android.widget.Toast;
+
+// Manifest.permission.READ_CONTACTS 这个需要的import
+import android.Manifest;
+
+
+
+public class MainActivity extends AppCompatActivity   {
+
+    private static final int PERMISSION_REQUEST_READ_CONTACTS = 100; 
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        Button requestPermissionButton = findViewById(R.id.request_permission_button);
+        requestPermissionButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                requestReadContactsPermission();
+            }
+        });
+    }
+
+    private void requestReadContactsPermission() {
+        // 检查是不是已经拥有了读取联系人的权限
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_CONTACTS)) {
+                Toast.makeText(this, "需要读取联系人权限来显示联系人列表", Toast.LENGTH_SHORT).show();
+            }
+
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_CONTACTS},
+                    PERMISSION_REQUEST_READ_CONTACTS);
+        } else {
+            displayContacts();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == PERMISSION_REQUEST_READ_CONTACTS) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                displayContacts();
+            } else {
+                Toast.makeText(this, "权限被拒绝，无法显示联系人列表", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void displayContacts() {
+        Toast.makeText(this, "读取并显示联系人列表...", Toast.LENGTH_SHORT).show();
+        // 实际应用中，在这里实现读取联系人并显示的逻辑
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
+}
+```
+
+​			
+
+activity_main.xml
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <Button
+        android:id="@+id/request_permission_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="请求联系人权限"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+```
+
+
+
+现在来逐句分析一下这个代码
+
+1. `<uses-permission android:name="android.permission.READ_CONTACTS" />` 
+   1. 这个是我们申请的权限，不是我们声明的权限。所以是 uses-permission 		
+
+2. `android:allowBackup="true"` 
+
+   1. `<application>`标签里设置。它的作用是指示应用的数据是否可以进行备份和恢复。值为`true`表示允许备份，值为`false`表示不允许备份。 然后在用户更换设备或重新安装应用时恢复。这可以帮助用户保留应用的设置、数据等信息
+
+3. `android:dataExtractionRules="@xml/data_extraction_rules"` 
+
+   1. 它指定了一个XML资源文件，该文件包含了应用数据提取规则（备份，数据转移，一键换机这样的功能）。这些规则决定了哪些应用数据应该被包含在设备的全局备份和恢复过程中，`@xml/data_extraction_rules`表示规则文件位于应用的`res/xml`目录下，文件名为`data_extraction_rules.xml`。在这个文件中，通过 `<include>` 和 `<exclude>` 来包含和排除一些文件夹
+
+   2. ```xml
+      <data-extraction-rules>
+          <include domain="file" path="shared_prefs" />
+          <exclude domain="file" path="shared_prefs/excluded_prefs.xml" />
+          <include domain="file" path="databases" />
+          <include domain="file" path="app_webview" />
+          <include domain="file" path="app_textures" />
+      </data-extraction-rules>
+      ```
+
+4. `android:fullBackupContent="@xml/backup_rules"` （Android 12 开始就已经弃用，改用 dataExtractionRules 属性）
+
+   1. 全量备份是指将应用程序的所有数据备份到云端（例如，Google Drive），以便在需要时进行恢复。全量备份可以在用户更换设备或者重置设备后，帮助用户恢复应用程序的数据，文件在 xml/backup_rules.xml 。所以这两个属性，一个是负责数据转移，也就是一键换机的时候，使用，另一个是，负责云端备份，至于本地备份是开发者自己的行为。在新的Android当中的（12及其以上），这个属性已经删掉了，全部变成了 dataExtractionRules 这个属性
+
+5. `android:label="@string/app_name" ` 
+
+   1. 个例子中，它表示应用程序的名称将从 `res/values/strings.xml` 资源文件中引用的字符串值中获取，该字符串的名称是 `app_name`
+
+6. ` android:roundIcon="@mipmap/ic_launcher_round"` 
+
+   1. 是一个属性，用于指定应用程序的圆形图标。在这个例子中，它表示应用程序的圆形图标将从 `mipmap` 资源文件夹中引用的图像文件中获取，该图像的名称是 `res/values/ic_launcher_round` 注意这不是一个文件，而是一个文件夹，下面放了各种分辨率下的，图标的文件。
+
+7. `android:supportsRtl="true"` 
+
+   1. 是一个属性，表示您的应用程序支持从右到左（RTL）的布局方向。这主要用于支持阿拉伯语、希伯来语等从右到左书写的语言
+
+8. `tools:targetApi="31" ` 这个属性用于指定当前应用的目标 API 级别，在这个例子中是 31。API 级别表示应用程序所针对的 Android 平台版本。 这个只显示信息，不参与编译
+
+
+
+先是检测是不是已经获取到了读取联系人的权限，如果没有就请求联系人的权限
+
+```java
+    private void requestReadContactsPermission() {
+        // 检查是不是已经拥有了读取联系人的权限
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_CONTACTS)) {
+                Toast.makeText(this, "需要读取联系人权限来显示联系人列表", Toast.LENGTH_SHORT).show();
+            }
+
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_CONTACTS},
+                    PERMISSION_REQUEST_READ_CONTACTS);
+        } else {
+            displayContacts();
+        }
+    }
+```
+
+翻译
+
+GRANTED ：已授予
+
+​				
+
+```java
+if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS)
+                != PackageManager.PERMISSION_GRANTED)
+```
+
+`ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS` 是用来检查是不是已经获取了权限，获取与否会返回一个值，如果这个值 等于 `PackageManager.PERMISSION_GRANTED` 就说明已经获取了权限，如果不等于就说明没有获取权限		
+
+​		
+
+```java
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_CONTACTS)) {
+                Toast.makeText(this, "需要读取联系人权限来显示联系人列表", Toast.LENGTH_SHORT).show();
+            }
+```
+
+翻译
+
+Rationale : 原因
+
+​		
+
+这个是，是否应该显示请求权限的原因
+
+这个时候就应该有人奇怪，为什么我之前就已经判断是是不是有权限，有权限就获取权限，没有权限，就说明用户拒绝了，为什么还要是否应该显示请求权限的原因
+
+因为有一种情况，当用户第一次安装并运行应用时，应用可能会请求某些权限。对于用户来说，可能会觉得突然弹出权限请求不明所以。如果直接请求权限，用户可能会对此感到困惑，并拒绝授予权限。这对应用的功能和用户体验可能会产生负面影响。`shouldShowRequestPermissionRationale()` 方法的作用在于，当用户之前已经拒绝过权限请求时，这个方法会返回 `true`。这时，开发者可以在再次请求权限之前，向用户展示解释，阐述为什么应用需要这个权限。这样可以提高用户对权限请求的理解，增加用户同意授权的可能性。		
+
+需要注意的是，`shouldShowRequestPermissionRationale()` 方法仅在用户已经拒绝过权限请求的情况下返回 `true`。对于首次请求权限，或者用户在拒绝权限请求时勾选了 "不再询问" 选项，这个方法会返回 `false`。这就是为什么我们需要在请求权限之前，额外判断是否需要向用户展示解释的原因。				
+
+`ActivityCompat.shouldShowRequestPermissionRationale()` 方法返回值如下：
+
+- 返回 `true`：当用户之前已经拒绝过权限请求，但没有勾选 "不再询问" 选项。在这种情况下，应用应当在请求权限之前向用户提供解释，让用户了解为什么应用需要这个权限。
+- 返回 `false`：在以下情况下，该方法会返回 false
+  1. 用户首次安装应用，还没有请求过权限。
+  2. 用户在拒绝权限请求时勾选了 "不再询问" 选项。
+  3. 应用已经获得了相应权限。
+
+​				
+
+
+
+```java
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_CONTACTS},
+                    PERMISSION_REQUEST_READ_CONTACTS);
+```
+
+这段代码的作用是请求 READ_CONTACTS 权限。当应用调用这个方法时，系统会弹出一个对话框，询问用户是否允许应用访问联系人信息。用户做出决定后，系统会调用 `onRequestPermissionsResult()` 方法，通知应用请求的结果。			
+
+`new String[]{Manifest.permission.READ_CONTACTS}`：一个包含要请求的权限的字符串数组。在这个例子中，我们只请求一个权限：`Manifest.permission.READ_CONTACTS`，用于读取联系人信息。
+
+`PERMISSION_REQUEST_READ_CONTACTS` 是我们的自定义的标识符，用于区别不同的权限。
+
+​			
+
+```java
+   public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == PERMISSION_REQUEST_READ_CONTACTS) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                displayContacts();
+            } else {
+                Toast.makeText(this, "权限被拒绝，无法显示联系人列表", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+```
+
+这个代码的作用是显示我我们的联系人，但是我们的权限授予是异步的，所以，我们使用这个权限的时候，不能够确定就已经赋予上了。所以需要检查一下
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ### Activity之间的通信startActivityForResult_onActivityResult
 
-在前面的介绍当中，我们知道，广播能够做到两个Activity之间的通信，onActivityResult和startActivityForResult 同样的能够做到
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+在前面的介绍当中，我们知道，广播能够做到两个Activity之间的通信，onActivityResult和startActivityForResult 同样的能够做到。
 
 
 
