@@ -2365,7 +2365,7 @@ public class SecondActivity extends AppCompatActivity{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_second);
         
-        // 显式广播
+        // 发送广播
         Button btnSendBroadcast = findViewById(R.id.btn_send_broadcast);
         btnSendBroadcast.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -2561,7 +2561,7 @@ public class SecondActivity extends AppCompatActivity {
 
 
 
-### 一个最简单的有序广播
+### 一个最简单的有序广播（动态注册_隐式）
 
 有序广播（Ordered Broadcast）是一种特殊类型的广播，允许多个广播接收器按照优先级顺序接收和处理广播。在传统的广播中，所有注册的广播接收器几乎是同时收到广播，但在有序广播中，系统会按照接收器的优先级顺序依次发送广播。每个接收器在处理完广播后，可以决定是否传递给下一个接收器，还可以修改广播数据。
 
@@ -2570,6 +2570,12 @@ public class SecondActivity extends AppCompatActivity {
 如果我们没有写优先级，那么这个优先级就是 0 。
 
 如果大家都是 0 那么顺序就是注册的顺序，接近同步 。 
+
+
+
+翻译
+
+priority ： 优先权
 
 
 
@@ -2704,6 +2710,1266 @@ public class HighPriorityReceiver extends BroadcastReceiver {
 ```
 
 ​			
+
+### 一个最简单的有序广播（静态注册_显式）
+
+AndroidManifest.xml
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
+    <uses-permission android:name="com.example.permission.MODULE_A" />
+    <uses-permission android:name="com.example.permission.MODULE_B" />
+
+
+    <permission
+        android:name="com.example.permission.MY_BROADCAST_PERMISSION"
+        android:protectionLevel="normal" />
+
+    <uses-permission android:name="com.example.permission.MY_BROADCAST_PERMISSION" />
+
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.TT"
+        tools:targetApi="31">
+
+        <receiver android:name=".MyOrderedBroadcastReceiver"
+            android:exported="false">
+            <intent-filter android:priority="100">  <!-- 设置权限 -->
+                <action android:name="com.example.ORDERED_EXPLICIT_ACTION" />
+            </intent-filter>
+        </receiver>
+
+
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
+
+    </application>
+</manifest>
+```
+
+​			
+
+MyOrderedBroadcastReceiver.java
+
+```java
+package com.fu.tt;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+import android.widget.Toast;
+
+public class MyOrderedBroadcastReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        String action = intent.getAction();
+        if ("com.example.ORDERED_EXPLICIT_ACTION".equals(action)) {
+            Toast.makeText(context, "接收到静态注册有序显式广播", Toast.LENGTH_SHORT).show();
+        }
+    }
+}
+```
+
+​				
+
+MainActivity.java
+
+```java
+package com.fu.tt;
+import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.util.Log;
+import android.widget.Button;
+import android.view.View;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import android.os.Bundle;
+import android.widget.Toast;
+import android.os.HandlerThread;
+
+
+import android.Manifest;
+
+
+public class MainActivity extends AppCompatActivity   {
+
+    private ReceiverA receiverA;
+    private ReceiverB receiverB;
+    private BroadcastReceiver finalReceiver;
+    private Handler handler;
+    private HandlerThread handlerThread;
+
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        HandlerThread handlerThread = new HandlerThread("FinalReceiverThread");
+        handlerThread.start();
+        handler = new Handler(handlerThread.getLooper());
+
+        // 发送有序广播
+        findViewById(R.id.send_ordered_broadcast_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.i("guangbo","发送按钮点击");
+                Toast.makeText(MainActivity.this, "发送广播", Toast.LENGTH_SHORT).show();
+                sendOrderedExplicitBroadcast();
+            }
+        });
+    }
+
+    private void registerReceivers() {
+        receiverA = new ReceiverA();
+        IntentFilter filterA = new IntentFilter("com.example.orderedbroadcast.ACTION");
+        filterA.setPriority(100);
+        registerReceiver(receiverA, filterA);
+
+        receiverB = new ReceiverB();
+        IntentFilter filterB = new IntentFilter("com.example.orderedbroadcast.ACTION");
+        filterB.setPriority(99);
+        registerReceiver(receiverB, filterB);
+    }
+
+    private void sendOrderedBroadcastWithFinalReceiver() {
+        Intent intent = new Intent("com.example.orderedbroadcast.ACTION");
+        finalReceiver = new FinalReceiver();
+        // 发送有序广播，添加最终接收者
+        sendOrderedBroadcast(intent, null, finalReceiver, handler, Activity.RESULT_OK, null, null);
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(finalReceiver);
+    }
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
+
+    private void sendOrderedExplicitBroadcast() {
+        Intent intent = new Intent();
+        intent.setComponent(new ComponentName(getPackageName(), MyOrderedBroadcastReceiver.class.getName()));
+        intent.setAction("com.example.ORDERED_EXPLICIT_ACTION");
+        sendOrderedBroadcast(intent, null);
+    }
+}
+```
+
+
+
+这个代码
+
+```java
+    private void sendOrderedExplicitBroadcast() {
+        Intent intent = new Intent();
+        intent.setComponent(new ComponentName(getPackageName(), MyOrderedBroadcastReceiver.class.getName()));
+        intent.setAction("com.example.ORDERED_EXPLICIT_ACTION");
+        sendOrderedBroadcast(intent, null);
+    }
+```
+
+跟这个代码
+
+```java
+    private void sendOrderedExplicitBroadcast() {
+        Intent intent = new Intent(this,MyOrderedBroadcastReceiver.class);
+        intent.setAction("com.example.ORDERED_EXPLICIT_ACTION");
+        sendOrderedBroadcast(intent, null);
+    }
+```
+
+作用是一样的
+
+
+
+### 阻断有序广播
+
+`abortBroadcast();` // 阻断广播
+
+
+
+ReceiverA.java
+
+```java
+package com.fu.tt;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+
+
+public class ReceiverA extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        if ("com.example.orderedbroadcast.ACTION".equals(intent.getAction())) {
+            Log.d("Receiver", "收到有序广播，并且已经阻断了广播的传播");
+            abortBroadcast(); // 阻断广播
+        }
+    }
+}
+```
+
+​			
+
+ReceiverB.java
+
+```java
+package com.fu.tt;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+
+public class ReceiverB extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        if ("com.example.orderedbroadcast.ACTION".equals(intent.getAction())) {
+            Log.d("Receiver", "收到有序广播B");
+        }
+    }
+}
+```
+
+​				
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+
+  。。。。。
+  
+
+    <Button
+        android:id="@+id/send_ordered_broadcast_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="发送有序广播"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.501"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.622" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+```
+
+​			
+
+MainActivity.java
+
+```java
+package com.fu.tt;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.util.Log;
+import android.widget.Button;
+import android.view.View;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import android.os.Bundle;
+import android.widget.Toast;
+
+import android.Manifest;
+
+
+
+public class MainActivity extends AppCompatActivity   {
+
+    private ReceiverA receiverA;
+    private ReceiverB receiverB;
+
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        // 动态注册广播接收器
+        registerReceivers();
+
+
+        // 发送有序广播
+        findViewById(R.id.send_ordered_broadcast_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.i("guangbo","发送按钮点击");
+                sendOrderedBroadcast();
+            }
+        });
+    }
+
+    private void registerReceivers() {
+        receiverA = new ReceiverA();
+        IntentFilter filterA = new IntentFilter("com.example.orderedbroadcast.ACTION");
+        filterA.setPriority(100);
+        registerReceiver(receiverA, filterA);
+
+        receiverB = new ReceiverB();
+        IntentFilter filterB = new IntentFilter("com.example.orderedbroadcast.ACTION");
+        filterB.setPriority(999);
+        registerReceiver(receiverB, filterB);
+    }
+
+    private void sendOrderedBroadcast() {
+        Intent intent = new Intent("com.example.orderedbroadcast.ACTION");
+        sendOrderedBroadcast(intent, null);
+        Log.i("guangbo","发送函数执行完成");
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(receiverA);
+        unregisterReceiver(receiverB);
+    }
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
+}
+```
+
+​				
+
+### 有序广播（修改广播单条信息_修改广播结果）
+
+MainActivity.java
+
+```java
+package com.fu.tt;
+import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.util.Log;
+import android.widget.Button;
+import android.view.View;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import android.os.Bundle;
+import android.widget.Toast;
+import android.os.HandlerThread;
+
+
+import android.Manifest;
+
+
+
+public class MainActivity extends AppCompatActivity   {
+
+    private BroadcastReceiver myOrderedBroadcastReceiver1;
+    private BroadcastReceiver myOrderedBroadcastReceiver2;
+
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        // 注册广播
+        registerOrderedReceivers();
+
+
+
+        // 发送有序广播
+        findViewById(R.id.send_ordered_broadcast_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.i("guangbo","发送按钮点击");
+                Toast.makeText(MainActivity.this, "发送广播", Toast.LENGTH_SHORT).show();
+                    sendOrderedBroadcastWithModifiedData();
+            }
+        });
+    }
+
+    // 注册广播
+    private void registerOrderedReceivers() {
+        IntentFilter filter = new IntentFilter("com.example.ORDERED_ACTION");
+        filter.setPriority(100);
+        myOrderedBroadcastReceiver1 = new MyOrderedBroadcastReceiver1();
+        registerReceiver(myOrderedBroadcastReceiver1, filter);
+
+        filter.setPriority(50);
+        myOrderedBroadcastReceiver2 = new MyOrderedBroadcastReceiver2();
+        registerReceiver(myOrderedBroadcastReceiver2, filter);
+    }
+
+
+
+
+// 注销广播
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(myOrderedBroadcastReceiver1);
+        unregisterReceiver(myOrderedBroadcastReceiver2);
+    }
+
+  // 发送广播，并且附带信息
+    private void sendOrderedBroadcastWithModifiedData() {
+        Intent intent = new Intent("com.example.ORDERED_ACTION");
+        intent.putExtra("message", "Hello, this is a message from the sender.");
+
+        // 发送有序广播
+        sendOrderedBroadcast(intent, null);
+    }
+
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
+}
+```
+
+​			
+
+MyOrderedBroadcastReceiver1.java
+
+```java
+package com.fu.tt;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+import android.widget.Toast;
+
+public class MyOrderedBroadcastReceiver1 extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        String originalMessage = intent.getStringExtra("message");
+        String newMessage = originalMessage + " (Modified by Receiver1)";
+
+        Log.d("Receiver1", "Original Message: " + originalMessage);
+        Log.d("Receiver1", "New Message: " + newMessage);
+
+        // 修改广播信息
+        setResultData(newMessage);
+    }
+}
+```
+
+​			
+
+MyOrderedBroadcastReceiver2
+
+```java
+package com.fu.tt;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+import android.widget.Toast;
+
+public class MyOrderedBroadcastReceiver2 extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        String modifiedMessage = getResultData();
+        Log.d("Receiver2", "Modified Message: " + modifiedMessage);
+    }
+}
+
+```
+
+
+
+### 有序广播（修改广播多条信息_修改广播额外信息）
+
+MainActivity.java
+
+```java
+package com.fu.tt;
+import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.util.Log;
+import android.widget.Button;
+import android.view.View;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import android.os.Bundle;
+import android.widget.Toast;
+import android.os.HandlerThread;
+
+
+import android.Manifest;
+
+
+
+public class MainActivity extends AppCompatActivity   {
+
+    private BroadcastReceiver myOrderedBroadcastReceiver1;
+    private BroadcastReceiver myOrderedBroadcastReceiver2;
+
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        // 注册广播
+        registerOrderedReceivers();
+
+        // 发送有序广播
+        findViewById(R.id.send_ordered_broadcast_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.i("guangbo","发送按钮点击");
+                Toast.makeText(MainActivity.this, "发送广播", Toast.LENGTH_SHORT).show();
+                    sendOrderedBroadcastWithModifiedData();
+            }
+        });
+    }
+
+    // 注册广播
+    private void registerOrderedReceivers() {
+        IntentFilter filter = new IntentFilter("com.example.ORDERED_ACTION");
+        filter.setPriority(100);
+        myOrderedBroadcastReceiver1 = new MyOrderedBroadcastReceiver1();
+        registerReceiver(myOrderedBroadcastReceiver1, filter);
+
+        filter.setPriority(50);
+        myOrderedBroadcastReceiver2 = new MyOrderedBroadcastReceiver2();
+        registerReceiver(myOrderedBroadcastReceiver2, filter);
+    }
+
+
+
+// 注销广播
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(myOrderedBroadcastReceiver1);
+        unregisterReceiver(myOrderedBroadcastReceiver2);
+    }
+
+  // 给我们的广播写入两条数据，两个键值对
+    private void sendOrderedBroadcastWithModifiedData() {
+        Intent intent = new Intent("com.example.ORDERED_ACTION");
+        intent.putExtra("message1", "Hello, this is message1 from the sender.");
+        intent.putExtra("message2", "Hello, this is message2 from the sender.");
+
+        // 发送有序广播
+        sendOrderedBroadcast(intent, null);
+    }
+
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
+
+}
+```
+
+​			
+
+MyOrderedBroadcastReceiver1.java
+
+```java
+package com.fu.tt;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.widget.Toast;
+
+public class MyOrderedBroadcastReceiver1 extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        String originalMessage1 = intent.getStringExtra("message1");
+        String newMessage1 = originalMessage1 + " (Modified by Receiver1)";
+        Log.d("Receiver1", "Original Message1: " + originalMessage1);
+        Log.d("Receiver1", "New Message1: " + newMessage1);
+
+        String originalMessage2 = intent.getStringExtra("message2");
+        String newMessage2 = originalMessage2 + " (Modified by Receiver1)";
+        Log.d("Receiver1", "Original Message2: " + originalMessage2);
+        Log.d("Receiver1", "New Message2: " + newMessage2);
+
+
+        // 获取当前的额外数据
+        Bundle extras = getResultExtras(true);
+
+        // 修改多个键值对的信息
+        extras.putString("message1", "newValue1");
+        extras.putString("message2", "newValue2");
+
+
+        // 将修改后的 Bundle 设置为结果额外数据
+        setResultExtras(extras);
+    }
+}
+```
+
+​			
+
+MyOrderedBroadcastReceiver2.java
+
+```java
+package com.fu.tt;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.Log;
+import android.widget.Toast;
+
+public class MyOrderedBroadcastReceiver2 extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        Bundle extras = getResultExtras(false);
+        String modifiedMessage1 = extras.getString("message1");
+        String modifiedMessage2 = extras.getString("message2");
+        Log.d("Receiver2", "Modified Message1: " + modifiedMessage1);
+        Log.d("Receiver2", "Modified Message2: " + modifiedMessage2);
+    }
+}
+```
+
+
+
+### setResultExtras 和 setResultData
+
+有序广播当中的数据传递
+
+`setResultExtras(Bundle)` 和 `setResultData(String)` 是在 BroadcastReceiver 的 `onReceive()` 方法中使用的两个方法，它们分别用于修改广播中的额外数据（键值对）和结果数据（字符串）。这两个方法通常在有序广播中使用，因为有序广播允许接收者之间传递修改后的数据。
+
+1. `setResultExtras(Bundle)`：
+
+这个方法用于设置或修改广播中的额外数据。额外数据包含在一个 Bundle 对象中，可以在广播中附带任意数量的键值对。你可以使用 `getResultExtras(boolean)` 获取当前的额外数据，然后对其进行修改，最后使用 `setResultExtras(Bundle)` 设置回广播。
+
+```java
+@Override
+public void onReceive(Context context, Intent intent) {
+    // 获取当前的额外数据
+    Bundle extras = getResultExtras(true);
+
+    // 修改键值对的信息
+    extras.putString("key1", "new value 1");
+    extras.putString("key2", "new value 2");
+
+    // 将修改后的 Bundle 设置为结果额外数据
+    setResultExtras(extras);
+}
+```
+
+​			
+
+2. `setResultData(String)`：
+
+这个方法用于设置或修改广播中的结果数据。结果数据是一个字符串，它可以在广播中传递单个值。你可以使用 `getResultData()` 获取当前的结果数据，然后使用 `setResultData(String)` 设置回广播。
+
+```java
+@Override
+public void onReceive(Context context, Intent intent) {
+    // 获取当前的结果数据
+    String currentData = getResultData();
+
+    // 修改结果数据
+    String newData = currentData + " modified by Receiver";
+
+    // 将修改后的数据设置为结果数据
+    setResultData(newData);
+}
+```
+
+​			
+
+要获取额外数据（键值对）和结果数据（字符串），你可以在 BroadcastReceiver 的 `onReceive()` 方法中使用 `getResultExtras(boolean)` 和 `getResultData()` 方法。
+
+​				
+
+1. 获取额外数据（键值对）：
+
+你可以使用 `getResultExtras(boolean)` 方法获取广播中的额外数据。这个方法返回一个 Bundle 对象，其中包含所有键值对。`boolean` 参数表示如果当前没有额外数据，是否创建一个新的空 Bundle 对象。
+
+```java
+@Override
+public void onReceive(Context context, Intent intent) {
+    // 获取额外数据
+    Bundle extras = getResultExtras(true);
+
+    // 从额外数据中获取特定的键值对
+    String value1 = extras.getString("key1");
+    String value2 = extras.getString("key2");
+
+    // 对获取到的数据进行操作
+    // ...
+}
+```
+
+​			
+
+2. 获取结果数据（字符串）：
+
+你可以使用 `getResultData()` 方法获取广播中的结果数据。这个方法返回一个字符串，表示结果数据。
+
+```java
+@Override
+public void onReceive(Context context, Intent intent) {
+    // 获取结果数据
+    String resultData = getResultData();
+
+    // 对获取到的结果数据进行操作
+    // ...
+}
+```
+
+​			
+
+### 普通广播的数据传递（Bundle&intent）
+
+​			
+
+**intent	**				
+
+MainActivity.java
+
+```java
+Intent intent = new Intent("com.example.myaction");
+intent.putExtra("key_string", "Hello World!");
+intent.putExtra("key_int", 42);
+intent.putExtra("key_bool", true);
+sendBroadcast(intent);
+```
+
+​			
+
+MyBroadcastReceiver.java
+
+```java
+public class MyBroadcastReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        String valueString = intent.getStringExtra("key_string");
+        int valueInt = intent.getIntExtra("key_int", 0);
+        boolean valueBool = intent.getBooleanExtra("key_bool", false);
+
+        // 在这里使用获取到的值进行相应的操作
+    }
+}
+```
+
+1. `getStringExtra(String key)` - 获取字符串值
+2. `getIntExtra(String key, int defaultValue)` - 获取整数值
+3. `getBooleanExtra(String key, boolean defaultValue)` - 获取布尔值
+4. `getLongExtra(String key, long defaultValue)` - 获取长整数值
+5. `getFloatExtra(String key, float defaultValue)` - 获取浮点数值
+6. `getDoubleExtra(String key, double defaultValue)` - 获取双精度浮点数值
+7. `getByteExtra(String key, byte defaultValue)` - 获取字节值
+8. `getShortExtra(String key, short defaultValue)` - 获取短整数值
+9. `getCharExtra(String key, char defaultValue)` - 获取字符值
+10. `getParcelableExtra(String key)` - 获取实现了 `Parcelable` 接口的对象
+11. `getSerializableExtra(String key)` - 获取实现了 `Serializable` 接口的对象
+12. `getBundleExtra(String key)` - 获取 `Bundle` 对象
+
+注意：对于基本数据类型（如整数、布尔值、浮点数等），`getXXXExtra` 方法需要一个默认值参数，以便在找不到指定键的情况下返回默认值。对于引用类型（如字符串、`Parcelable`、`Serializable` 等），当找不到指定键时，方法会返回 `null`。
+
+​			
+
+```java
+int intValue = intent.getIntExtra("key", 0); // 如果找不到 "key"，则返回 0
+boolean boolValue = intent.getBooleanExtra("key", false); // 如果找不到 "key"，则返回 false
+float floatValue = intent.getFloatExtra("key", 0.0f); // 如果找不到 "key"，则返回 0.0f
+```
+
+​				
+
+**Bundle**
+
+MainActivity.java
+
+```java
+// 创建一个 Intent 对象
+Intent intent = new Intent("com.example.MY_BROADCAST_ACTION");
+
+// 将数据添加到 Intent 对象
+intent.putExtra("key1", "value1");
+intent.putExtra("key2", "value2");
+
+// 发送广播
+sendBroadcast(intent);
+```
+
+​				
+
+MyBroadcastReceiver.java
+
+```java
+public class MyBroadcastReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        // 从 Intent 对象中获取包含所有额外数据的 Bundle 对象
+        Bundle extras = intent.getExtras();
+
+        // 从 Bundle 对象中提取特定数据
+        String value1 = extras.getString("key1");
+        String value2 = extras.getString("key2");
+
+        // 对获取到的数据进行操作
+        // ...
+    }
+}
+```
+
+​			
+
+多种数据类型的数据
+
+MainActivity.java
+
+```java
+private void sendCustomBroadcast() {
+    Intent intent = new Intent("com.example.CUSTOM_ACTION");
+
+    Bundle extras = new Bundle();
+    extras.putInt("key_int", 42);
+    extras.putBoolean("key_boolean", true);
+    extras.putString("key_string", "Hello, Bundle!");
+    // ... 添加其他类型的值
+
+    intent.putExtras(extras);
+
+    sendBroadcast(intent);
+}
+```
+
+​			
+
+MyBroadcastReceiver.java
+
+```java
+public class MyBroadcastReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        Bundle extras = intent.getExtras();
+        if (extras != null) {
+            int intValue = extras.getInt("key_int", 0);
+            boolean boolValue = extras.getBoolean("key_boolean", false);
+            String strValue = extras.getString("key_string");
+            // ... 获取其他类型的值
+
+            Log.d("MyBroadcastReceiver", "Received int: " + intValue);
+            Log.d("MyBroadcastReceiver", "Received boolean: " + boolValue);
+            Log.d("MyBroadcastReceiver", "Received string: " + strValue);
+            // ... 打印其他类型的值
+        }
+    }
+}
+```
+
+extras.getInt 这个的，默认值是可有可无的。如果有的话，就是指定默认值，没有的话，就是默认的默认值
+
+
+
+### 有序广播（带最终接受者）
+
+FinalReceiver.java
+
+```java
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+
+public class FinalReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        Log.d("FinalReceiver", "收到有序广播");
+    }
+}
+```
+
+​			
+
+MainActivity.java
+
+```java
+package com.fu.tt;
+import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.util.Log;
+import android.widget.Button;
+import android.view.View;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import android.os.Bundle;
+import android.widget.Toast;
+
+import android.Manifest;
+
+
+public class MainActivity extends AppCompatActivity   {
+
+    private ReceiverA receiverA;
+    private ReceiverB receiverB;
+    private BroadcastReceiver finalReceiver;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        // 创建一个最终接收者
+        finalReceiver = new FinalReceiver();
+
+        // 动态注册广播接收器
+        registerReceivers();
+
+
+        // 发送有序广播
+        findViewById(R.id.send_ordered_broadcast_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.i("guangbo","发送按钮点击");
+                sendOrderedBroadcastWithFinalReceiver();
+            }
+        });
+    }
+
+    private void registerReceivers() {
+        receiverA = new ReceiverA();
+        IntentFilter filterA = new IntentFilter("com.example.orderedbroadcast.ACTION");
+        filterA.setPriority(100);
+        registerReceiver(receiverA, filterA);
+
+        receiverB = new ReceiverB();
+        IntentFilter filterB = new IntentFilter("com.example.orderedbroadcast.ACTION");
+        filterB.setPriority(99);
+        registerReceiver(receiverB, filterB);
+    }
+
+    private void sendOrderedBroadcastWithFinalReceiver() {
+        Intent intent = new Intent("com.example.orderedbroadcast.ACTION");
+
+        // 发送有序广播，添加最终接收者
+        sendOrderedBroadcast(intent, null, finalReceiver, null, Activity.RESULT_OK, null, null);
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(receiverA);
+        unregisterReceiver(receiverB);
+    }
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
+}
+```
+
+注意这个注销对于 finalReceiver 是不需要的
+
+​			
+
+详细分析 `sendOrderedBroadcast(intent, null, finalReceiver, null, Activity.RESULT_OK, null, null);` 这一行代码
+
+1. `intent` - 要发送的广播的 `Intent`。它包含了广播的 action、数据、类别等信息。
+
+2. `null` - 一个字符串，用于指定发送广播所需的权限。在这个例子中，我们使用 `null` 表示发送广播不需要任何特定权限。
+
+3. `finalReceiver` - 最终的广播接收者，它是一个 `BroadcastReceiver` 实例。当有序广播完成时，这个接收者的 `onReceive()` 方法将被调用。在这个例子中，我们创建了一个匿名的 `BroadcastReceiver` 实例作为最终接收者。
+
+4. `null` - 一个 `Handler`，用于指定哪个线程应该处理最终接收者的 `onReceive()` 方法。在这个例子中，我们使用 `null` 表示使用默认的线程。当你发送一个有序广播时，广播接收者会按顺序处理广播。这个 `Handler` 参数可以指定最终接收者的 `onReceive()` 方法应该在哪个线程上运行。如果你设置为 `null`，那么默认情况下，接收者的 `onReceive()` 方法将在主线程（UI线程）上运行。例如，如果你想让最终接收者在子线程上运行，你可以创建一个 `HandlerThread` 和一个与之关联的 `Handler`，然后将这个 `Handler` 传递给 `sendOrderedBroadcast()` 方法，在大多数情况下，您可以将此参数设置为`null`，这意味着最终接收者将在当前线程（通常是主线程）中执行`onReceive()`方法。这对于大多数简单的场景已经足够了，因为广播接收者的处理通常不会耗费太多时间。
+
+   然而，在某些情况下，您可能希望最终接收者在一个不同的线程中处理广播，以避免阻塞主线程。例如，如果您的应用程序需要在收到广播时执行一些耗时的操作（如文件读写、网络请求等），那么在主线程中执行这些操作可能会导致应用程序界面卡顿或不响应。
+
+5. `Activity.RESULT_OK` - 一个整数，表示广播的初始结果代码。接收者可以根据需要修改这个结果代码。
+
+6. `null` - 一个字符串，表示广播的初始结果数据。接收者可以根据需要修改这个结果数据。
+
+7. `null` - 一个 `Bundle`，用于传递广播的初始额外数据。接收者可以根据需要修改这个额外数据。（4~7都是用来广播之间进行通信的）
+
+注意这些参数只存在有序广播当中
+
+
+
+### 有序广播_指定finalReceiver的运行线程（第四个参数）
+
+我们知道第四个参数的作用是，用于指定哪个线程应该处理最终接收者的 `onReceive()` 方法。
+
+
+
+FinalReceiver.java
+
+```java
+package com.fu.tt;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+
+public class FinalReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        Log.d("FinalReceiver", "开始处理耗时操作");
+
+        // 模拟耗时操作，比如网络请求或者文件操作
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        Log.d("FinalReceiver", "耗时操作完成");
+    }
+}
+```
+
+​				
+
+MainActivity.java
+
+```java
+package com.fu.tt;
+import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.util.Log;
+import android.widget.Button;
+import android.view.View;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import android.os.Bundle;
+import android.widget.Toast;
+import android.os.HandlerThread;
+
+
+import android.Manifest;
+
+
+public class MainActivity extends AppCompatActivity   {
+
+    private BroadcastReceiver finalReceiver;
+    private Handler handler;
+    private HandlerThread handlerThread;
+
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        HandlerThread handlerThread = new HandlerThread("FinalReceiverThread");
+        handlerThread.start();
+        handler = new Handler(handlerThread.getLooper());
+
+
+        // 动态注册广播接收器
+        registerReceivers();
+
+
+        // 发送有序广播
+        findViewById(R.id.send_ordered_broadcast_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.i("guangbo","发送按钮点击");
+                sendOrderedBroadcastWithFinalReceiver();
+            }
+        });
+    }
+
+    private void registerReceivers() {
+        receiverA = new ReceiverA();
+        IntentFilter filterA = new IntentFilter("com.example.orderedbroadcast.ACTION");
+        filterA.setPriority(100);
+        registerReceiver(receiverA, filterA);
+
+        receiverB = new ReceiverB();
+        IntentFilter filterB = new IntentFilter("com.example.orderedbroadcast.ACTION");
+        filterB.setPriority(99);
+        registerReceiver(receiverB, filterB);
+    }
+
+    private void sendOrderedBroadcastWithFinalReceiver() {
+        Intent intent = new Intent("com.example.orderedbroadcast.ACTION");
+        finalReceiver = new FinalReceiver();
+
+        // 发送有序广播，添加最终接收者
+        sendOrderedBroadcast(intent, null, finalReceiver, handler, Activity.RESULT_OK, null, null);
+    }
+
+  
+// 注销广播，关闭线程，并且是安全关闭（也就是说，他会在关闭之前，将没有处理完的任务处理完才关闭）
+  // 如果使用的 handlerThread.quit(); 就是直接关闭线程
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        handlerThread.quitSafely();
+        unregisterReceiver(finalReceiver);
+    }
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
+}
+```
+
+
+
+分析代码
+
+```java
+        HandlerThread handlerThread = new HandlerThread("FinalReceiverThread");
+        handlerThread.start();
+        handler = new Handler(handlerThread.getLooper());
+```
+
+1. `HandlerThread handlerThread = new HandlerThread("FinalReceiverThread");`
+   1. 这行代码创建了一个名为 "FinalReceiverThread" 的新 `HandlerThread` 实例。`HandlerThread` 是一个特殊的线程，它可以处理和执行任务。
+2. `handlerThread.start();`
+   1. 这行代码启动了我们创建的 `HandlerThread`。当线程启动后，它会准备好处理任务
+3. `handler = new Handler(handlerThread.getLooper());`
+   1. 这行代码创建了一个 `Handler` 实例，它是用来将任务发送到 `HandlerThread` 上执行的工具。我们需要让 `Handler` 知道它应该将任务发送到哪个线程上，所以我们将刚刚创建的 `handlerThread` 的 `Looper` 传递给新的 `Handler`。`Looper` 是一个处理消息队列（任务队列）的组件，它将任务分发到关联的线程上。
+
+
+
+```java
+// 发送有序广播，添加最终接收者
+        sendOrderedBroadcast(intent, null, finalReceiver, handler, Activity.RESULT_OK, null, null);
+```
+
+通过这样的方式，将 finalReceiver 的任务队列添加进 handlerThread 线程当中			
+
+（一般来说，`Handler` 的 `post()` 和 `postDelayed()` 方法用于将任务发送到与之关联的 `HandlerThread` 上。这个我们后面介绍）				
+
+​			
+
+
+
+
+
+
+
+
 
 ### 带权限的广播
 
@@ -3184,9 +4450,184 @@ Rationale : 原因
 
 这个代码的作用是显示我我们的联系人，但是我们的权限授予是异步的，所以，我们使用这个权限的时候，不能够确定就已经赋予上了。所以需要检查一下
 
+​			
+
+### 有序广播（结果码）
+
+Activity.RESULT_OK 这个就是一个常量他就是 -1，然后传进去
+
+在广播接收器当中的结束的位置，通过 setResultCode(200) ；类似于这样的操作。
+
+我们在任何一个位置，比方说原来的Activity，或者是下一个 OnReceive 的方法当中就能够通过 `getResultCode()` 的函数获取到，当前的 结果码，如果，我们获取到的结果码是 200 ，就说明，我们的这个已经执行完毕了
 
 
 
+MainActivity.java
+
+```java
+package com.fu.tt;
+import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.util.Log;
+import android.widget.Button;
+import android.view.View;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import android.os.Bundle;
+import android.widget.Toast;
+import android.os.HandlerThread;
+
+
+import android.Manifest;
+
+
+public class MainActivity extends AppCompatActivity   {
+
+
+    private BroadcastReceiver finalReceiver;
+    private MyOrderedBroadcastReceiver1 myOrderedBroadcastReceiver1;
+    private MyOrderedBroadcastReceiver2 myOrderedBroadcastReceiver2;
+
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        // 注册广播
+        registerOrderedReceivers();
+
+
+
+        // 发送有序广播
+        findViewById(R.id.send_ordered_broadcast_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.i("guangbo","发送按钮点击");
+                Toast.makeText(MainActivity.this, "发送广播", Toast.LENGTH_SHORT).show();
+                sendOrderedBroadcast();
+            }
+        });
+    }
+
+    // 注册广播
+    private void registerOrderedReceivers() {
+        IntentFilter filter = new IntentFilter("com.example.ORDERED_ACTION");
+        filter.setPriority(100);
+        myOrderedBroadcastReceiver1 = new MyOrderedBroadcastReceiver1();
+        registerReceiver(myOrderedBroadcastReceiver1, filter);
+
+        filter.setPriority(50);
+        myOrderedBroadcastReceiver2 = new MyOrderedBroadcastReceiver2();
+        registerReceiver(myOrderedBroadcastReceiver2, filter);
+    }
+
+
+
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(myOrderedBroadcastReceiver1);
+        unregisterReceiver(myOrderedBroadcastReceiver2);
+    }
+
+
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
+
+    private void sendOrderedBroadcast() {
+        Intent intent = new Intent("com.example.ORDERED_ACTION");
+        intent.setPackage(getPackageName());
+        sendOrderedBroadcast(intent, null, new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                int resultCode = getResultCode();
+                Log.d("OrderedBroadcast", "Final Receiver: Result code = " + resultCode);
+            }
+        }, null, Activity.RESULT_OK, null, null);
+    }
+}
+```
+
+​			
+
+OrderedBroadcastReceiver1.java
+
+```java
+package com.fu.tt;
+
+import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+
+public class OrderedBroadcastReceiver1 extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        int resultCode = getResultCode(); // 他没有什么作用，他的作用就是获取上一次的赋予的结果码
+        if (resultCode == Activity.RESULT_OK) {
+            Log.d("OrderedBroadcast", "Receiver 1: Result code = " + resultCode);
+            setResultCode(100); // 设置结果码
+        }
+    }
+}
+```
+
+​			
+
+OrderedBroadcastReceiver2.java
+
+```java
+package com.fu.tt;
+
+import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+
+public class OrderedBroadcastReceiver2 extends BroadcastReceiver {
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        int resultCode = getResultCode();
+        if (resultCode == 100) {
+            Log.d("OrderedBroadcast", "Receiver 2: Result code = " + resultCode);
+            setResultCode(200);
+        }
+    }
+}
+```
+
+在普通广播（非有序广播）中，广播接收者是异步执行的，且接收者之间没有先后顺序，因此也没有结果代码。普通广播通常用于通知多个接收者某个事件发生，而不关心接收者处理的结果或顺序。
+
+
+
+### 普通广播（将任务分发到其他线程执行）
+
+普通广播中指定运行的线程：默认情况下，广播接收者的 `onReceive()` 方法在主线程中执行。如果您需要在其他线程中执行广播接收者的代码，可以在 `onReceive()` 方法中使用 `Handler`、`HandlerThread` 或其他并发工具将代码分发到其他线程。然而，这种方式并不会影响广播接收者的执行顺序，仅仅是将接收者的处理逻辑移到其他线程执行。
+
+&&
 
 
 
