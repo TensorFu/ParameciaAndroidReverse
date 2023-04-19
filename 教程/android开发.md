@@ -29,13 +29,27 @@
 - [隐式\_动态广播](#隐式_动态广播)
 - [Activity 间通信广播：](#activity-间通信广播)
 - [SecondActivity 通过广播修改 MainActivity 的展示效果](#secondactivity-通过广播修改-mainactivity-的展示效果)
-- [一个最简单的有序广播](#一个最简单的有序广播)
+- [一个最简单的有序广播（动态注册\_隐式）](#一个最简单的有序广播动态注册_隐式)
+- [一个最简单的有序广播（静态注册\_显式）](#一个最简单的有序广播静态注册_显式)
+- [阻断有序广播](#阻断有序广播)
+- [有序广播（修改广播单条信息\_修改广播结果）](#有序广播修改广播单条信息_修改广播结果)
+- [有序广播（修改广播多条信息\_修改广播额外信息）](#有序广播修改广播多条信息_修改广播额外信息)
+- [setResultExtras 和 setResultData](#setresultextras-和-setresultdata)
+- [普通广播的数据传递（Bundle\&intent）](#普通广播的数据传递bundleintent)
+- [有序广播（带最终接受者）](#有序广播带最终接受者)
+- [有序广播\_指定finalReceiver的运行线程（第四个参数）](#有序广播_指定finalreceiver的运行线程第四个参数)
 - [带权限的广播](#带权限的广播)
   - [权限的申请](#权限的申请)
   - [一个关于权限的code案例](#一个关于权限的code案例)
+- [有序广播（结果码）](#有序广播结果码)
+- [有序广播（最后三个参数）](#有序广播最后三个参数)
+- [普通广播（将任务分发到其他线程执行）](#普通广播将任务分发到其他线程执行)
 - [Activity之间的通信startActivityForResult\_onActivityResult](#activity之间的通信startactivityforresult_onactivityresult)
 - [广播的生命周期](#广播的生命周期)
 - [Activity 的生命周期](#activity-的生命周期)
+- [多线程开发](#多线程开发)
+- [多线程开发（Thread 类）](#多线程开发thread-类)
+- [Handler](#handler)
 
 
 
@@ -4621,25 +4635,246 @@ public class OrderedBroadcastReceiver2 extends BroadcastReceiver {
 
 在普通广播（非有序广播）中，广播接收者是异步执行的，且接收者之间没有先后顺序，因此也没有结果代码。普通广播通常用于通知多个接收者某个事件发生，而不关心接收者处理的结果或顺序。
 
+​				
 
+### 有序广播（最后三个参数）
+
+最后三个参数分别是
+
+1. 结果码（Result Code）： 结果码是一个整数值，用于表示广播处理的状态或结果。你可以通过 `setResultCode(int)` 方法在 BroadcastReceiver 中设置结果码，然后在后续的接收者或最终接收者中使用 `getResultCode()` 方法获取这个值。结果码主要用于表示广播处理过程中的某种状态，例如表示操作成功、失败或其他状态。
+2. 结果数据（Result Data）： 结果数据是一个字符串值，用于在广播接收者之间传递简单的文本信息。你可以通过 `setResultData(String)` 方法在 BroadcastReceiver 中设置结果数据，然后在后续的接收者或最终接收者中使用 `getResultData()` 方法获取这个值。结果数据适用于传递较简单的文本信息，例如修改后的文本消息等。
+3. 额外数据（Extras）： 额外数据是一个 Bundle 对象，其中可以包含多种数据类型（如字符串、整数、布尔值等）。你可以在发送广播时将数据存储在 Intent 的 Extras 中，然后在 BroadcastReceiver 中使用 `intent.getExtras()` 方法获取这些数据。如果需要在广播接收者之间修改或添加额外数据，可以通过 `setResultExtras(Bundle)` 方法设置新的 Bundle 对象，然后在后续的接收者或最终接收者中使用 `getResultExtras(boolean)` 方法获取这个 Bundle。额外数据适用于传递复杂的数据结构，例如包含多个键值对的 Bundle 对象。
+
+这三个参数的存在意义主要是为了在广播接收者之间传递不同类型和复杂度的数据。结果码用于传递状态信息，结果数据用于传递简单的文本信息，而额外数据用于传递更复杂的数据结构。它们在一定程度上具有互补性，可以根据你的需求选择使用哪个参数来传递数据。需要注意的是，这些参数在有序广播中才能发挥作用，因为有序广播允许接收者之间传递修改后的数据。在普通广播中，你需要使用 Intent 对象中的 getExtras() 和其他类似方法获取相应的数据。				
+
+​					
 
 ### 普通广播（将任务分发到其他线程执行）
 
 普通广播中指定运行的线程：默认情况下，广播接收者的 `onReceive()` 方法在主线程中执行。如果您需要在其他线程中执行广播接收者的代码，可以在 `onReceive()` 方法中使用 `Handler`、`HandlerThread` 或其他并发工具将代码分发到其他线程。然而，这种方式并不会影响广播接收者的执行顺序，仅仅是将接收者的处理逻辑移到其他线程执行。
 
-&&
+​				
+
+BackgroundTaskManager.java
+
+```java
+package com.fu.tt;
+
+import android.os.Handler;
+import android.os.HandlerThread;
+
+public class BackgroundTaskManager {
+    private static BackgroundTaskManager instance;
+    private HandlerThread handlerThread;
+    private Handler handler;
+
+    private BackgroundTaskManager() {
+        handlerThread = new HandlerThread("BackgroundTaskManagerThread");
+        handlerThread.start();
+        handler = new Handler(handlerThread.getLooper());
+    }
+
+    public static BackgroundTaskManager getInstance() {
+        if (instance == null) {
+            instance = new BackgroundTaskManager();
+        }
+        return instance;
+    }
+
+    public void postTask(Runnable task) {
+        handler.post(task);
+    }
+}
+```
+
+​					
+
+MyBroadcastReceiver.java
+
+```java
+package com.fu.tt;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.util.Log;
+import android.widget.Toast;
+
+public class MyBroadcastReceiver extends BroadcastReceiver {
+    @Override
+    public void onReceive(final Context context, final Intent intent) {
+        Log.i("MyBroadcastReceiver", "收到广播");
+
+        BackgroundTaskManager.getInstance().postTask(new Runnable() {
+            @Override
+            public void run() {
+                // 在这里执行后台任务
+                Log.d("MyBroadcastReceiver", "后台任务执行中...");
+
+                // 模拟耗时任务
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                Log.d("MyBroadcastReceiver", "后台任务完成");
+            }
+        });
+    }
+}
+```
+
+​				
+
+```java
+package com.fu.tt;
+import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.util.Log;
+import android.widget.Button;
+import android.view.View;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import android.os.Bundle;
+import android.widget.Toast;
+import android.os.HandlerThread;
+
+
+import android.Manifest;
 
 
 
+public class MainActivity extends AppCompatActivity   {
+
+    private MyBroadcastReceiver myBroadcastReceiver;
 
 
 
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        myBroadcastReceiver = new MyBroadcastReceiver();
+        IntentFilter intentFilter = new IntentFilter("com.example.BACKGROUND_TASK_ACTION");
+        registerReceiver(myBroadcastReceiver, intentFilter);
 
 
+        // 发送有序广播
+        findViewById(R.id.send_ordered_broadcast_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.i("guangbo","发送按钮点击");
+                Toast.makeText(MainActivity.this, "发送广播", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent("com.example.BACKGROUND_TASK_ACTION");
+                sendBroadcast(intent);
+            }
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(myBroadcastReceiver);
+        BackgroundTaskManager.getInstance().quitSafely();
+    }
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+    }
+}
+```
+
+​				
+
+分析代码			
+
+```java
+    public static BackgroundTaskManager getInstance() {
+        if (instance == null) {
+            instance = new BackgroundTaskManager();
+        }
+        return instance;
+    }
+```
+
+这个 `getInstance()` 方法是一个典型的单例模式的实现。单例模式（Singleton Pattern）是一种设计模式，它确保一个类只有一个实例，并提供一个全局访问点。在这个例子中，`BackgroundTaskManager` 类是一个单例类。			
+
+可以把MyBroadcastReceiver.java这个类拆开写，方便理解
+
+```java
+package com.fu.tt;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.util.Log;
+import android.widget.Toast;
+
+public class MyBroadcastReceiver extends BroadcastReceiver {
+    // 接收到广播
+    @Override
+    public void onReceive(final Context context, final Intent intent) {
+        handleBroadcast(context, intent);
+    }
 
 
+    private void handleBroadcast(Context context, Intent intent) {
+        Log.i("MyBroadcastReceiver", "收到广播");
 
+        // 生成多线程的任务
+        Runnable task = createBackgroundTask();
+        // 将多线程的任务添加给线程
+        BackgroundTaskManager backgroundTaskManager = BackgroundTaskManager.getInstance();
+        backgroundTaskManager.postTask(task);
+    }
 
+    // 返回一个 Runnable 的任务，任务加在重写的 run 函数当中
+    private Runnable createBackgroundTask() {
+        return new Runnable() {
+            @Override
+            public void run() {
+                performBackgroundTask();
+            }
+        };
+    }
+
+    private void performBackgroundTask() {
+        Log.d("MyBroadcastReceiver", "后台任务执行中...");
+        // 当前运行在哪一个线程当中
+        Log.d("MyBroadcastReceiver","正在 ：" + Thread.currentThread().getName() + " 线程上执行 ... ")
+
+        // 模拟耗时任务
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        Log.d("MyBroadcastReceiver", "后台任务完成");
+    }
+}
+```
+
+​				
 
 ### Activity之间的通信startActivityForResult_onActivityResult
 
@@ -4706,3 +4941,416 @@ public class OrderedBroadcastReceiver2 extends BroadcastReceiver {
 
 ---
 
+### 多线程开发
+
+在 Android 中，有以下几种常用的多线程编程方法：
+
+1. **Thread 类**：直接使用 Java 中的 `Thread` 类创建一个新的线程。你可以通过继承 `Thread` 类并重写 `run()` 方法，或者通过传递一个 `Runnable` 对象来实现。这是一种基本的多线程编程方法，但需要注意线程间的同步和通信问题。
+2. **AsyncTask 类**：`AsyncTask` 是一个 Android 提供的轻量级异步任务类，适用于执行较短时间的后台任务。`AsyncTask` 可以让你在后台线程上执行任务，然后在主线程上更新 UI。需要注意的是，`AsyncTask` 自 Android 11（API 级别 30）开始已被弃用，建议使用其他替代方案。
+3. **HandlerThread 类**：`HandlerThread` 是一个可以在新线程中运行 `Handler` 的预定义类。它创建了一个新的线程，其中包含一个与其关联的 `Looper`。这个 `Looper` 可以用于创建 `Handler` 对象，从而实现在子线程中处理消息和运行任务。`HandlerThread` 非常适合于需要执行周期性任务或需要处理消息队列的场景。
+4. **IntentService 类**：`IntentService` 是一个用于处理异步请求的服务类。通过发送 `Intent` 来启动服务，`IntentService` 会在一个工作线程上执行该请求，然后在完成后自动停止服务。`IntentService` 适用于执行一次性的后台任务，例如文件下载。
+5. **ThreadPoolExecutor 类**：`ThreadPoolExecutor` 是 Java 并发库中的一个类，用于创建和管理线程池。它可以用于执行大量的短时间任务，这些任务可以在一个固定数量的线程上并发执行。线程池可以减少线程创建和销毁的开销，提高系统性能。
+6. **RxJava**：RxJava 是一个响应式编程库，它可以让你使用观察者模式来处理异步任务。RxJava 提供了一系列操作符，让你可以方便地管理多线程、数据流和回调。
+7. **Kotlin 协程**：如果你使用 Kotlin 进行 Android 开发，可以使用 Kotlin 协程来处理异步任务。协程是一种轻量级的线程管理方式，它可以让你编写简洁的异步代码，同时提供了结构化的并发。
+
+​				
+
+### 多线程开发（Thread 类）
+
+Thread 类是 Java 提供的基本多线程编程工具。使用 Thread 类创建线程有两种方法：
+
+1. 继承 Thread 类并重写 `run()` 方法；
+2. 实现 Runnable 接口并将 Runnable 对象传递给 Thread 构造函数。
+
+​			
+
+**方法一：继承 Thread 类**
+
+1. 创建一个新类，继承自 Thread 类，并重写 `run()` 方法。
+
+```java
+public class MyThread extends Thread {
+    @Override
+    public void run() {
+        // 在这里执行线程任务
+        for (int i = 0; i < 5; i++) {
+            System.out.println("MyThread: " + i);
+            try {
+                Thread.sleep(1000); // 休眠 1 秒
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+```
+
+​			
+
+2. 在需要创建线程的地方创建 `MyThread` 实例，并调用 `start()` 方法启动线程。
+
+```java
+MyThread myThread = new MyThread();
+myThread.start();
+```
+
+​				
+
+完整的代码
+
+```java
+package com.fu.tt;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.util.Log;
+
+
+public class MainActivity extends AppCompatActivity   {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        MyThread myThread = new MyThread();
+        myThread.start();
+    }
+
+    // 自定义线程类，继承自 Thread 类
+    private static class MyThread extends Thread {
+        @Override
+        public void run() {
+            super.run();
+
+            // 在这里执行线程任务
+            for (int i = 0; i < 5; i++) {
+                Log.d("MyThread", "线程运行中：" + i);
+
+                try {
+                    // 模拟耗时任务，线程休眠1秒
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+    }
+}
+```
+
+在这个例子中，线程会在 `run()` 方法中的任务执行完毕后自动退出。你可以看到 `run()` 方法里有一个循环，循环执行5次打印日志和休眠操作。当循环执行完毕后，`run()` 方法结束，线程自然就退出了。			
+
+​			
+
+​			
+
+**方法二：实现 Runnable 接口**（更加推荐）
+
+1. 创建一个新类，实现 Runnable 接口，并重写 `run()` 方法。			
+
+```java
+public class MyRunnable implements Runnable {
+    @Override
+    public void run() {
+        // 在这里执行线程任务
+        for (int i = 0; i < 5; i++) {
+            System.out.println("MyRunnable: " + i);
+            try {
+                Thread.sleep(1000); // 休眠 1 秒
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+```
+
+​				
+
+2. 在需要创建线程的地方创建 Thread 实例，将 `MyRunnable` 对象传递给 Thread 构造函数，并调用 `start()` 方法启动线程。
+
+```java
+MyRunnable myRunnable = new MyRunnable();
+Thread thread = new Thread(myRunnable);
+thread.start();
+```
+
+​			
+
+完整的代码（比较不正常的写法）
+
+```java
+package com.fu.tt;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.util.Log;
+
+
+public class MainActivity extends AppCompatActivity implements Runnable  {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+
+        Thread myThread = new Thread(this);
+        myThread.start();
+    }
+
+    // 自定义线程类，继承自 Thread 类
+    private static class MyThread extends Thread {
+        @Override
+        public void run() {
+            super.run();
+
+            // 在这里执行线程任务
+            for (int i = 0; i < 5; i++) {
+                Log.d("MyThread", "线程运行中：" + i);
+
+                try {
+                    // 模拟耗时任务，线程休眠1秒
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+    }
+
+    @Override
+    public void run() {
+        for (int i = 0; i < 100; i++) {
+            Log.d("MyRunnable", "MyRunnable is running: " + i);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+```
+
+​			
+
+完整的代码（比较正常的写法）
+
+MainActivity.java
+
+```java
+package com.fu.tt;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.util.Log;
+
+
+public class MainActivity extends AppCompatActivity   {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        MyRunnable myRunnable = new MyRunnable();
+        Thread myThread = new Thread(myRunnable);
+        myThread.start();
+    }
+
+    // 自定义线程类，继承自 Thread 类
+    private static class MyThread extends Thread {
+        @Override
+        public void run() {
+            super.run();
+
+            // 在这里执行线程任务
+            for (int i = 0; i < 5; i++) {
+                Log.d("MyThread", "线程运行中：" + i);
+
+                try {
+                    // 模拟耗时任务，线程休眠1秒
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+    }
+}
+```
+
+​					
+
+MyRunnable.java
+
+```java
+package com.fu.tt;
+
+import android.util.Log;
+
+public class MyRunnable implements Runnable {
+    @Override
+    public void run() {
+        for (int i = 0; i < 100; i++) {
+            Log.d("MyRunnable", "MyRunnable is running: " + i);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+}
+
+```
+
+​			
+
+**这两种方式有什么区别，为什么要大费周章的使用第二种方式?**
+
+**1. 继承关系**
+
+方法一是通过继承 Thread 类来实现多线程，方法二是通过实现 Runnable 接口来实现多线程。Java 语言不支持多重继承，因此，如果一个类已经继承了其他类，就无法再继承 Thread 类。在这种情况下，实现 Runnable 接口就成了实现多线程的唯一选择。
+
+**2. 资源共享**
+
+当使用继承 Thread 类的方法创建线程时，每个线程都拥有自己的实例变量。这意味着，每个线程之间是相互独立的，它们不共享实例变量。而使用 Runnable 接口的方法，由于多个线程共享同一个 Runnable 实例，因此，它们可以共享实例变量，更容易实现资源共享。
+
+**3. 代码复用**
+
+实现 Runnable 接口的方式更具代码复用性。当一个类实现了 Runnable 接口，它可以作为一个线程任务，也可以作为一个普通的类被其他类调用。而继承 Thread 类的方式则限制了代码复用性，因为它是一个线程类，只能用于线程任务。
+
+**4. 灵活性**
+
+实现 Runnable 接口允许您更灵活地组织代码。例如，可以创建一个工作类，实现 Runnable 接口，并在该类中实现多个任务。然后，可以通过创建多个线程，为每个线程分配一个任务，以实现并发执行。这样的代码组织更加清晰和灵活。
+
+总结起来，使用实现 Runnable 接口的方式更具灵活性、代码复用性和资源共享性。在实际开发中，实现 Runnable 接口的方式比继承 Thread 类更受推荐。当然，根据具体需求和场景，您可以选择适合您的方法。
+
+接下来，我们通过代码一一来看他的优势
+
+​				
+
+### 多线程开发（Thread 类_Runnabled的继承优势）
+
+以下是一个使用 `Runnable` 的例子，该例子展示了当一个类已经继承了另一个类时，为什么需要实现 `Runnable` 接口以实现多线程			
+
+​				
+
+首先，创建一个名为 `BaseClass.java` 的新文件，并定义 `BaseClass` 类：
+
+```java
+public class BaseClass {
+    public void baseMethod() {
+        Log.d("BaseClass", "This is a method in the base class.");
+    }
+}
+```
+
+​			
+
+然后创建一个名为 `MyExtendedClass.java` 的新文件，继承 `BaseClass` 类并实现 `Runnable` 接口：
+
+```java
+public class MyExtendedClass extends BaseClass implements Runnable {
+    @Override
+    public void run() {
+        Log.d("MyExtendedClass", "MyExtendedClass is running.");
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+​				
+
+接下来，在你的主要活动或其他类中，你可以创建一个 `MyExtendedClass` 实例，启动一个新线程并调用 `baseMethod()`：
+
+```java
+public class MainActivity extends AppCompatActivity {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        MyExtendedClass myExtendedClass = new MyExtendedClass();
+        Thread myThread = new Thread(myExtendedClass);
+        myThread.start();
+        myExtendedClass.baseMethod();
+    }
+}
+```
+
+在这个例子中，`MyExtendedClass` 类继承了 `BaseClass` 并实现了 `Runnable` 接口。由于 Java 不支持多重继承，我们不能同时继承 `BaseClass` 和 `Thread`。但是，我们可以实现 `Runnable` 接口，从而让 `MyExtendedClass` 具有多线程功能，同时保留对 `BaseClass` 的继承。这使得 `MyExtendedClass` 可以访问 `BaseClass` 中的方法，如 `baseMethod()`。
+
+​				
+
+### 多线程开发（Thread 类_Runnabled的资源共享优势）
+
+
+
+
+
+
+
+
+
+
+
+-------
+
+### Handler
+
+Handler 的作用是将任务投递到指定的线程中执行。它并不负责创建或管理线程，而是在已有的线程（如主线程或子线程）中调度任务。同时，Handler 可以携带一些信息，以便在任务执行过程中使用
+
+&&
