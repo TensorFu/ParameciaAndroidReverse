@@ -49,6 +49,15 @@
 - [Activity 的生命周期](#activity-的生命周期)
 - [多线程开发](#多线程开发)
 - [多线程开发（Thread 类）](#多线程开发thread-类)
+- [多线程开发（Thread 类\_Runnabled的继承优势）](#多线程开发thread-类_runnabled的继承优势)
+- [多线程开发（Thread 类\_Runnabled的资源共享优势）](#多线程开发thread-类_runnabled的资源共享优势)
+  - [runOnUiThread()](#runonuithread)
+  - [使用 Lambda 表达式简化 Runnable](#使用-lambda-表达式简化-runnable)
+  - [使用线程池执行 Runnable 任务\_FixedThreadPool](#使用线程池执行-runnable-任务_fixedthreadpool)
+  - [使用线程池执行 Runnable 任务\_CachedThreadPool](#使用线程池执行-runnable-任务_cachedthreadpool)
+  - [使用线程池执行 Runnable 任务\_ScheduledThreadPool](#使用线程池执行-runnable-任务_scheduledthreadpool)
+  - [使用线程池执行 Runnable 任务\_SingleThreadExecutor](#使用线程池执行-runnable-任务_singlethreadexecutor)
+- [多线程 AsyncTask](#多线程-asynctask)
 - [Handler](#handler)
 
 
@@ -5337,9 +5346,856 @@ public class MainActivity extends AppCompatActivity {
 
 ### 多线程开发（Thread 类_Runnabled的资源共享优势）
 
+MainActivity.java
+
+```java
+package com.fu.tt;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.util.Log;
+import android.widget.TextView;
+
+
+public class MainActivity extends AppCompatActivity {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+      // 他们对于同一个 sharedCounter 的counter 数值进行增加，一个增加100，如果两者互不通信，那么最后显示结果肯定是 100 ，如果两个都对同一个 sharedCounter 操作，也就是尽心了通信，那么最后就是200
+        Counter sharedCounter = new Counter(0);
+
+        Thread thread1 = new Thread(new IncrementTask(sharedCounter));
+        Thread thread2 = new Thread(new IncrementTask(sharedCounter));
+
+        thread1.start();
+        thread2.start();
+
+      // 他的作用是阻塞当前的主线程，也就是，UI线程，目的是，等待我们的加数线程都运行结束以后，才更新UI
+      // 如果阻塞，可能两边线程各自加了50，总数就是100。还以为没有进行通信呢
+        try {
+            thread1.join();
+            thread2.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+// 这个作用是更新UI，加上这个的目的是确保我们的更新，UI的工作是在主线程上面运行的，在我们的例子当中，不是那么的必要
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                TextView textView = findViewById(R.id.textView);
+                textView.setText("Counter value: " + sharedCounter.getValue());
+            }
+        });
+    }
 
 
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+    }
+}
+```
+
+​			
+
+Counter.java
+
+```java
+package com.fu.tt;
+
+public class Counter {
+    private int value;
+
+    public Counter(int initialValue) {
+        value = initialValue;
+    }
+
+    public void increment() {
+        value++;
+    }
+
+    public int getValue() {
+        return value;
+    }
+}
+
+```
+
+​			
+
+IncrementTask.java
+
+```java
+package com.fu.tt;
+
+public class IncrementTask implements Runnable {
+    private Counter counter;
+
+    public IncrementTask(Counter counter) {
+        this.counter = counter;
+    }
+
+    @Override
+    public void run() {
+        for (int i = 0; i < 100; i++) {
+            counter.increment();
+        }
+    }
+}
+```
+
+​			
+
+#### runOnUiThread()
+
+这个是保证我们的更改 UI 的代码一定执行在 UI 主线程上面					
+
+MainActivity.java				
+
+```java
+package com.fu.tt;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+
+public class MainActivity extends AppCompatActivity {
+    private TextView textView;
+    private Button button;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        button = findViewById(R.id.button);
+        textView = findViewById(R.id.textView);
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                performLongRunningTaskAndUpdateTextView();
+            }
+        });
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+    }
+
+    private void performLongRunningTask() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                simulateLongRunningTask();
+                updateUIAfterTaskCompletion();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void simulateLongRunningTask() {
+        // 模拟耗时任务（如网络请求）
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void updateUIAfterTaskCompletion() {
+
+        textView.setText("Task completed");
+    }
+
+    private void performLongRunningTaskAndUpdateTextView() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                // 模拟耗时操作
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                // 耗时操作完成，更新 TextView
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        textView.setText("Task completed!");
+                    }
+                });
+            }
+        }).start();
+    }
+}
+```
+
+在这个案例当中，我们把更新UI 的操作移步到了，一个线程当中，但是，在执行的时候，又通过 runOnUiThread  这样的方式，对我们的，更新代码强制在 主线程当中运行 （但是你会发现，即便是将 runOnUiThread 这个部分的代码删掉，程序依然会成功的运行，并且没有任何的错误，这个错误，在不同的设备上的是否触发，有随机性）
+
+​			
+
+#### 使用 Lambda 表达式简化 Runnable
+
+```java
+Runnable runnable = () -> {
+    System.out.println("Hello from the Runnable implemented with a Lambda expression!");
+};
+```
+
+​			
+
+```java
+new Thread(() -> {
+    // 这里执行任务
+}).start();
+```
+
+​			
+
+其实就是省掉了
+
+```java
+                    @Override
+                    public void run() {
+                        ...
+                    }
+```
+
+变成了
+
+```java
+() -> textView.setText("Task completed!")
+```
+
+​					
+
+对比下面的两个代码
+
+```java
+package com.fu.tt;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+
+public class MainActivity extends AppCompatActivity {
+    private TextView textView;
+    private Button button;
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        button = findViewById(R.id.button);
+        textView = findViewById(R.id.textView);
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                performLongRunningTaskAndUpdateTextView();
+            }
+        });
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+    }
+
+    private void performLongRunningTask() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                simulateLongRunningTask();
+                updateUIAfterTaskCompletion();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void simulateLongRunningTask() {
+        // 模拟耗时任务（如网络请求）
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void updateUIAfterTaskCompletion() {
+
+        textView.setText("Task completed");
+    }
+
+    private void performLongRunningTaskAndUpdateTextView() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                // 模拟耗时操作
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                // 耗时操作完成，更新 TextView
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        textView.setText("Task completed!");
+                    }
+                });
+            }
+        }).start();
+    }
+}
+```
+
+​			
+
+```java
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+public class MainActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        Button button = findViewById(R.id.button);
+        TextView textView = findViewById(R.id.textView);
+
+        button.setOnClickListener(view -> {
+            // 使用 Lambda 表达式实现 Runnable
+            Runnable task = () -> {
+                try {
+                    // 模拟一个耗时任务
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                // 更新 UI 必须在 UI 线程中进行
+                runOnUiThread(() -> textView.setText("Task completed!"));
+            };
+
+            // 创建并启动一个新线程来执行任务
+            new Thread(task).start();
+        });
+    }
+}
+```
+
+
+
+
+
+#### 使用线程池执行 Runnable 任务_FixedThreadPool
+
+线程池是一种管理线程的机制，它允许您事先创建多个线程并将它们保存在一个池中。当需要执行任务时，线程池会从池中获取一个空闲的线程来执行任务。任务完成后，线程返回池中，等待下一个任务。线程池的好处在于减少了线程的创建和销毁开销，同时能更有效地管理系统资源。
+
+​				
+
+FixedThreadPool：这是一个拥有固定数量线程的线程池。任务提交时，如果线程池中有空闲线程，它将被用于执行任务。如果没有空闲线程，任务将被排队等待。
+
+​			
+
+```java
+package com.fu.tt;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+
+
+public class MainActivity extends AppCompatActivity {
+    private TextView textView;
+    private Button button;
+    private ExecutorService executorService;
+
+    private static final String TAG = "ThreadPoolExample";
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        Button button = findViewById(R.id.button);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                executeTasks();
+            }
+        });
+    }
+
+    private void executeTasks() {
+        ExecutorService executorService = Executors.newFixedThreadPool(4);
+
+        Runnable task1 = new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < 10; i++) {
+                    Log.d(TAG, "Task 1 - Number: " + i);
+                }
+            }
+        };
+
+        Runnable task2 = new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < 10; i++) {
+                    Log.d(TAG, "Task 2 - Number: " + i);
+                }
+            }
+        };
+
+        Runnable task3 = new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < 10; i++) {
+                    Log.d(TAG, "Task 3 - Number: " + i);
+                }
+            }
+        };
+
+        Runnable task4 = new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < 10; i++) {
+                    Log.d(TAG, "Task 4 - Number: " + i);
+                }
+            }
+        };
+
+        // 提交任务到线程池
+        executorService.execute(task1);
+        executorService.execute(task2);
+        executorService.execute(task3);
+        executorService.execute(task4);
+
+        // 关闭线程池（在完成所有任务后）
+        executorService.shutdown();
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // 关闭线程池，释放资源
+        executorService.shutdown();
+    }
+
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+    }
+}
+```
+
+​				
+
+#### 使用线程池执行 Runnable 任务_CachedThreadPool
+
+`CachedThreadPool` 是 Java 提供的一种线程池实现，它具有动态调整线程数量的特点。当需要执行新任务时，`CachedThreadPool` 会尝试重用之前创建的空闲线程。如果没有空闲线程可用，`CachedThreadPool` 会创建一个新线程来执行任务。当线程完成任务并变为空闲时，如果在一定时间内（默认为 60 秒）没有新任务分配给该线程，线程将被终止并从线程池中移除。这种特性使得 `CachedThreadPool` 在执行大量短时任务时表现出较高的性能。			
+
+
+
+MainActivity.java
+
+```java
+package com.fu.tt;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+
+public class MainActivity extends AppCompatActivity {
+    private TextView textView;
+    private Button button;
+    private ExecutorService executorService;
+
+    private static final String TAG = "CachedThreadPoolExample";
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        executorService = Executors.newFixedThreadPool(4);
+
+        Button button = findViewById(R.id.button);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                executeTasks();
+            }
+        });
+    }
+
+    private void executeTasks() {
+        // 创建线程池
+        ExecutorService executorService = Executors.newCachedThreadPool();
+
+        // 创建任务
+        Runnable task1 = () -> {
+            for (int i = 0; i < 10; i++) {
+                Log.d(TAG, "Task 1 - Number: " + i);
+            }
+        };
+
+        Runnable task2 = () -> {
+            for (int i = 0; i < 10; i++) {
+                Log.d(TAG, "Task 2 - Number: " + i);
+            }
+        };
+
+        Runnable task3 = () -> {
+            for (int i = 0; i < 10; i++) {
+                Log.d(TAG, "Task 3 - Number: " + i);
+            }
+        };
+
+        // 提交任务到线程池
+        executorService.execute(task1);
+        executorService.execute(task2);
+        executorService.execute(task3);
+
+        // 关闭线程池（在完成所有任务后）
+        executorService.shutdown();
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // 关闭线程池，释放资源
+        executorService.shutdown();
+    }
+
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+    }
+}
+```
+
+​				
+
+#### 使用线程池执行 Runnable 任务_ScheduledThreadPool
+
+`ScheduledThreadPool` 是 Java 提供的一种线程池实现，它允许您在指定的延迟后执行任务，或者按照固定的时间间隔定期执行任务。
+
+```java
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+public class MainActivity extends AppCompatActivity {
+
+    private static final String TAG = "ScheduledThreadPoolExample";
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        Button button = findViewById(R.id.button);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                scheduleTasks();
+            }
+        });
+    }
+
+    private void scheduleTasks() {
+        ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(2);
+
+        // 延迟任务
+        Runnable delayedTask = () -> Log.d(TAG, "Delayed task executed");
+        scheduledExecutorService.schedule(delayedTask, 3, TimeUnit.SECONDS);
+
+        // 定期任务
+        Runnable periodicTask = () -> Log.d(TAG, "Periodic task executed");
+        scheduledExecutorService.scheduleAtFixedRate(periodicTask, 5, 2, TimeUnit.SECONDS);
+    }
+}
+```
+
+翻译
+
+scheduled ： 计划中的
+
+Fixed ：固定的
+
+Rate ：频率
+
+period ：周期
+
+
+
+​			
+
+```java
+        Runnable delayedTask = () -> Log.d(TAG, "Delayed task executed");
+        scheduledExecutorService.schedule(delayedTask, 3, TimeUnit.SECONDS);
+```
+
+delayedTask : 任务
+
+3 TimeUnit.SECONDS ： 延迟 3 秒钟
+
+​			
+
+```java
+        // 定期任务
+        Runnable periodicTask = () -> Log.d(TAG, "Periodic task executed");
+        scheduledExecutorService.scheduleAtFixedRate(periodicTask, 5, 2, TimeUnit.SECONDS);
+```
+
+1. `periodicTask`：这是要执行的任务，它实现了 `Runnable` 接口。
+2. `5`：这是一个整数值，表示任务的**初始延迟**。这意味着任务将在 5 秒后开始执行。
+3. `2`：这是一个整数值，表示任务执行之间的**固定周期**。这意味着任务开始执行后，每隔 2 秒将再次执行一次。
+4. `TimeUnit.SECONDS`：这是一个枚举值，表示时间单位。在这个例子中，它表示初始延迟和固定周期的时间单位都是秒。
+
+​				
+
+如果我们延迟 3 小时，但是每隔秒钟执行一次，应该怎么办呢？也就是说，延迟时间和固定周期的时间单位不一样				
+
+​				
+
+```java
+ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
+Runnable periodicTask = new Runnable() {
+    @Override
+    public void run() {
+        // 你的任务代码
+    }
+};
+
+long initialDelay = TimeUnit.HOURS.toSeconds(3); // 将 3 小时转换为秒
+scheduledExecutorService.scheduleAtFixedRate(periodicTask, initialDelay, 2, TimeUnit.SECONDS);
+
+```
+
+​				
+
+#### 使用线程池执行 Runnable 任务_SingleThreadExecutor
+
+`SingleThreadExecutor` 是一个线程池实现，它只使用一个工作线程来执行任务。这个线程池的主要特点是任务会按照提交顺序依次执行。因为它只有一个线程，所以能保证任务之间的顺序性，不会出现多线程执行时的竞争问题。这种线程池适用于需要顺序执行的任务场景。
+
+​			
+
+MainActivity.java
+
+```java
+package com.fu.tt;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+
+public class MainActivity extends AppCompatActivity {
+    private TextView textView;
+    private Button button;
+    private ExecutorService executorService;
+
+
+    private ExecutorService singleThreadExecutor;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        singleThreadExecutor = Executors.newSingleThreadExecutor();
+
+        Button button = findViewById(R.id.button);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                singleThreadExecutorTasks();
+            }
+        });
+    }
+
+    private void singleThreadExecutorTasks() {
+        Runnable task1 = new Runnable() {
+            @Override
+            public void run() {
+                Log.i("SingleThreadExecutor", "Task 1 is running");
+            }
+        };
+
+        Runnable task2 = new Runnable() {
+            @Override
+            public void run() {
+                Log.i("SingleThreadExecutor", "Task 2 is running");
+            }
+        };
+
+        Runnable task3 = new Runnable() {
+            @Override
+            public void run() {
+                Log.i("SingleThreadExecutor", "Task 3 is running");
+            }
+        };
+
+        singleThreadExecutor.execute(task1);
+        singleThreadExecutor.execute(task2);
+        singleThreadExecutor.execute(task3);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // 关闭线程池，释放资源
+        singleThreadExecutor.shutdown();
+    }
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+    }
+}
+```
+
+这个是依次执行的
+
+​			
+
+### 多线程_Android 中与其他组件配合使用 Runnable
+
+
+
+
+
+
+
+
+
+### 多线程 AsyncTask
+
+**自 Android 11（API 级别 30）开始已被弃用**				
+
+AsyncTask 类是 Android 提供的一个便捷的类，用于在后台线程上执行异步任务，同时在 UI 线程上更新用户界面。AsyncTask 通常用于执行较短时间的后台任务，如从网络加载数据、文件操作或者数据库查询等。
+
+AsyncTask 的工作原理是在后台线程上执行任务，然后在任务完成时，通知 UI 线程进行界面更新。这样可以确保用户界面保持响应，避免因为耗时操作而卡住。			
+
+
+
+&&&
 
 
 
@@ -5349,8 +6205,150 @@ public class MainActivity extends AppCompatActivity {
 
 -------
 
-### Handler
+### Handler_通信
 
 Handler 的作用是将任务投递到指定的线程中执行。它并不负责创建或管理线程，而是在已有的线程（如主线程或子线程）中调度任务。同时，Handler 可以携带一些信息，以便在任务执行过程中使用
 
-&&
+Handler 是 Android 中一个非常有用的组件，它允许您在不同线程之间进行**通信和任务调度**。Handler 主要用于在后台线程执行任务并将结果传递回主线程（UI线程）。
+
+​				
+
+翻译
+
+Handler ：处理程序
+
+Looper ：循环器
+
+​			
+
+下面这个代码演示如何在后台线程执行任务并更新 UI。在这个示例中，我们将创建一个简单的计时器，在后台线程中每隔一秒更新计数器，并将其显示在 TextView 中			
+
+activity_layout.xml			
+
+```xml
+<TextView
+    android:id="@+id/textView"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Count: 0" />
+```
+
+​						
+
+Mainacttivity.java
+
+```java
+package com.fu.tt;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+import java.util.concurrent.ExecutorService;
+
+public class MainActivity extends AppCompatActivity {
+    private TextView textView;
+    private Button button;
+    private Handler handler;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        handler = new Handler(Looper.getMainLooper());
+
+
+        Button button = findViewById(R.id.button);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startCounter();
+            }
+        });
+    }
+    private void startCounter() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 1; i <= 1000; i++) {
+                    // 模拟耗时任务（例如计算或网络请求）
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    // 将计数值传递给主线程以更新 UI
+                    int finalI = i;
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            TextView textView = findViewById(R.id.textView);
+                            textView.setText("Count: " + finalI);
+                        }
+                    });
+                }
+            }
+        }).start();
+    }
+
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+    }
+}
+```
+
+​				
+
+分析代码
+
+```java
+handler = new Handler(Looper.getMainLooper());
+```
+
+ `Handler` 对象，它关联到主线程（UI线程）的 `Looper`			
+
+​			
+
+`Looper.getMainLooper()`：`Looper` 是一个消息循环处理器，它在一个线程中管理一个消息队列。每个线程只能有一个 `Looper`。`getMainLooper()` 是一个静态方法，用于获取主线程（UI线程）的 `Looper` 对象。		
+
+​		
+
+```java
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            TextView textView = findViewById(R.id.textView);
+                            textView.setText("Count: " + finalI);
+                        }
+                    });
+```
+
+下面是 `handler.post()` 方法的简要说明：
+
+- 参数：一个实现了 `Runnable` 接口的对象。这个对象的 `run()` 方法将在与 `Handler` 关联的线程中执行。
+- 返回值：一个布尔值，表示 `Runnable` 对象是否成功添加到消息队列。如果成功添加，返回 `true`；否则返回 `false`。
+
+​			
+
