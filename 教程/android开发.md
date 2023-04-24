@@ -57,8 +57,16 @@
   - [使用线程池执行 Runnable 任务\_CachedThreadPool](#使用线程池执行-runnable-任务_cachedthreadpool)
   - [使用线程池执行 Runnable 任务\_ScheduledThreadPool](#使用线程池执行-runnable-任务_scheduledthreadpool)
   - [使用线程池执行 Runnable 任务\_SingleThreadExecutor](#使用线程池执行-runnable-任务_singlethreadexecutor)
+- [多线程\_Android 中与其他组件配合使用 Runnable](#多线程_android-中与其他组件配合使用-runnable)
 - [多线程 AsyncTask](#多线程-asynctask)
-- [Handler](#handler)
+- [Handler\_通信](#handler_通信)
+- [在其他的线程当中创建 looper](#在其他的线程当中创建-looper)
+- [import android.os.Message](#import-androidosmessage)
+- [import android.os.Message\_arg1和arg2](#import-androidosmessage_arg1和arg2)
+- [import android.os.Message\_obj](#import-androidosmessage_obj)
+- [import android.os.Message\_在message当中存放多个数据](#import-androidosmessage_在message当中存放多个数据)
+- [import android.os.Message\_msg.when](#import-androidosmessage_msgwhen)
+- [Handle的线程之间的通信](#handle的线程之间的通信)
 
 
 
@@ -6348,7 +6356,1453 @@ handler = new Handler(Looper.getMainLooper());
 下面是 `handler.post()` 方法的简要说明：
 
 - 参数：一个实现了 `Runnable` 接口的对象。这个对象的 `run()` 方法将在与 `Handler` 关联的线程中执行。
-- 返回值：一个布尔值，表示 `Runnable` 对象是否成功添加到消息队列。如果成功添加，返回 `true`；否则返回 `false`。
+- 返回值：一个布尔值，表示 `Runnable` 对象是否成功添加到消息队列。如果成功添加，返回 `true`；否则返回 `false`
 
 ​			
 
+将代码改成 runOnUiThread 也是可以的，能够保证修改 UI线程 的代码，运行在，UI线程上
+
+```java
+package com.fu.tt;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+import java.util.concurrent.ExecutorService;
+
+public class MainActivity extends AppCompatActivity {
+    private TextView textView;
+    private Button button;
+    private Handler handler;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        handler = new Handler(Looper.getMainLooper());
+
+
+        Button button = findViewById(R.id.button);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startCounter();
+            }
+        });
+    }
+    private void startCounter() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 1; i <= 1000; i++) {
+                    // 模拟耗时任务（例如计算或网络请求）
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
+                    // 将计数值传递给主线程以更新 UI
+                    int finalI = i;
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            TextView textView = findViewById(R.id.textView);
+                            textView.setText("Count: " + finalI);
+                        }
+                    });
+                }
+            }
+        }).start();
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+    }
+}
+```
+
+​			
+
+### 在其他的线程当中创建 looper
+
+在刚刚的代码当中，我们知道
+
+```java
+handler = new Handler(Looper.getMainLooper());
+```
+
+1. `Handler`：`Handler` 是 Android 系统提供的一个组件，用于在不同线程之间传递和处理消息。通常，它用于将后台线程的计算结果传递给主线程以更新 UI。`Handler` 的主要功能是将 `Runnable` 对象或 `Message` 对象发送到关联的 `Looper` 的消息队列中。
+2. `Looper.getMainLooper()`：`Looper` 是一个消息循环处理器，它在一个线程中管理一个消息队列。每个线程只能有一个 `Looper`。`getMainLooper()` 是一个静态方法，用于获取主线程（UI线程）的 `Looper` 对象。
+3. `new Handler(Looper.getMainLooper())`：这个构造函数创建一个新的 `Handler` 实例，并将其关联到传入的 `Looper` 对象。在这个例子中，我们传入了主线程的 `Looper`，这意味着我们创建的 `Handler` 对象与主线程关联。
+
+​			
+
+那么 `Looper.getMainLooper() ` `getMainLooper()` 是一个静态方法，用于获取主线程（UI线程）的 `Looper` 对象，那我们如何获取，其他线程的 looper 呢？			
+
+​						
+
+以下是一个完整的例子，演示了如何在一个新的线程中创建一个 `Looper`，并通过 `Handler` 在主线程和新线程之间发送消息。在这个例子中，我们将在新线程中计算斐波那契数列的第 n 项，并将结果显示在主线程的 `TextView` 上。			
+
+​				
+
+```java
+package com.fu.tt;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+import java.util.concurrent.ExecutorService;
+
+public class MainActivity extends AppCompatActivity {
+    private TextView textView;
+    private Handler mainHandler;
+    private Handler workerHandler;
+
+    private static final int MESSAGE_TYPE_FIBONACCI_RESULT = 1;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textView);
+
+        mainHandler = new Handler(Looper.getMainLooper()) {
+            @Override
+            public void handleMessage(Message msg)
+            {
+                if (msg.what == MESSAGE_TYPE_FIBONACCI_RESULT) {
+                    int result = msg.arg1;
+                    textView.setText("Fibonacci result: " + result);
+                }
+            }
+        };
+
+        MyLooperThread myLooperThread = new MyLooperThread();
+        myLooperThread.start();
+
+        // 等待 workerHandler 初始化完成
+        while ((workerHandler = myLooperThread.getHandler()) == null) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // 计算斐波那契数列的第 10 项
+        Message workerMessage = Message.obtain(workerHandler, 10);
+        workerHandler.sendMessage(workerMessage);
+    }
+
+    private class MyLooperThread extends Thread {
+        private Handler handler;
+
+        @Override
+        public void run() {
+            Looper.prepare();
+            handler = new Handler(Looper.myLooper()) {
+                @Override
+                public void handleMessage(Message msg) {
+                    int n = msg.what;
+                    int result = fibonacci(n);
+
+                    Message mainMessage = Message.obtain(mainHandler, MESSAGE_TYPE_FIBONACCI_RESULT);
+                    mainMessage.arg1 = result;
+                    mainHandler.sendMessage(mainMessage);
+                }
+            };
+            Looper.loop();
+        }
+
+      // 用于判断，是不是已经新建成功
+        public Handler getHandler() {
+            return handler;
+        }
+
+        private int fibonacci(int n) {
+            if (n <= 1) {
+                return n;
+            }
+            return fibonacci(n - 1) + fibonacci(n - 2);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+    }
+}
+```
+
+​			
+
+这个示例中，我们创建了一个名为 `MyLooperThread` 的子类，它从 `Thread` 继承。在该线程的 `run` 方法中，我们调用 `Looper.prepare()` 和 `Looper.loop()` 以在新线程中创建一个 `Looper`。我们还创建了一个 `Handler` 对象，它用于处理从主线程发送过来的消息。
+
+在 `MainActivity` 的 `onCreate` 方法中，我们启动了 `MyLooperThread`，等待它的 `Handler` 初始化完成。然后，我们通过发送一个消息来请求计算斐波那契数列的第 10 项。`MyLooperThread` 的 `Handler` 接收到消息后，计算结果并将其发送回主线程，主线程的 `Handler` 更新 `TextView` 以显示结果					
+
+​				
+
+`Looper.prepare()` 和 `Looper.loop()` 是 `Looper` 类的方法，它们用于在新线程中创建一个消息循环。下面是对这两个方法的详细解释：
+
+1. `Looper.prepare()`: 这个方法会在当前线程中初始化一个新的 `Looper` 实例。每个线程只能有一个 `Looper` 实例，所以 `prepare()` 方法只能在一个线程中调用一次。调用 `Looper.prepare()` 会为当前线程创建一个与之关联的消息队列。
+2. `Looper.loop()`: 这个方法会启动消息循环。它从与当前线程关联的消息队列中获取消息，并将它们分发给相应的 `Handler`。`Looper.loop()` 会一直运行，直到消息队列为空且没有活动的 `Handler` 时才会退出。当一个线程调用了 `Looper.loop()`，它会一直处理消息，直到循环结束。这就是为什么称之为消息循环。
+
+当您想要在一个新线程中创建一个 `Looper` 时，您需要调用 `Looper.prepare()` 和 `Looper.loop()`。首先，调用 `Looper.prepare()` 来创建一个新的 `Looper` 实例并设置与当前线程关联的消息队列。接下来，创建一个或多个 `Handler`，它们将负责处理消息。最后，调用 `Looper.loop()` 启动消息循环。
+
+​				
+
+### import android.os.Message
+
+`Message` 是 Android 中用于在线程之间传递信息的一个轻量级的数据结构。`Message` 通常与 `Handler` 一起使用，用于在线程之间发送消息，实现线程间通信。
+
+以下是 `Message` 的一些关键概念和属性：
+
+1. `what`：一个整型字段，用于表示消息的类型。您可以在发送和处理消息时使用这个字段来区分不同类型的消息。
+2. `arg1` 和 `arg2`：这是两个整型字段，您可以用它们携带一些整数数据。这对于携带简单的数据非常有用，但是对于更复杂的数据结构，您可能需要使用下面提到的 `obj` 字段。
+3. `obj`：一个 `Object` 字段，您可以用它携带任何类型的对象数据。请注意，您需要确保在发送和接收消息时正确地处理这个字段中的对象类型。
+4. `when`：一个长整型字段，表示消息何时应该被处理。当您通过 `Handler` 发送延时消息时，`when` 字段会自动设置为系统时间加上延迟的毫秒数。
+
+​				
+
+```java
+package com.fu.tt;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+import java.util.concurrent.ExecutorService;
+
+public class MainActivity extends AppCompatActivity {
+    private TextView textView;
+    private MyLooperThread myLooperThread;
+    private Handler mainHandler;
+    private Handler handler;
+
+    private static final int MESSAGE_TYPE_UPDATE_TEXT = 1;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textView);
+
+        handler = new Handler(Looper.getMainLooper()) {
+            @Override
+            public void handleMessage(Message msg) {
+                if (msg.what == MESSAGE_TYPE_UPDATE_TEXT) {
+                    String text = (String) msg.obj;
+                    textView.setText(text);
+                }
+            }
+        };
+
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                String newText = "Hello from background thread!";
+                Message message = Message.obtain(handler, MESSAGE_TYPE_UPDATE_TEXT);
+                message.obj = newText;
+                handler.sendMessage(message);
+            }
+        }).start();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+    }
+}
+```
+
+​			
+
+```java
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                String newText = "Hello from background thread!";
+                Message message = Message.obtain(handler, MESSAGE_TYPE_UPDATE_TEXT);
+                message.obj = newText;
+                handler.sendMessage(message);
+            }
+        }).start();
+```
+
+1. `new Thread(new Runnable() {...}).start();`：这里创建了一个新的线程，并传入一个 `Runnable` 对象，这个对象包含了线程要执行的代码。然后调用 `start()` 方法启动这个线程。
+2. `@Override public void run() {...}`：这是 `Runnable` 接口的 `run()` 方法。这个方法包含了在线程中要执行的代码。当线程启动时，它将自动调用这个方法。
+3. `String newText = "Hello from background thread!";`：这是一个简单的字符串变量，我们将在后续的代码中将其作为消息发送给主线程。
+4. `Message message = Message.obtain(handler, MESSAGE_TYPE_UPDATE_TEXT);`：这里我们使用 `Message.obtain()` 方法创建一个新的 `Message` 实例。我们传入一个 `Handler` 对象（在本例中是主线程的 `handler`）和一个整数 `MESSAGE_TYPE_UPDATE_TEXT`（用于表示消息类型）。这样我们可以在 `handleMessage()` 方法中根据 `what` 字段区分消息类型。
+5. `message.obj = newText;`：这里我们将 `newText` 字符串赋值给 `Message` 的 `obj` 字段。这允许我们将字符串作为消息内容发送给主线程。
+6. `handler.sendMessage(message);`：这里我们使用 `handler` 的 `sendMessage()` 方法将 `Message` 实例发送给主线程。当主线程收到这个消息时，它将在 `handleMessage()` 方法中处理消息，并根据 `what` 字段更新 UI。
+
+​			
+
+```java
+        handler = new Handler(Looper.getMainLooper()) {
+            @Override
+            public void handleMessage(Message msg) {
+                if (msg.what == MESSAGE_TYPE_UPDATE_TEXT) {
+                    String text = (String) msg.obj;
+                    textView.setText(text);
+                }
+            }
+        };
+```
+
+1. `handler = new Handler(Looper.getMainLooper())`：这行代码创建了一个`Handler`对象，并将其与主线程的`Looper`对象关联起来。通过将`Looper.getMainLooper()`作为参数传递给`Handler`构造函数，我们告诉这个`Handler`处理来自主线程`Looper`的消息队列。因此，这个`Handler`可以在主线程中处理从其他线程发送过来的消息。
+2. `public void handleMessage(Message msg)`：这个方法是`Handler`类的一个重要方法，需要我们重写以处理消息。这个方法会在主线程中被调用，以处理从其他线程发送过来的消息。
+3. `if (msg.what == MESSAGE_TYPE_UPDATE_TEXT)`：`msg.what`是一个整数值，用于区分不同类型的消息。在这个例子中，我们检查`msg.what`是否等于预先定义的`MESSAGE_TYPE_UPDATE_TEXT`常量，以确定是否需要处理这条消息。
+4. `String text = (String) msg.obj`：如果消息的类型是`MESSAGE_TYPE_UPDATE_TEXT`，我们将`msg.obj`转换为`String`类型。在这个例子中，`msg.obj`包含了我们要在`TextView`中显示的文本。
+5. `textView.setText(text)`：最后，我们使用`setText()`方法将`TextView`的文本设置为从`msg.obj`获取的字符串。这样，主线程就可以根据从其他线程发送过来的消息更新UI。
+
+​				
+
+### import android.os.Message_arg1和arg2
+
+`Message`对象中的`arg1`和`arg2`是两个整型字段（**如果是其他的数据类型，就用 message.obj** ），它们可以用于携带整数类型的数据。这对于在消息中传递简单的整数数据非常有用。它们可以作为额外的信息与`msg.what`字段一起使用，以帮助接收方根据这些参数执行相应的操作。
+
+```java
+package com.fu.tt;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+import java.util.concurrent.ExecutorService;
+
+public class MainActivity extends AppCompatActivity {
+    private TextView textView;
+    private Handler handler;
+
+    public static final int OPERATION_ADD = 1;
+    public static final int OPERATION_SUBTRACT = 2;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textView);
+
+        handler = new Handler(Looper.getMainLooper()) {
+            @Override
+            public void handleMessage(Message msg) {
+                int result = -1;
+                if (msg.what == OPERATION_ADD) {
+                    result = msg.arg1 + msg.arg2;
+                } else if (msg.what == OPERATION_SUBTRACT) {
+                    result = msg.arg1 - msg.arg2;
+                }
+                // 更新UI，例如显示结果
+                textView.setText(String.valueOf(result));
+            }
+        };
+
+        Message message = Message.obtain();
+        message.what = OPERATION_SUBTRACT;
+        message.arg1 = 3;
+        message.arg2 = 5;
+        handler.sendMessage(message);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+    }
+}
+```
+
+我将`Message`对象的创建和发送移到了`onCreate()`方法的末尾。这样在创建`Handler`对象后，才会发送`Message`对象。否则，`Handler`对象可能尚未创建，而`Message`对象已经发送，这将导致无法处理消息
+
+​			
+
+在这次的创建 message 的时候，我们使用的是
+
+```java
+Message message = Message.obtain();
+```
+
+​			
+
+而不是使用的
+
+```java
+Message message = Message.obtain(handler, MESSAGE_TYPE_UPDATE_TEXT);
+```
+
+​			
+
+这是因为
+
+```java
+        Message message = Message.obtain();
+        message.what = OPERATION_SUBTRACT;
+        message.arg1 = 3;
+        message.arg2 = 5;
+        handler.sendMessage(message);
+```
+
+在后续的操作当中已经单独指定了 `message.what = OPERATION_SUBTRACT;`			
+
+至于 handler ，在发送广播的时候 `handler.sendMessage(message);` 就已经指定了，在创建的时候指定，其实是有点画蛇添足的			
+
+​			
+
+### import android.os.Message_obj
+
+`Message.obj` 是一个用于携带任意类型对象数据的字段。在使用 `Message` 传递数据时，您可以将需要传递的对象赋值给 `obj` 字段。然后，在接收消息时，您需要根据发送的对象类型进行相应的处理。		
+
+Person.java
+
+```java
+public class Person {
+    public String name;
+    public int age;
+
+    public Person(String name, int age) {
+        this.name = name;
+        this.age = age;
+    }
+}
+```
+
+​				
+
+MainActivity.java
+
+```java
+public class MainActivity extends AppCompatActivity {
+    private TextView textView;
+    private Handler handler;
+
+    public static final int MESSAGE_TYPE_PERSON = 1;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textView);
+
+        handler = new Handler(Looper.getMainLooper()) {
+            @Override
+            public void handleMessage(Message msg) {
+                if (msg.what == MESSAGE_TYPE_PERSON) {
+                    Person person = (Person) msg.obj;
+                    String text = "Name: " + person.name + ", Age: " + person.age;
+                    textView.setText(text);
+                }
+            }
+        };
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Person person = new Person("Alice", 30);
+                Message message = Message.obtain();
+                message.what = MESSAGE_TYPE_PERSON;
+                message.obj = person;
+                handler.sendMessage(message);
+            }
+        }).start();
+    }
+}
+```
+
+在这个例子中，我们创建了一个 `Person` 对象并将其发送给主线程的 `Handler`。`Handler` 根据 `message.what` 判断消息类型，并将 `message.obj` 转换为 `Person` 类型，然后在 UI 上显示其属性。
+
+需要注意的是，在使用 `Message.obj` 传递对象时，要确保发送和接收时正确处理对象类型，避免类型转换异常。
+
+​				
+
+### import android.os.Message_在message当中存放多个数据
+
+可以发现，无论是， arg1_arg2 还是 obj 都只能存放一个数据，想要发送多个信息，可以考虑 Bundle 的数据（或者是在 msg.obj 当中传入一个 Bundle ）
+
+```java
+package com.fu.tt;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+import java.util.concurrent.ExecutorService;
+
+public class MainActivity extends AppCompatActivity {
+    private TextView textView;
+    private Handler handler;
+
+    public static final int MESSAGE_TYPE_UPDATE_TEXT = 1;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textView);
+
+        handler = new Handler(Looper.getMainLooper()) {
+            @Override
+            public void handleMessage(@NonNull Message msg) {
+                if (msg.what == MESSAGE_TYPE_UPDATE_TEXT) {
+                    Bundle data = msg.getData();
+                    String newText = data.getString("newTextKey");
+                    int someInt = data.getInt("someIntKey");
+                    double someDouble = data.getDouble("someDoubleKey");
+
+                    // 使用获取到的数据执行操作
+                    textView.setText(newText);
+                    // ...
+                }
+            }
+
+        };
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                String newText = "Hello from background thread!";
+                int someInt = 42;
+                double someDouble = 3.14;
+
+                Message message = Message.obtain(handler, MESSAGE_TYPE_UPDATE_TEXT);
+
+                // 创建一个 Bundle 对象，并将多个数据放入其中
+                Bundle data = new Bundle();
+                data.putString("newTextKey", newText);
+                data.putInt("someIntKey", someInt);
+                data.putDouble("someDoubleKey", someDouble);
+
+                // 将 Bundle 对象与 Message 关联
+                message.setData(data);
+
+                handler.sendMessage(message);
+            }
+        }).start();
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+    }
+}
+```
+
+​					
+
+```java
+package com.fu.tt;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+import java.util.concurrent.ExecutorService;
+
+public class MainActivity extends AppCompatActivity {
+    private TextView textView;
+    private Handler handler;
+
+    public static final int MESSAGE_TYPE_UPDATE_TEXT = 1;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textView);
+
+        handler = new Handler(Looper.getMainLooper()) {
+            @Override
+            public void handleMessage(@NonNull Message msg) {
+                if (msg.what == MESSAGE_TYPE_UPDATE_TEXT) {
+                    Bundle data = (Bundle) msg.obj;
+                    String newText = data.getString("newTextKey");
+                    int someInt = data.getInt("someIntKey");
+                    double someDouble = data.getDouble("someDoubleKey");
+
+                    // 使用获取到的数据执行操作
+                    textView.setText(String.valueOf(someInt));
+                    // ...
+                }
+            }
+
+        };
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                String newText = "Hello from background thread!";
+                int someInt = 42;
+                double someDouble = 3.14;
+
+                Message message = Message.obtain(handler, MESSAGE_TYPE_UPDATE_TEXT);
+
+                // 创建一个 Bundle 对象，并将多个数据放入其中
+                Bundle data = new Bundle();
+                data.putString("newTextKey", newText);
+                data.putInt("someIntKey", someInt);
+                data.putDouble("someDoubleKey", someDouble);
+
+                // 将 Bundle 对象与 Message 关联
+                message.obj = data;
+
+                handler.sendMessage(message);
+            }
+        }).start();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+    }
+}
+```
+
+​				
+
+### import android.os.Message_msg.when
+
+`Message.when` 是一个长整型字段，用于表示消息应该在何时被处理。在使用 `Handler` 发送延时消息时，`when` 字段会自动设置为当前系统时间加上延迟的毫秒数。`Handler` 内部会根据这个值进行消息调度和处理。
+
+当您需要在一定时间后处理某个消息时，您可以使用 `Handler` 的 `sendMessageDelayed()` 方法，该方法需要指定一个延迟时间。例如，假设我们想要在 5 秒后更新 `TextView` 的文本：			
+
+​				
+
+handler.sendMessageDelayed(message, 5000);
+
+```java
+public class MainActivity extends AppCompatActivity {
+    private TextView textView;
+    private Handler handler;
+
+    public static final int MESSAGE_TYPE_UPDATE_TEXT = 1;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textView);
+
+        handler = new Handler(Looper.getMainLooper()) {
+            @Override
+            public void handleMessage(Message msg) {
+                if (msg.what == MESSAGE_TYPE_UPDATE_TEXT) {
+                    textView.setText("Text updated after 5 seconds");
+                }
+            }
+        };
+
+        // 创建一个 Message 对象并设置其类型
+        Message message = Message.obtain();
+        message.what = MESSAGE_TYPE_UPDATE_TEXT;
+
+        // 使用 sendMessageDelayed() 方法发送延时消息
+        handler.sendMessageDelayed(message, 5000); // 延迟 5 秒
+    }
+}
+```
+
+​				
+
+或者是				
+
+sendMessageAtTime				
+
+```java
+public class MainActivity extends AppCompatActivity {
+    private TextView textView;
+    private Handler handler;
+
+    public static final int MESSAGE_TYPE_UPDATE_TEXT = 1;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textView);
+
+        handler = new Handler(Looper.getMainLooper()) {
+            @Override
+            public void handleMessage(Message msg) {
+                if (msg.what == MESSAGE_TYPE_UPDATE_TEXT) {
+                    textView.setText("Text updated after 5 seconds");
+                }
+            }
+        };
+
+        // 创建一个 Message 对象并设置其类型
+        Message message = Message.obtain();
+        message.what = MESSAGE_TYPE_UPDATE_TEXT;
+
+        // 设置 Message.when 字段为当前系统时间加上延迟的毫秒数
+        long currentTimeMillis = SystemClock.uptimeMillis();
+        long delayMillis = 5000;
+        message.when = currentTimeMillis + delayMillis;
+
+        // 使用 sendMessageAtTime() 方法发送延迟消息
+        handler.sendMessageAtTime(message, message.when);
+    }
+}
+```
+
+​						
+
+### Handle的线程之间的通信
+
+在之前，我们已经讲解了如何做到，线程之间的通信，现在我们再看看，如何做到，线程之间的通信
+
+
+
+```java
+package com.fu.tt;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import android.content.pm.PackageManager;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import android.Manifest;
+
+import java.util.concurrent.ExecutorService;
+
+public class MainActivity extends AppCompatActivity {
+
+    private static final int UPDATE_UI = 1;
+    private Button button;
+    private TextView textView;
+
+    private Handler handler = new Handler(Looper.getMainLooper()) {
+        @Override
+        public void handleMessage(Message msg) {
+            if (msg.what == UPDATE_UI) {
+                textView.setText("耗时操作已完成");
+            }
+        }
+    };
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        button = findViewById(R.id.button);
+        textView = findViewById(R.id.textView);
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                performTask();
+            }
+        });
+    }
+
+
+    // 在另一个线程，执行的耗时任务
+    private void performTask() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                Message message = handler.obtainMessage(UPDATE_UI);
+                handler.sendMessage(message);
+            }
+        }).start();
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+    }
+}
+```
+
+
+
+### Handler looper 还有 Runnable  这三个东西的关系
+
+#### Handler
+
+**作用与功能：**
+
+1. 通信：`Handler` 用于在不同线程之间发送和处理消息。它可以将消息从一个线程发送到另一个线程，例如从后台线程发送消息到主线程（UI线程）。
+2. 任务调度：`Handler` 还可以用于任务调度，即在指定的时间或时间间隔后执行特定任务。它提供了一系列方法（如 `post()`、`postDelayed()` 和 `postAtTime()`）来安排任务。
+
+​			
+
+#### Looper
+
+**作用与功能：**
+
+1. 消息循环：`Looper` 是一个运行在特定线程的消息循环，负责从与其关联的消息队列中取出并处理消息。每个线程只能有一个关联的 `Looper`，默认情况下，仅主线程（UI线程）有一个 `Looper`。
+2. 管理消息队列：`Looper` 管理一个消息队列，它将接收到的消息和 `Runnable` 对象按照优先级和预定执行时间排序。当执行完一个任务后，`Looper` 将继续从队列中取出并执行下一个任务。		
+
+​			
+
+#### Runnable
+
+**作用与功能：**
+
+1. 封装任务：`Runnable` 是一个接口，用于封装要在特定线程上执行的任务。您可以通过实现 `Runnable` 接口的 `run()` 方法来定义任务内容。
+2. 灵活调度：`Runnable` 对象可以直接传递给 `Handler` 的 `post()` 方法或作为消息的一部分发送。这为在不同线程之间调度任务提供了灵活性。
+
+​		
+
+简单来说，Runnable 的作用是，封装任务，Looper 的作用是，管理消息和任务，Handler 的作用是发送消息和任务
+
+但是处理消息是在			
+
+```java
+    private Handler handler = new Handler(Looper.getMainLooper()) {
+        @Override
+        public void handleMessage(Message msg) {
+            if (msg.what == UPDATE_UI) {
+                textView.setText("耗时操作已完成");
+            }
+        }
+    };
+```
+
+当中实现的			
+
+​			
+
+### Handle的任务调度
+
+`Handler` 除了用于线程间通信外，还可以用于任务调度。任务调度是指在某个特定的时间或时间间隔后执行特定的任务。`Handler` 提供了 `post()`, `postDelayed()`, `postAtTime()` 等方法来实现任务调度。
+
+1. `post(Runnable r)`: 将一个 `Runnable` 对象加入到消息队列中，该队列会被关联到 `Handler` 的 `Looper`。`Runnable` 会在下一个空闲时间执行。			
+
+```java
+handler.post(new Runnable() {
+    @Override
+    public void run() {
+        // 在主线程执行的代码
+    }
+});
+```
+
+​				
+
+2. `postDelayed(Runnable r, long delayMillis)`: 将一个 `Runnable` 对象加入到消息队列中，该队列会被关联到 `Handler` 的 `Looper`。`Runnable` 会在指定的延迟时间（以毫秒为单位）后执行。
+
+```java
+handler.postDelayed(new Runnable() {
+    @Override
+    public void run() {
+        // 在主线程执行的代码
+    }
+}, 3000); // 延迟 3 秒执行
+```
+
+​			
+
+3. `postAtTime(Runnable r, long uptimeMillis)`: 将一个 `Runnable` 对象加入到消息队列中，该队列会被关联到 `Handler` 的 `Looper`。`Runnable` 会在指定的系统运行时间（以毫秒为单位）后执行。
+
+```java
+long targetTime = SystemClock.uptimeMillis() + 5000; // 当前系统运行时间 + 5 秒
+handler.postAtTime(new Runnable() {
+    @Override
+    public void run() {
+        // 在主线程执行的代码
+    }
+}, targetTime);
+```
+
+​					
+
+#### post(Runnable r)
+
+`post(Runnable r)` 是 `Handler` 类中的一个方法，它用于将一个 `Runnable` 对象添加到与 `Handler` 关联的 `Looper` 的消息队列中。`Runnable` 对象中的任务将在 `Looper` 所关联的线程中执行。		
+
+这里是 `post(Runnable r)` 方法的详细解释：
+
+**功能：** 将一个 `Runnable` 对象添加到消息队列中，以便在 `Looper` 关联的线程上执行。
+
+**参数：** `r` - 要执行的 `Runnable` 对象。
+
+**返回值：** 如果成功将 `Runnable` 对象添加到消息队列，则返回 `true`；否则返回 `false`。
+
+
+
+```java
+package com.fu.tt;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import android.content.pm.PackageManager;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import android.Manifest;
+
+import java.util.concurrent.ExecutorService;
+
+public class MainActivity extends AppCompatActivity {
+
+    private static final int UPDATE_UI = 1;
+    private Button button;
+    private TextView textView;
+
+    private Handler mainThreadHandler = new Handler(Looper.getMainLooper());
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        button = findViewById(R.id.button);
+        textView = findViewById(R.id.textView);
+
+        mainThreadHandler = new Handler(Looper.getMainLooper());
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                updateUI();
+            }
+        });
+    }
+
+
+    private void updateUI() {
+        mainThreadHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                textView.setText("UI has been updated!");
+            }
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+    }
+}
+```
+
+​			
+
+#### postDelayed(Runnable r, long delayMillis) 
+
+**参数：**
+
+- `r` - 要执行的 `Runnable` 对象。
+- `delayMillis` - 延迟执行 `Runnable` 对象的时间，以毫秒为单位。
+
+**返回值：** 如果成功将 `Runnable` 对象添加到消息队列，则返回 `true`；否则返回 `false`。
+
+​			
+
+```java
+package com.fu.tt;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import android.content.pm.PackageManager;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import android.Manifest;
+
+import java.util.concurrent.ExecutorService;
+
+public class MainActivity extends AppCompatActivity {
+
+    private static final int UPDATE_UI = 1;
+    private Button button;
+    private TextView textView;
+
+    private Handler mainThreadHandler = new Handler(Looper.getMainLooper());
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        button = findViewById(R.id.button);
+        textView = findViewById(R.id.textView);
+
+        mainThreadHandler = new Handler(Looper.getMainLooper());
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                updateUI();
+            }
+        });
+    }
+
+
+    private void updateUI() {
+        mainThreadHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                textView.setText("UI has been updated!");
+            }
+        },3000); //3秒钟
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+    }
+}
+```
+
+​				
+
+#### postAtTime(Runnable r, long uptimeMillis)
+
+`postAtTime(Runnable r, long uptimeMillis)` 是 `Handler` 类中的一个方法，它用于将一个 `Runnable` 对象添加到与 `Handler` 关联的 `Looper` 的消息队列中，并在指定的系统运行时间（uptimeMillis）时执行。与 `post(Runnable r)` 和 `postDelayed(Runnable r, long delayMillis)` 类似，`Runnable` 对象中的任务将在 `Looper` 所关联的线程中执行。
+
+​					
+
+**功能：** 将一个 `Runnable` 对象添加到消息队列中，在指定的系统运行时间（uptimeMillis）时在 `Looper` 关联的线程上执行。
+
+**参数：**
+
+- `r` - 要执行的 `Runnable` 对象。
+- `uptimeMillis` - 指定的系统运行时间，以毫秒为单位。这个值是从系统启动开始计算的，不包括深度睡眠时间。
+
+**返回值：** 如果成功将 `Runnable` 对象添加到消息队列，则返回 `true`；否则返回 `false`。
+
+​			
+
+```java
+package com.fu.tt;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import android.content.pm.PackageManager;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.os.SystemClock;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import android.Manifest;
+
+import java.util.concurrent.ExecutorService;
+
+public class MainActivity extends AppCompatActivity {
+
+    private static final int UPDATE_UI = 1;
+    private Button button;
+    private TextView textView;
+
+    private Handler mainThreadHandler = new Handler(Looper.getMainLooper());
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        button = findViewById(R.id.button);
+        textView = findViewById(R.id.textView);
+
+        mainThreadHandler = new Handler(Looper.getMainLooper());
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                updateUI();
+            }
+        });
+    }
+
+
+    private void updateUI() {
+        long currentTime = SystemClock.uptimeMillis();
+        long targetTime = currentTime + 3000; // 在当前时间的基础上增加 3000 毫秒（3 秒）
+        mainThreadHandler.postAtTime(new Runnable() {
+            @Override
+            public void run() {
+                // 在主线程（UI线程）中执行的代码，例如更新 UI
+                textView.setText("定时更新的内容");
+            }
+        }, targetTime);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+    protected void onResume()
+    {
+        super.onResume();
+    }
+
+    @Override
+    protected void onPause()
+    {
+        super.onPause();
+    }
+}
+```
+
+
+
+#### SystemClock 的几种方法
+
+`SystemClock.uptimeMillis()` 是 Android 中 `SystemClock` 类的一个方法，它返回自系统启动以来的时间（不包括设备处于深度睡眠状态的时间），单位为毫秒。这个方法在计算延迟、设定定时任务或者测量时间间隔等场景下非常有用。
+
+`SystemClock.uptimeMillis()` 的返回值表示设备从启动到现在经过的时间，但不包括设备进入深度睡眠（如 CPU 休眠）的时间。这意味着在设备处于活跃状态时，这个值会持续增加，但在设备进入睡眠状态时，这个值会暂停。
+
+`SystemClock` 类中还有其他几个与时间相关的方法，例如：
+
+- `SystemClock.elapsedRealtime()`：返回自系统启动以来的时间，包括设备处于深度睡眠状态的时间，单位为毫秒。
+- `SystemClock.currentThreadTimeMillis()`：返回当前线程已运行的时间，单位为毫秒。
+- `SystemClock.sleep(long ms)`：使当前线程睡眠指定的毫秒数。
+
+​			
+
+### Handler.Callback
+
+`mainThreadHandler = new Handler(Looper.getMainLooper())` 的方式并没有完全被淘汰，但是在某些场景下，使用 `Handler.Callback` 接口来处理消息更加推荐，因为这样可以更好地管理和组织代码。		
+
+​				
+
+`Handler.Callback` 接口允许您更加灵活地处理 `Handler` 收到的消息。当您在创建 `Handler` 对象时提供一个实现了 `Handler.Callback` 接口的对象，`Handler` 会将接收到的消息传递给该 `Callback` 对象的 `handleMessage(Message msg)` 方法处理。这样，您可以将消息处理逻辑与 `Handler` 对象的创建分离，使代码更加模块化和易于维护。
+
+
+
+不使用 Handler.Callback
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
+
+public class MainActivity extends AppCompatActivity {
+
+    private static final int MESSAGE_TYPE_1 = 1;
+    private static final int MESSAGE_TYPE_2 = 2;
+
+    private Button buttonType1;
+    private Button buttonType2;
+
+    private Handler mainThreadHandler;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        buttonType1 = findViewById(R.id.buttonType1);
+        buttonType2 = findViewById(R.id.buttonType2);
+
+        mainThreadHandler = new Handler(Looper.getMainLooper()) {
+            @Override
+            public void handleMessage(Message msg) {
+                switch (msg.what) {
+                    case MESSAGE_TYPE_1:
+                        Toast.makeText(MainActivity.this, "Message type 1 received", Toast.LENGTH_SHORT).show();
+                        break;
+                    case MESSAGE_TYPE_2:
+                        Toast.makeText(MainActivity.this, "Message type 2 received", Toast.LENGTH_SHORT).show();
+                        break;
+                    default:
+                        super.handleMessage(msg);
+                }
+            }
+        };
+
+        buttonType1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mainThreadHandler.sendEmptyMessage(MESSAGE_TYPE_1);
+            }
+        });
+
+        buttonType2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mainThreadHandler.sendEmptyMessage(MESSAGE_TYPE_2);
+            }
+        });
+    }
+}
+```
+
+​				
+
+加了Handler.Callback
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
+
+public class MainActivity extends AppCompatActivity implements Handler.Callback {
+
+    private static final int MESSAGE_TYPE_1 = 1;
+    private static final int MESSAGE_TYPE_2 = 2;
+
+    private Button buttonType1;
+    private Button buttonType2;
+
+    private Handler mainThreadHandler;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        buttonType1 = findViewById(R.id.buttonType1);
+        buttonType2 = findViewById(R.id.buttonType2);
+
+        mainThreadHandler = new Handler(Looper.getMainLooper(), this);
+
+        buttonType1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mainThreadHandler.sendEmptyMessage(MESSAGE_TYPE_1);
+            }
+        });
+
+        buttonType2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mainThreadHandler.sendEmptyMessage(MESSAGE_TYPE_2);
+            }
+        });
+    }
+
+    @Override
+    public boolean handleMessage(Message msg) {
+        // 根据 msg.what 的值处理不同的消息
+        switch (msg.what) {
+            case MESSAGE_TYPE_1:
+                // 处理类型为 MESSAGE_TYPE_1 的消息
+                Toast.makeText(this, "Message type 1 received", Toast.LENGTH_SHORT).show();
+                break;
+            case MESSAGE_TYPE_2:
+                Toast.makeText(this, "Message type 2 received", Toast.LENGTH_SHORT).show();
+                // 处理类型为 MESSAGE_TYPE_2 的消息
+                break;
+            default:
+                // 对于未知的消息类型，返回 false，表示消息未被处理
+                return false;
+        }
+        // 返回 true，表示消息已被处理
+        return true;
+    }
+}
+```
