@@ -5808,7 +5808,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void executeTasks() {
-        ExecutorService executorService = Executors.newFixedThreadPool(4);
+        ExecutorService  = Executors.newFixedThreadPool(4);
 
         Runnable task1 = new Runnable() {
             @Override
@@ -7661,9 +7661,9 @@ public class MainActivity extends AppCompatActivity {
 
 ​				
 
-`Handler.Callback` 接口允许您更加灵活地处理 `Handler` 收到的消息。当您在创建 `Handler` 对象时提供一个实现了 `Handler.Callback` 接口的对象，`Handler` 会将接收到的消息传递给该 `Callback` 对象的 `handleMessage(Message msg)` 方法处理。这样，您可以将消息处理逻辑与 `Handler` 对象的创建分离，使代码更加模块化和易于维护。
+`Handler.Callback` 接口允许您更加灵活地处理 `Handler` 收到的消息。当您在创建 `Handler` 对象时提供一个实现了 `Handler.Callback` 接口的对象，`Handler` 会将接收到的消息传递给该 `Callback` 对象的 `handleMessage(Message msg)` 方法处理。这样，**您可以将消息处理逻辑与 `Handler` 对象的创建分离**，使代码更加模块化和易于维护。**也就是说，可以在类里面重写消息/任务处理函数 handleMessage ，而不是，在创建的时候，一起写 handleMessage** 
 
-
+​					
 
 不使用 Handler.Callback
 
@@ -7806,3 +7806,1570 @@ public class MainActivity extends AppCompatActivity implements Handler.Callback 
     }
 }
 ```
+
+​				
+
+通过Lambda表达式
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
+
+public class MainActivity extends AppCompatActivity {
+
+    private static final int MESSAGE_TYPE_1 = 1;
+    private static final int MESSAGE_TYPE_2 = 2;
+
+    private Button buttonType1;
+    private Button buttonType2;
+
+    private Handler mainThreadHandler;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        buttonType1 = findViewById(R.id.buttonType1);
+        buttonType2 = findViewById(R.id.buttonType2);
+
+        mainThreadHandler = new Handler(Looper.getMainLooper(), msg -> {
+            switch (msg.what) {
+                case MESSAGE_TYPE_1:
+                    Toast.makeText(MainActivity.this, "Message type 1 received", Toast.LENGTH_SHORT).show();
+                    break;
+                case MESSAGE_TYPE_2:
+                    Toast.makeText(MainActivity.this, "Message type 2 received", Toast.LENGTH_SHORT).show();
+                    break;
+                default:
+                    return false;
+            }
+            return true;
+        });
+
+        buttonType1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mainThreadHandler.sendEmptyMessage(MESSAGE_TYPE_1);
+            }
+        });
+
+        buttonType2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mainThreadHandler.sendEmptyMessage(MESSAGE_TYPE_2);
+            }
+        });
+    }
+}
+```
+
+​				
+
+将lambda表达式展开			
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
+
+public class MainActivity extends AppCompatActivity {
+
+    private static final int MESSAGE_TYPE_1 = 1;
+    private static final int MESSAGE_TYPE_2 = 2;
+
+    private Button buttonType1;
+    private Button buttonType2;
+
+    private Handler mainThreadHandler;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        buttonType1 = findViewById(R.id.buttonType1);
+        buttonType2 = findViewById(R.id.buttonType2);
+
+
+        mainThreadHandler = new Handler(Looper.getMainLooper(), new Handler.Callback() {
+            @Override
+            public boolean handleMessage(Message msg) {
+                switch (msg.what) {
+                    case MESSAGE_TYPE_1:
+                        Toast.makeText(MainActivity.this, "Message type 1 received", Toast.LENGTH_SHORT).show();
+                        break;
+                    case MESSAGE_TYPE_2:
+                        Toast.makeText(MainActivity.this, "Message type 2 received", Toast.LENGTH_SHORT).show();
+                        break;
+                    default:
+                        return false;
+                }
+                return true;
+            }
+        });
+
+
+        buttonType1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mainThreadHandler.sendEmptyMessage(MESSAGE_TYPE_1);
+            }
+        });
+
+        buttonType2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mainThreadHandler.sendEmptyMessage(MESSAGE_TYPE_2);
+            }
+        });
+    }
+}
+```
+
+​				
+
+加了Handler.Callback
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
+
+public class MainActivity extends AppCompatActivity {
+
+    private static final int MESSAGE_TYPE_1 = 1;
+    private static final int MESSAGE_TYPE_2 = 2;
+
+    private Button buttonType1;
+    private Button buttonType2;
+
+    private Handler mainThreadHandler;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        buttonType1 = findViewById(R.id.buttonType1);
+        buttonType2 = findViewById(R.id.buttonType2);
+
+        Handler.Callback callback = new Handler.Callback() {
+            @Override
+            public boolean handleMessage(Message msg) {
+                switch (msg.what) {
+                    case MESSAGE_TYPE_1:
+                        Toast.makeText(MainActivity.this, "Message type 1 received", Toast.LENGTH_SHORT).show();
+                        break;
+                    case MESSAGE_TYPE_2:
+                        Toast.makeText(MainActivity.this, "Message type 2 received", Toast.LENGTH_SHORT).show();
+                        break;
+                    default:
+                        return false;
+                }
+                return true;
+            }
+        };
+
+        mainThreadHandler = new Handler(Looper.getMainLooper(), callback);
+
+        buttonType1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mainThreadHandler.sendEmptyMessage(MESSAGE_TYPE_1);
+            }
+        });
+
+        buttonType2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mainThreadHandler.sendEmptyMessage(MESSAGE_TYPE_2);
+            }
+        });
+    }
+}
+```
+
+​				
+
+### Lambda表达式
+
+ambda 表达式是 Java 8 中引入的一种新特性，它提供了一种简洁、函数式的方法来表示只有一个方法的接口（也称为**函数式接口**）的实例。Lambda 表达式可以使代码更简洁、易读。
+
+```java
+(parameters) -> { body }
+```
+
+1. 参数列表 (parameters)：它定义了 Lambda 表达式所需要的输入参数。参数列表可以为空，有一个参数或多个参数。如果参数列表为空，您需要使用一对空括号 `()`。如果只有一个参数，可以选择省略括号。如果有多个参数，需要用逗号分隔，用括号括起来。
+2. 箭头符号 (->)：它用于分隔参数列表和 Lambda 表达式的主体部分。
+3. 主体 (body)：它包含了 Lambda 表达式需要执行的代码。主体可以是一个表达式或一个代码块。如果主体是一个表达式，那么结果将被隐式返回。如果主体是一个代码块，您需要使用大括号 `{}` 将其括起来，并且可能需要显式使用 `return` 语句返回结果。      
+
+如果一个接口里只有一个抽象方法（不包括默认方法和静态方法），那么这个接口就被称为函数式接口（Functional Interface）。只有函数式接口才能使用 Lambda 表达式。
+
+​					
+
+```java
+package com.fu.tt;
+
+interface MyFunctionalInterface {
+    void doSomething(String input);
+}
+```
+
+
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
+
+public class MainActivity extends AppCompatActivity {
+
+    private static final int MESSAGE_TYPE_1 = 1;
+    private static final int MESSAGE_TYPE_2 = 2;
+
+    private Button buttonType1;
+    private Button buttonType2;
+
+    private Handler mainThreadHandler;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        MyFunctionalInterface myInstance1 = input -> Log.i("tag","Hello, " + input);;
+
+
+        MyFunctionalInterface myInstance2 = new MyFunctionalInterface() {
+            @Override
+            public void doSomething(String input) {
+                Log.i("tag","Hello, " + input);
+            }
+        };
+
+        myInstance1.doSomething("heisenberg");
+        myInstance2.doSomething("heisenberg");
+    }
+}
+```
+
+​				
+
+**一个案例**
+
+Greeting.java		
+
+```java
+package com.fu.tt;
+
+@FunctionalInterface
+public interface Greeting {
+    void sayHello(String name);
+}
+```
+
+`@FunctionalInterface` 是一个注解，用于表示一个接口是一个函数式接口。函数式接口是一个具有单一抽象方法（SAM）的接口。由于它们只包含一个方法，它们可以用于 Lambda 表达式和方法引用。			
+
+请注意，`@FunctionalInterface` 注解不是强制性的。如果一个接口只包含一个抽象方法，它在语义上仍然是一个函数式接口，即使没有使用 `@FunctionalInterface` 注解。然而，建议使用这个注解来明确表示接口的用途并提高代码的可读性。				
+
+​					
+
+LambdaDemo.java
+
+```java
+public class LambdaDemo {
+    public static void main(String[] args) {
+        // 使用带有大括号的 Lambda 表达式实现 Greeting 接口
+        Greeting greeting = (name) -> {
+            String greetingMessage = "Hello, " + name + "!";
+            System.out.println(greetingMessage);
+            return greetingMessage;
+        };
+
+        // 调用 sayHello 方法
+        String result = greeting.sayHello("Alice");
+        System.out.println("Greeting result: " + result);
+    }
+}
+```
+
+或者是，当只有一个的函数的时候，就可以不用 { }
+
+```java
+package com.fu.tt;
+
+import android.util.Log;
+
+public class LambdaDemo {
+    public static void main(String[] args) {
+        // 使用 Lambda 表达式实现 Greeting 接口
+        Greeting greeting = (name) -> Log.i("tag","Hello " + name + "!");
+
+        // 调用 sayHello 方法
+        greeting.sayHello("Alice");
+    }
+}
+```
+
+​					
+
+#### 接口当中的默认方法
+
+接口可以包含默认方法（Default Method）。默认方法是一种特殊类型的方法，它在接口中提供了具体的实现，而不是一个抽象方法。默认方法允许接口的设计者在不破坏已有实现的情况下，向接口添加新的方法		
+
+​			
+
+默认方法使用 `default` 关键字修饰，并提供方法体。这样，实现接口的类可以选择覆盖默认方法，也可以直接使用默认实现。以下是一个带有默认方法的接口示例：			
+
+```java
+public interface MyInterface {
+    void abstractMethod(String input);
+
+    default void defaultMethod() {
+        System.out.println("This is a default method in the interface.");
+    }
+}
+```
+
+​				
+
+### View.post() 和 View.postDelayed()
+
+`View.post()` 和 `View.postDelayed()` 是 Android View 类的方法，它们允许你将一个 Runnable 对象排队到 UI 线程的消息队列中。这对于更新 UI 或执行与 UI 相关的操作非常有用，因为这些操作必须在 UI 线程上执行。这两个方法都可以确保 Runnable 对象在 UI 线程上运行。
+
+1. `View.post(Runnable action)`：这个方法将 Runnable 对象添加到 View 的消息队列中。当 View 的 UI 线程准备好执行 Runnable 时，它会执行。**这是在不使用 Handler 的情况下**，在 UI 线程上执行代码的简便方法
+
+​					
+
+**View.post()**	
+
+```java
+textView.post(new Runnable() {
+    @Override
+    public void run() {
+        textView.setText("Text updated on the UI thread");
+    }
+});
+```
+
+
+
+**View.postDelayed()**				
+
+```java
+textView.postDelayed(new Runnable() {
+    @Override
+    public void run() {
+        textView.setText("Text updated after 2 seconds");
+    }
+}, 2000); // 更新文本将在 2 秒后发生
+```
+
+​			
+
+完整的demo
+
+activity_main.xml
+
+```xml
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+
+    <Button
+        android:id="@+id/updateButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Update Text"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Initial Text"
+        app:layout_constraintBottom_toTopOf="@+id/updateButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+```
+
+​				
+
+MainActivity.java
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
+
+public class MainActivity extends AppCompatActivity {
+
+    private Button updateButton;
+    private TextView textView;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        updateButton = findViewById(R.id.updateButton);
+        textView = findViewById(R.id.textView);
+
+        updateButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                textView.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        textView.setText("Updating...");
+                    }
+                });
+
+                textView.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        textView.setText("Updated!");
+                    }
+                }, 2000);
+            }
+        });
+    }
+}
+```
+
+​			
+
+### Timer 和 TimerTask
+
+1. Timer 类
+
+   `Timer` 类是 Java 提供的一个实用工具类，用于在将来的某个时间点调度任务。您可以使用 `schedule()` 方法指定要执行的任务（`TimerTask` 类型）以及任务的执行时间。这里有一个简单的示例：
+
+```java
+import java.util.Timer;
+
+public class TimerExample {
+    public static void main(String[] args) {
+        Timer timer = new Timer();
+        timer.schedule(new MyTimerTask(), 3000);
+    }
+}
+
+```
+
+​			
+
+2. TimerTask 类
+
+`TimerTask` 是一个实现了 `Runnable` 接口的抽象类，它定义了一个 `run()` 方法，该方法将在指定时间由 `Timer` 类执行。以下是一个简单的 `MyTimerTask` 示例：
+
+MyTimerTask.java
+
+```java
+package com.fu.tt;
+
+import android.util.Log;
+
+import java.util.TimerTask;
+
+public class MyTimerTask extends TimerTask {
+    @Override
+    public void run() {
+        Log.i("MyTimerTask","Task executed!");
+    }
+}
+```
+
+​			
+
+要让任务定期执行，可以使用 `Timer` 类的 `scheduleAtFixedRate()` 方法。以下是一个简单的示例
+
+```java
+import java.util.Timer;
+
+public class TimerExample {
+    public static void main(String[] args) {
+        Timer timer = new Timer();
+        timer.scheduleAtFixedRate(new MyTimerTask(), 0, 3000);
+    }
+}
+```
+
+在这个示例中，我们使用 `scheduleAtFixedRate()` 方法让 `MyTimerTask` 每隔 3 秒执行一次。首次执行任务将在 0 毫秒后开始，即立即开始。
+
+将这两个类放在一个项目中，运行 `TimerExample` 类，您会看到控制台每隔 3 秒输出一次 "Task executed!"。
+
+​			
+
+一个案例				
+
+如何在 `TimerTask` 中更新 UI 线程的 UI			
+
+```java
+package com.fu.tt;
+
+import java.util.TimerTask;
+
+public class MyTimerTask extends TimerTask {
+
+    private MainActivity mainActivity;
+
+    public MyTimerTask(MainActivity mainActivity) {
+        this.mainActivity = mainActivity;
+    }
+
+    @Override
+    public void run() {
+        mainActivity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mainActivity.updateTextView();
+            }
+        });
+    }
+}
+```
+
+​			
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
+import java.util.Timer;
+
+public class MainActivity extends AppCompatActivity {
+
+    private Button updateButton;
+    private TextView textView;
+    private int counter = 0;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        updateButton = findViewById(R.id.updateButton);
+        textView = findViewById(R.id.textView);
+
+        Timer timer = new Timer();
+
+
+        updateButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Timer timer = new Timer();
+                timer.scheduleAtFixedRate(new MyTimerTask(MainActivity.this), 0, 1000);
+            }
+        });
+    }
+
+    public void updateTextView() {
+        counter++;
+        textView.setText("Counter: " + counter);
+    }
+}
+```
+
+​				
+
+或者是写在一起
+
+```java
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.os.Handler;
+import android.widget.TextView;
+
+import java.util.Timer;
+import java.util.TimerTask;
+
+public class MainActivity extends AppCompatActivity {
+
+    private TextView textView;
+    private int counter = 0;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textView);
+
+        Timer timer = new Timer();
+        timer.scheduleAtFixedRate(new MyTimerTask(), 0, 1000);
+    }
+
+    class MyTimerTask extends TimerTask {
+        @Override
+        public void run() {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    counter++;
+                    textView.setText("Counter: " + counter);
+                }
+            });
+        }
+    }
+}
+```
+
+​					
+
+### 线程池
+
+`java.util.concurrent.ExecutorService` 是一个 Java 接口，它表示一个可以执行提交的 `Runnable` 和 `Callable` 任务的线程池。
+
+它提供了一些方法，如 `execute(Runnable)`、`submit(Callable)`、`submit(Runnable)` 等，用于提交任务，并提供了如 `shutdown()` 和 `awaitTermination(long, TimeUnit)` 等方法来关闭线程池。这个接口是 Java 并发框架的核心组件之一，它的实现类为 `ThreadPoolExecutor`。			
+
+​							
+
+`java.util.concurrent.Executors` 是一个 Java 类，提供了一些静态工厂方法，用于创建不同类型的 `ExecutorService` 实例。这些方法包括：
+
+- `newFixedThreadPool(int nThreads)`: 创建一个固定线程数量的线程池。
+- `newCachedThreadPool()`: 创建一个缓存线程池，根据需要自动增加线程数量。
+- `newSingleThreadExecutor()`: 创建一个单线程执行器。
+- `newScheduledThreadPool(int corePoolSize)`: 创建一个调度线程池，用于在给定延迟后执行任务或定期执行任务。
+
+通过使用 `Executors` 类提供的工厂方法，你可以轻松地创建各种类型的线程池，而不需要自己手动实例化 `ThreadPoolExecutor` 类并配置各种参数。这大大简化了线程池的创建过程。
+
+总结一下，`ExecutorService` 是一个接口，表示一个线程池，而 `Executors` 是一个类，提供了创建 `ExecutorService` 实例的工厂方法。这两者结合起来，使得在 Java 中创建和使用线程池变得简单和方便。
+
+
+
+在 Android 开发中，线程池是一种有效管理多个线程的方法，以便更高效地处理并发任务。线程池可以重用已经创建的线程，从而减少了创建和销毁线程的开销。在 Java 和 Android 中，`ExecutorService` 是管理线程池的主要类。
+
+以下是关于线程池的一些关键知识点，以及与之相关的代码示例：
+
+1. 创建线程池
+
+   使用 `Executors` 类创建线程池。以下是创建不同类型线程池的方法：
+
+   - 固定线程池（Fixed Thread Pool）：拥有固定数量的线程。
+
+     ```java
+     javaCopy code
+     int numberOfThreads = 4;
+     ExecutorService fixedThreadPool = Executors.newFixedThreadPool(numberOfThreads);
+     ```
+
+   - 单线程执行器（Single Thread Executor）：仅有一个线程的线程池。
+
+     ```java
+     javaCopy code
+     ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
+     ```
+
+   - 缓存线程池（Cached Thread Pool）：根据需要创建新线程的线程池，但会在可能的情况下重用之前构造的线程。
+
+     ```java
+     javaCopy code
+     ExecutorService cachedThreadPool = Executors.newCachedThreadPool();
+     ```
+
+   - 定时线程池（Scheduled Thread Pool）：用于执行定时任务的线程池。
+
+     ```java
+     javaCopy code
+     int numberOfThreads = 4;
+     ScheduledExecutorService scheduledThreadPool = Executors.newScheduledThreadPool(numberOfThreads);
+     ```
+
+2. 提交任务
+
+   使用 `ExecutorService` 的 `submit()` 方法提交任务。任务通常是实现了 `Runnable` 接口的类。
+
+   ```java
+   javaCopy code
+   class MyTask implements Runnable {
+       @Override
+       public void run() {
+           // 任务逻辑
+       }
+   }
+   
+   MyTask task = new MyTask();
+   fixedThreadPool.submit(task);
+   ```
+
+   也可以使用 Lambda 表达式创建任务：
+
+   ```java
+   javaCopy code
+   fixedThreadPool.submit(() -> {
+       // 任务逻辑
+   });
+   ```
+
+3. 关闭线程池
+
+   在不再需要线程池时，使用 `shutdown()` 方法关闭线程池。这将启动有序的关闭，在关闭之前允许提交的任务完成。可以使用 `awaitTermination()` 方法等待线程池关闭。
+
+   ```java
+   javaCopy code
+   fixedThreadPool.shutdown();
+   
+   try {
+       if (!fixedThreadPool.awaitTermination(60, TimeUnit.SECONDS)) {
+           fixedThreadPool.shutdownNow();
+       }
+   } catch (InterruptedException e) {
+       fixedThreadPool.shutdownNow();
+   }
+   ```
+
+4. 定时任务
+
+   对于定时任务，使用 `ScheduledExecutorService`。以下是如何使用 `schedule()`、`scheduleAtFixedRate()` 和 `scheduleWithFixedDelay()` 方法执行定时任务：
+
+   - `schedule()`：在指定的延迟之后运行一次任务。
+
+     ```
+     javaCopy code
+     Runnable task = () -> {
+         // 任务逻辑
+     };
+     long delay = 5;
+     TimeUnit timeUnit = TimeUnit.SECONDS;
+     scheduledThreadPool.schedule(task, delay, timeUnit);
+     ```
+
+   - `scheduleAtFixedRate()`：在指定的初始延迟之后开始运行任务，并以固定的速率连续执行任务。如果任务的执行时间超过指定的周期，则下一个任务将在当前任务完成后立即开始。
+
+     ```java
+     javaCopy code
+     Runnable task = () -> {
+         // 任务逻辑
+     };
+     long initialDelay = 1;
+     long period = 5;
+     TimeUnit timeUnit = TimeUnit.SECONDS;
+     scheduledThreadPool.scheduleAtFixedRate(task, initialDelay, period, timeUnit);
+     ```
+
+   - `scheduleWithFixedDelay()`：在指定的初始延迟之后开始运行任务，并在每次任务完成后以固定的延迟执行下一个任务。
+
+     ```java
+     javaCopy code
+     Runnable task = () -> {
+         // 任务逻辑
+     };
+     long initialDelay = 1;
+     long delay = 5;
+     TimeUnit timeUnit = TimeUnit.SECONDS;
+     scheduledThreadPool.scheduleWithFixedDelay(task, initialDelay, delay, timeUnit);
+     ```
+
+5. 自定义线程池
+
+在某些情况下，您可能需要自定义线程池，以便更好地控制线程的创建、管理和回收。可以使用 `ThreadPoolExecutor` 类创建自定义线程池。
+
+```
+javaCopy code
+int corePoolSize = 2;
+int maximumPoolSize = 4;
+long keepAliveTime = 60;
+TimeUnit timeUnit = TimeUnit.SECONDS;
+BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>();
+ThreadFactory threadFactory = Executors.defaultThreadFactory();
+RejectedExecutionHandler handler = new ThreadPoolExecutor.AbortPolicy();
+
+ThreadPoolExecutor customThreadPool = new ThreadPoolExecutor(
+    corePoolSize, maximumPoolSize, keepAliveTime, timeUnit, workQueue, threadFactory, handler
+);
+```
+
+这些参数的含义如下：
+
+- `corePoolSize`：线程池维护的核心线程数。
+- `maximumPoolSize`：线程池允许的最大线程数。
+- `keepAliveTime`：非核心线程空闲等待新任务的最长时间。超过这个时间，非核心线程将被终止。
+- `timeUnit`：`keepAliveTime` 参数的时间单位。
+- `workQueue`：用于存储等待执行的任务的阻塞队列。
+- `threadFactory`：用于创建新线程的工厂。
+- `handler`：当线程池已满且队列已满时，拒绝处理新任务的处理程序。
+
+​				
+
+#### 线程池_fixedThreadPool（固定线程池）
+
+ExecutorService 是一个可管理线程池的接口，提供了线程管理和任务执行的方法。FixedThreadPool 是 ExecutorService 的一种实现，它创建了一个具有固定线程数的线程池。
+
+​			
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
+import java.util.Timer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
+    private ExecutorService fixedThreadPool;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        Button button = findViewById(R.id.start_button);
+        fixedThreadPool = Executors.newFixedThreadPool(3);
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                for (int i = 0; i < 100; i++) {
+                    final int taskNumber = i;
+                    fixedThreadPool.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                Thread.sleep(2000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            Log.d(TAG, "Task " + taskNumber + " is executed by thread: " + Thread.currentThread().getName());
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (fixedThreadPool != null) {
+          // 关闭线程池
+            fixedThreadPool.shutdown();
+        }
+    }
+}
+```
+
+​				
+
+1. 线程复用：线程池中的线程在完成任务后不会立即销毁，而是等待新的任务分配给它。这种复用机制避免了频繁创建和销毁线程带来的性能开销。
+2. 任务调度：线程池负责管理任务队列，根据线程的可用性来调度任务。在这个例子中，FixedThreadPool 的线程数量为3，因此线程池会并发执行3个任务。当一个任务完成时，空闲的线程会开始执行下一个任务。任务将在队列中等待，直到有可用的线程来执行它们。（一次性打印三个日志）
+3. 资源控制：线程池可以控制同时运行的线程数量，从而避免过多的线程消耗系统资源。在这个例子中，我们创建了一个具有3个线程的 FixedThreadPool，这意味着在任何时候，最多只会有3个线程同时执行任务。这有助于提高应用程序的性能，特别是在资源受限的设备上。
+
+​			
+
+#### 线程池_SingleThreadExecutor（单线程执行器）
+
+单线程执行器（Single Thread Executor）是一种特殊类型的线程池，它只有一个工作线程。这意味着它同时只能执行一个任务，而其他任务将排队等待。单线程执行器的一个主要优点是它可以保证任务按照提交的顺序依次执行。这在某些场景下非常有用，比如你需要按顺序执行一系列任务，而不希望它们在多个线程中并发执行
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
+import java.util.Timer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
+    private ExecutorService executorService;
+
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        Button button = findViewById(R.id.start_button);
+
+        // 创建一个单线程执行器
+        executorService = Executors.newSingleThreadExecutor();
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                for (int i = 0; i < 10; i++) {
+                    final int taskNumber = i;
+                    executorService.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                Thread.sleep(2000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            Log.d(TAG, "Task " + taskNumber + " is executed by thread: " + Thread.currentThread().getName());
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (executorService != null) {
+            executorService.shutdown();
+        }
+    }
+}
+```
+
+​				
+
+#### 线程池_cachedThreadPool（缓存线程池）
+
+缓存线程池（Cached Thread Pool）是一种特殊类型的线程池，它的工作线程数量可以根据需要动态调整。当有新任务提交到缓存线程池时，如果有空闲的工作线程，那么这个任务将立即被这个工作线程执行；如果没有空闲的工作线程，线程池会创建一个新的工作线程来执行这个任务。此外，当工作线程空闲一段时间后（默认为60秒），它将被自动销毁以减少资源占用。
+
+缓存线程池适用于执行大量短时任务的场景，因为它可以根据任务数量动态调整线程数量，从而提高系统资源的利用率。				
+
+​				
+
+```java
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.os.Bundle;
+import android.widget.TextView;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class MainActivity extends AppCompatActivity {
+
+    private TextView textView;
+    private ExecutorService cachedThreadPool;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textView);
+
+        // 创建一个缓存线程池
+        cachedThreadPool = Executors.newCachedThreadPool();
+
+        // 提交任务
+        for (int i = 0; i < 10; i++) {
+            int taskNumber = i + 1;
+            cachedThreadPool.execute(() -> {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                // 更新 UI
+                runOnUiThread(() -> textView.append("Task " + taskNumber + " completed on thread: " + Thread.currentThread().getName() + "\n"));
+            });
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // 关闭线程池
+        if (cachedThreadPool != null) {
+            cachedThreadPool.shutdown();
+        }
+    }
+}
+```
+
+​				
+
+#### 线程池_ScheduledThreadPool（定时任务）
+
+定时线程池（Scheduled Thread Pool）允许您在指定延迟之后运行任务，或者定期执行任务。在 Android 开发中，您可以使用 `java.util.concurrent.ScheduledThreadPoolExecutor` 类来创建和管理定时线程池。
+
+​					
+
+**scheduleAtFixedRate（周期）**
+
+```java
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+public class MainActivity extends AppCompatActivity {
+
+    private TextView textView;
+    private Button startButton;
+    private int counter = 0;
+    private ScheduledExecutorService scheduledExecutorService;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textView);
+        startButton = findViewById(R.id.startButton);
+
+        scheduledExecutorService = Executors.newScheduledThreadPool(1);
+
+        startButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+                    @Override
+                    public void run() {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                counter++;
+                                textView.setText("Counter: " + counter);
+                            }
+                        });
+                    }
+                }, 0, 1, TimeUnit.SECONDS);
+            }
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        scheduledExecutorService.shutdown();
+    }
+}
+```
+
+ `Executors.newScheduledThreadPool(1)` 创建一个包含一个线程的定时线程池，然后，当用户点击 `startButton` 时，我们使用 `scheduleAtFixedRate` 方法安排一个定期运行的任务，注意：**每次点击按钮时，你都会向线程池中提交一个新的定时任务。这些任务会在同一个线程中依次执行。因此，在你的示例中，你会有多个定时任务在同一个线程中同时运行，导致计数器加速。	并不是因为点击一次 START 就新增一个线程，多个线程同时运行，导致的计时速度加快**			
+
+​							
+
+```java
+scheduleAtFixedRate(new Runnable,0,1,TimeUnit.SECONDS)
+```
+
+1. `Runnable command`: 要执行的任务。这是一个实现了 `Runnable` 接口的对象，表示要执行的代码。
+2. `long initialDelay`: 初始延迟。这是任务首次执行前的等待时间。这个值的单位是由第 4 个参数指定的。
+3. `long period`: 任务执行的间隔。这是连续任务执行之间的时间间隔。这个值的单位是由第 4 个参数指定的。
+4. `TimeUnit unit`: 时间单位。这是一个枚举类型，用于指定初始延迟和执行间隔的时间单位。可用的单位包括 `NANOSECONDS`（纳秒）、`MICROSECONDS`（微秒）、`MILLISECONDS`（毫秒）、`SECONDS`（秒）、`MINUTES`（分钟）、`HOURS`（小时）和 `DAYS`（天）。
+
+​			
+
+```java
+scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+    @Override
+    public void run() {
+        // ... 更新 UI ...
+    }
+}, 0, 1, TimeUnit.SECONDS);
+```
+
+这意味着：
+
+1. 我们创建了一个新的 `Runnable` 对象，该对象包含要执行的任务（在本例中为更新 UI）。
+2. 初始延迟为 0，任务将立即开始执行。
+3. 任务执行间隔为 1 秒，即每隔 1 秒执行一次任务。
+4. 时间单位为 `TimeUnit.SECONDS`，表示初始延迟和执行间隔都以秒为单位。
+
+​					
+
+如果你想将十个任务分配给十个线程，你只需要创建一个拥有十个线程的线程池，每一次 `scheduledExecutorService.scheduleAtFixedRate` 都会将新的任务分配空闲的线程，如果，你的没有空闲的，就会加在一个线程上面添加多个任务				
+通过点按按钮的方式，给十个线程分配任务
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+public class MainActivity extends AppCompatActivity {
+
+    private TextView textView;
+    private Button startButton;
+    private int counter = 0;
+    private ScheduledExecutorService scheduledExecutorService;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textView);
+        startButton = findViewById(R.id.startButton);
+
+        scheduledExecutorService = Executors.newScheduledThreadPool(100);
+
+        startButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+                    @Override
+                    public void run() {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                counter++;
+                                textView.setText("Counter: " + counter);
+                            }
+                        });
+                    }
+                }, 0, 1, TimeUnit.SECONDS);
+            }
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        scheduledExecutorService.shutdown();
+    }
+}
+```
+
+​					
+
+一次性就执行十次，让我们的线程池满负荷运行
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+public class MainActivity extends AppCompatActivity {
+
+    private TextView textView;
+    private Button startButton;
+    private int counter = 0;
+    private ScheduledExecutorService scheduledExecutorService;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textView);
+        startButton = findViewById(R.id.startButton);
+
+        scheduledExecutorService = Executors.newScheduledThreadPool(10);
+
+        startButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                for (int i = 0; i < 10; i++) {
+                    scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+                        @Override
+                        public void run() {
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    counter++;
+                                    textView.setText("Counter: " + counter);
+                                }
+                            });
+                        }
+                    }, 0, 1, TimeUnit.SECONDS);
+                }
+            }
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        scheduledExecutorService.shutdown();
+    }
+}
+```
+
+​					
+
+​				
+
+**schedule（延迟）**	
+
+`ScheduledExecutorService` 的 `schedule` 方法允许你在指定的延迟后执行一个一次性任务。
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+public class MainActivity extends AppCompatActivity {
+
+    private TextView textView;
+    private Button startButton;
+    private ScheduledExecutorService scheduledExecutorService;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textView);
+        startButton = findViewById(R.id.startButton);
+
+        scheduledExecutorService = Executors.newScheduledThreadPool(1);
+
+        startButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                scheduledExecutorService.schedule(new Runnable() {
+                    @Override
+                    public void run() {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                textView.setText("Task executed after 3 seconds");
+                            }
+                        });
+                    }
+                }, 3, TimeUnit.SECONDS);
+            }
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        scheduledExecutorService.shutdown();
+    }
+}
+```
+
+​				
+
+在这个例子中，我们有一个 `TextView` 和一个 `Button`。当用户点击按钮时，将在延迟 3 秒后执行一个任务，该任务将更新 `TextView` 的文本。请注意，这个任务只会执行一次，不会周期性地重复。
+
+`scheduledExecutorService.schedule()` 方法有三个参数：
+
+1. `Runnable`：要执行的任务。
+2. `long delay`：任务开始执行前的延迟时间。
+3. `TimeUnit unit`：延迟时间的单位（如 `TimeUnit.SECONDS`、`TimeUnit.MILLISECONDS` 等）。
+
+​				
+
+### 自创建线程池
+
+`ThreadPoolExecutor` 是 `java.util.concurrent` 包中的一个类，它允许你创建自定义的线程池。与 `Executors` 类提供的预定义线程池不同，使用 `ThreadPoolExecutor`，你可以更好地控制线程池的行为，例如核心线程数、最大线程数、线程空闲时间等。				
+
+
+
+```java
+package com.fu.tt;
+
+
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+public class MainActivity extends AppCompatActivity {
+
+    private TextView textView;
+    private Button startButton;
+    private ThreadPoolExecutor threadPoolExecutor;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textView);
+        startButton = findViewById(R.id.startButton);
+
+        int corePoolSize = 2;
+        int maximumPoolSize = 4;
+        long keepAliveTime = 10;
+        TimeUnit unit = TimeUnit.SECONDS;
+        LinkedBlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>();
+
+        threadPoolExecutor = new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
+
+        startButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                threadPoolExecutor.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Thread.sleep(3000);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                textView.setText("Task executed by custom ThreadPoolExecutor");
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        threadPoolExecutor.shutdown();
+    }
+}
+```
+
+1. `corePoolSize`：线程池中的核心线程数。即使线程空闲，线程池也会保持这些核心线程。
+2. `maximumPoolSize`：线程池中允许的最大线程数。当工作队列已满时，线程池会创建新线程，直到达到最大线程数。
+3. `keepAliveTime`：非核心线程空闲时的最长保持时间。超过这个时间，非核心线程将被终止。
+4. `unit`：`keepAliveTime` 的时间单位。
+5. `workQueue`：用于存储等待执行的任务的阻塞队列。
+
+当用户点击按钮时，我们将一个任务提交给线程池。这个任务会模拟耗时操作（通过 `Thread.sleep(3000)`），然后在主线程上更新 `TextView` 的文本。				
+
+​					
+
+```java
+LinkedBlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>();
+```
+
+`LinkedBlockingQueue` 是 `java.util.concurrent` 包中的一个类，它实现了一个**线程安全的阻塞队列**。这个队列用于存储等待执行的任务。它是 `ThreadPoolExecutor` 构造函数的一个参数。
+
+​				
+
+阻塞队列（BlockingQueue）是一种特殊的队列，它支持在多线程环境下的插入和提取操作。其中，"阻塞" 的含义是指，当队列为空时，从队列中获取元素的操作会被阻塞，直到队列中有元素为止。同样，当队列已满时，向队列中添加元素的操作也会被阻塞，直到队列中有空位置为止。
+
+`LinkedBlockingQueue` 是一种实现了阻塞队列接口的类，它使用链表作为底层数据结构。它是线程安全的，意味着在多线程环境下，你不需要担心多个线程同时访问队列时的同步问题。
+
+在线程池中，`LinkedBlockingQueue` 用于存储等待执行的任务。当你向线程池提交任务时，任务会被添加到 `LinkedBlockingQueue` 中。线程池中的线程会从队列中获取任务并执行它们。如果队列为空，线程会等待，直到有新任务提交到队列为止。
+
+举个例子，假设你有一个线程池，它有3个线程。同时，你向线程池提交了5个任务。线程池中的3个线程将立即开始执行前3个任务。而剩下的2个任务会被添加到 `LinkedBlockingQueue` 中等待执行。当线程池中的一个线程完成了它的任务，它将从队列中获取下一个任务并执行。这样，队列中的任务会按照先进先出（FIFO）的顺序被处理。
+
+总之，`LinkedBlockingQueue` 是一种线程安全的、基于链表的阻塞队列。在线程池中，它用于存储等待执行的任务，并且支持多线程环境下的安全操作。
+
+​				
+
+### 泛型（Generics）
+
+泛型（Generics）是 Java 编程语言中的一个重要特性，它允许在类、接口和方法中使用类型参数。泛型的主要目的是提高代码的可重用性，减少代码重复，并增加类型安全性。			
+
+**就是不在意数据的类型	**				
+
+​				
+
+#### 泛型类和泛型接口
+
+泛型类和泛型接口是带有一个或多个类型参数的类和接口。例如，Java 集合框架中的 `List<E>` 和 `Map<K, V>` 都是泛型接口。在这些接口中，`E`、`K` 和 `V` 分别表示元素类型、键类型和值类型。
+
+一个例子			
+
+1. 首先，创建一个名为 `Storage` 的泛型接口，包含 `add`、`get` 和 `size` 方法。
+
+```java
+public interface Storage<T> {
+    void add(T item);
+    T get(int index);
+    int size();
+}
+```
+
+在这个泛型接口中，我们使用了泛型参数 `T`，表示要存储的元素类型				
+
+​				
+
+创建一个实现了 `Storage` 接口的泛型类 `ArrayStorage`，用于将元素存储在一个数组中。
+
+```java
+import java.util.Arrays;
+
+public class ArrayStorage<T> implements Storage<T> {
+    private Object[] items;
+    private int size;
+
+    public ArrayStorage() {
+        items = new Object[10];
+        size = 0;
+    }
+
+    @Override
+    public void add(T item) {
+        if (size == items.length) {
+            items = Arrays.copyOf(items, size * 2);
+        }
+        items[size++] = item;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public T get(int index) {
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException("Index: " + index + ", Size: " + size);
+        }
+        return (T) items[index];
+    }
+
+    @Override
+    public int size() {
+        return size;
+    }
+}
+```
+
+在这个泛型类中，我们使用了与 `Storage` 接口相同的泛型参数 `T`。注意，我们在 `ArrayStorage` 类中使用了一个 `Object[]` 数组来存储元素，并在获取元素时进行了类型转换。					
+
+​										
+
+在你的 `MainActivity` 类中，测试 `ArrayStorage` 类的使用
+
+```java
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import android.widget.TextView;
+
+public class MainActivity extends AppCompatActivity {
+
+    private TextView textView;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textView);
+
+        // 使用泛型类 ArrayStorage 存储 String 类型的元素
+        Storage<String> stringStorage = new ArrayStorage<>();
+        stringStorage.add("Hello");
+        stringStorage.add("World");
+
+        // 使用泛型类 ArrayStorage 存储 Integer 类型的元素
+        Storage<Integer> integerStorage = new ArrayStorage<>();
+        integerStorage.add(1);
+        integerStorage.add(2);
+        integerStorage.add(3);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("String Storage: ").append(stringStorage.get(0)).append(", ").append(stringStorage.get(1)).append("\n");
+        sb.append("Integer Storage: ").append(integerStorage.get(0)).append(", ").append(integerStorage.get(1)).append(", ").append(integerStorage.get(2));
+
+        textView.setText(sb.toString());
+    }
+}
+```
+
