@@ -89,6 +89,16 @@
 - [自创建线程池](#自创建线程池)
 - [泛型（Generics）](#泛型generics)
   - [泛型类和泛型接口](#泛型类和泛型接口)
+  - [泛型方法](#泛型方法)
+  - [类型参数和类型参数约束](#类型参数和类型参数约束)
+- [通配符](#通配符)
+- [AsyncTask 类](#asynctask-类)
+- [AsyncTask 的替代方案](#asynctask-的替代方案)
+- [ExecutorService\_submit](#executorservice_submit)
+- [Callable 和 Runnable](#callable-和-runnable)
+- [ViewModel](#viewmodel)
+  - [两个build.gradle](#两个buildgradle)
+- [LiveData](#livedata)
 
 
 
@@ -9291,7 +9301,9 @@ LinkedBlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>();
 
 泛型（Generics）是 Java 编程语言中的一个重要特性，它允许在类、接口和方法中使用类型参数。泛型的主要目的是提高代码的可重用性，减少代码重复，并增加类型安全性。			
 
-**就是不在意数据的类型	**				
+**就是不在意数据的类型	**	
+
+在编译时，Java 编译器会将泛型信息擦除，因此在运行时泛型类型的信息是不可用的。这意味着泛型实例在运行时的类型实际上是它们的原始类型			
 
 ​				
 
@@ -9394,4 +9406,1098 @@ public class MainActivity extends AppCompatActivity {
     }
 }
 ```
+
+​			
+
+```java
+Storage<Integer> integerStorage = new ArrayStorage<>();
+```
+
+因为在声明类的时候，并没有声明他是什么类型的类，	不知道里面的函数都是处理什么类型的数据，所以在创建的时候指定，他的数据类型				
+
+实际上，他的写法应该是			
+
+```java
+Storage<Integer> integerStorage = new ArrayStorage<Integer>();
+```
+
+但是在java7以后就简化了这样的写法。			
+
+​				
+
+#### 泛型方法
+
+```java
+package com.fu.tt;
+
+import java.util.List;
+
+public class Util {
+    public static <T> int findFirstOccurrence(List<T> list, T target) {
+        for (int i = 0; i < list.size(); i++) {
+            if (list.get(i).equals(target)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+}
+```
+
+​			
+
+```java
+package com.fu.tt;
+
+
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+public class MainActivity extends AppCompatActivity {
+
+    private TextView textView;
+    private Button startButton;
+    private ThreadPoolExecutor threadPoolExecutor;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textView);
+        List<String> names = Arrays.asList("Alice", "Bob", "Charlie", "Alice");
+        int index_names = Util.findFirstOccurrence(names, "Charlie");
+
+        List<Integer> age = Arrays.asList(1,2, 3, 4, 5);
+        int index_age = Util.findFirstOccurrence(names, "Charlie");
+
+        textView.setText("First occurrence of 'Charlie' is at index: " + index_names + "\nage : " + index_age);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+}
+```
+
+​			
+
+#### 类型参数和类型参数约束
+
+类型参数约束是指对泛型中可用类型的限制。这可以通过使用 `extends` 关键字来实现，表示类型参数必须是指定类型的子类（或实现了指定接口）。		
+
+简单来说，不是一个泛型可以衍生为多个类型嘛，那么约束就是，只接受指定的类型类的衍生类型
+
+```java
+// Shape 接口及其实现类
+public interface Shape {
+    double getArea();
+}
+
+public class Circle implements Shape {
+    private double radius;
+
+    public Circle(double radius) {
+        this.radius = radius;
+    }
+
+    @Override
+    public double getArea() {
+        return Math.PI * radius * radius;
+    }
+}
+
+public class Rectangle implements Shape {
+    private double width;
+    private double height;
+
+    public Rectangle(double width, double height) {
+        this.width = width;
+        this.height = height;
+    }
+
+    @Override
+    public double getArea() {
+        return width * height;
+    }
+}
+
+// Box 泛型类，使用类型参数约束
+public class Box<T extends Shape> {
+    private T shape;
+
+    public Box(T shape) {
+        this.shape = shape;
+    }
+
+    public T getShape() {
+        return shape;
+    }
+
+    public void setShape(T shape) {
+        this.shape = shape;
+    }
+}
+
+// 使用 Box 泛型类的示例代码
+public class Main {
+    public static void main(String[] args) {
+        Box<Circle> circleBox = new Box<>(new Circle(5));
+        Box<Rectangle> rectangleBox = new Box<>(new Rectangle(4, 6));
+
+        // 下面这行代码将导致编译错误，因为 String 类型不符合 T extends Shape 的约束
+        // Box<String> stringBox = new Box<>("Error");
+
+        System.out.println("Circle area: " + circleBox.getShape().getArea());
+        System.out.println("Rectangle area: " + rectangleBox.getShape().getArea());
+    }
+}
+```
+
+​				
+
+### 通配符
+
+一种更加灵活的忽略数据类型
+
+1. 无限制通配符（<?>）
+
+假设我们有一个方法，它需要接受一个 `List`，并打印其中的所有元素。我们可以使用无限制通配符（<?>）来表示未知的类型：			
+
+```java
+public void printListItems(List<?> list) {
+    for (Object item : list) {
+        System.out.println(item);
+    }
+}
+```
+
+​				
+
+那这个和我们的刚刚的泛型有什么区别呢，都是忽略
+
+泛型是声明的时候，不知道自己的接受的是什么类型的数据，但是一旦建立，就知道自己创建的是什么类型的数据，就已经确定了。
+
+通配符是，你在传输数据的时候都不知道，自己传进去的是什么类型的数据			
+
+​					
+
+详细的关注，for 循环的内容
+
+```java
+    public <T> void printListItems1(List<T> list) {
+      // 他非常确定，数据类型就是 T 
+        for (T item : list) {
+            Log.i("tag",String.valueOf(item));
+        }
+    }
+
+    public void printListItems2(List<?> list) {
+      // for 循环的时候也不清楚自己是什么数据类型，只能用所有数据类型的父类来存储数据
+        for (Object item : list) {
+            Log.i("tag",String.valueOf(item));
+        }
+    }
+```
+
+​					
+
+2. 上界通配符（<? extends T>）
+
+上界通配符用于限制未知类型的上限。例如，我们有一个 `Animal` 类和几个子类（如 `Dog` 和 `Cat`）。我们想创建一个接受 `Animal` 及其子类的列表的方法。这时，我们可以使用上界通配符：
+
+```java
+public abstract class Animal {
+    public abstract void makeSound();
+}
+
+public class Dog extends Animal {
+    public void makeSound() {
+        System.out.println("Woof!");
+    }
+}
+
+public class Cat extends Animal {
+    public void makeSound() {
+        System.out.println("Meow!");
+    }
+}
+
+public void playSounds(List<? extends Animal> animals) {
+  // 不知道传进来的是什么类型，只能够用父类来接受数据，因为，必定是 Animal 的子类
+    for (Animal animal : animals) {
+        animal.makeSound();
+    }
+}
+```
+
+​				
+
+3. 下界通配符（<? super T>）
+
+下界通配符用于限制未知类型的下限。例如，我们想创建一个将元素添加到列表的方法。这个方法应该接受任何 `Number` 类型及其超类的列表，例如 `List<Number>`、`List<Object>` 等。这时，我们可以使用下界通配符：
+
+```java
+public void addNumberToList(List<? super Number> list, Number number) {
+    list.add(number);
+}
+```
+
+使用 `<? super Number>`，我们可以确保此方法接受 `Number` 及其超类的列表。			
+
+​			
+
+结合上界通配符（<? extends T>）来解释一下。上界通配符用于限制泛型参数的类型必须是某个类的子类（或其自身）。上界通配符在处理泛型集合中的对象时很有用，因为它们允许你处理泛型集合中的不同类型的对象
+
+```java
+public class Animal {
+    // ...
+}
+
+public class Mammal extends Animal {
+    // ...
+}
+
+public class Dog extends Mammal {
+    // ...
+}
+```
+
+​				
+
+```java
+public static void processAnimals(List<? extends Animal> animals) {
+    for (Animal animal : animals) {
+        // 处理 animal 对象
+    }
+}
+```
+
+这里，我们使用了上界通配符 `<? extends Animal>` 来指定列表中的元素必须是 `Animal` 类型或其子类型。现在，我们可以使用这个方法处理不同类型的动物列表：			
+
+​				
+
+```java
+List<Animal> animalList = new ArrayList<>();
+List<Mammal> mammalList = new ArrayList<>();
+List<Dog> dogList = new ArrayList<>();
+
+// 有效
+processAnimals(animalList);
+
+// 有效
+processAnimals(mammalList);
+
+// 有效
+processAnimals(dogList);
+```
+
+现在，我们可以将 `Animal`、`Mammal` 和 `Dog` 类型的对象列表传递给 `processAnimals` 方法，这是因为我们使用了上界通配符 `<? extends Animal>`。			
+
+​			
+
+现在，我们对比一下上界通配符和下界通配符：
+
+- 上界通配符（<? extends T>）：限制泛型参数的类型必须是 T 或其子类。它在读取泛型集合中的对象时很有用，因为它们允许你处理泛型集合中的不同类型的对象。
+- 下界通配符（<? super T>）：限制泛型参数的类型必须是 T 或其父类。它在将对象写入泛型集合时很有用，因为它们允许你将更具体的类型（子类）添加到泛型集合中。
+
+
+
+​			
+
+```java
+public class Animal {
+    // ...
+}
+
+public class Mammal extends Animal {
+    // ...
+}
+
+public class Dog extends Mammal {
+    // ...
+}
+```
+
+​				
+
+假设我们想要实现一个方法，该方法可以将 `Mammal` 或其子类的对象添加到 `List` 中，该 `List` 可能包含 `Mammal` 或其父类的对象。为此，我们可以使用下界通配符 `<? super Mammal>`：			
+
+```java
+public static void addMammal(List<? super Mammal> mammals) {
+    mammals.add(new Mammal());
+    mammals.add(new Dog());
+}
+```
+
+现在，我们可以使用这个方法将 `Mammal` 和 `Dog` 对象添加到 `Animal` 和 `Mammal` 类型的列表中：		
+
+```java
+List<Animal> animalList = new ArrayList<>();
+List<Mammal> mammalList = new ArrayList<>();
+
+// 有效
+addMammal(animalList);
+
+// 有效
+addMammal(mammalList);
+
+// 注意：以下代码是无效的，因为 List<Dog> 只能容纳 Dog 对象，而不能容纳 Mammal 对象
+// List<Dog> dogList = new ArrayList<>();
+// addMammal(dogList);
+```
+
+​				
+
+### AsyncTask 类
+
+它允许你在 UI 线程之外执行耗时操作，然后将结果发布到 UI 线程，从而避免阻塞主线程。AsyncTask 类提供了一个简单的方法来实现异步操作。					
+
+他跟，Thread 单开一个线程，然后通过 runOnUiThread 或者是通过 Handle 发送任务的方式更新 UI 线程的 UI 有什么区别？    			
+
+AsyncTask 存在的意义在于它提供了一个简化的、更易于理解和使用的方法来处理后台任务和 UI 线程之间的通信。与直接使用 Thread 和 Handler 或者 runOnUiThread 不同，AsyncTask 将这些步骤封装在一个类中，并提供了一个更加结构化的方法来处理后台任务和 UI 更新。					
+
+以下是 AsyncTask 和其他方法之间的一些区别：					
+
+1. 结构化：AsyncTask 将后台任务执行和 UI 更新分离到不同的方法中（`doInBackground`、`onProgressUpdate` 和 `onPostExecute`），这使得代码更加清晰和易于理解。
+2. 线程池管理：AsyncTask 内部使用了线程池来处理并发任务，而不是为每个任务创建一个新的线程。这有助于提高性能并降低资源消耗。
+3. 进度更新：AsyncTask 提供了一种简单的方法来更新任务进度。使用 `publishProgress` 方法，你可以直接从 `doInBackground` 方法中触发 `onProgressUpdate` 方法，而不需要单独处理 Handler。
+4. 生命周期管理：AsyncTask 可以处理与 Activity 生命周期相关的问题，例如在旋转屏幕时正确取消任务以避免内存泄漏。
+
+然而，AsyncTask 并非适用于所有场景。它主要适用于短暂的、与 UI 交互的后台任务。对于长时间运行的后台任务或需要更细粒度控制的场景，使用其他方法（如 Service、Thread、Handler 或其他异步处理库）可能更合适。总之，AsyncTask 是一个易于使用的工具，适用于处理简单的后台任务和 UI 更新。				
+
+```java
+import android.os.AsyncTask;
+import android.widget.TextView;
+
+public class MyAsyncTask extends AsyncTask<Void, Integer, String> {
+
+    private TextView textView;
+
+    public MyAsyncTask(TextView textView) {
+        this.textView = textView;
+    }
+
+    @Override
+    protected void onPreExecute() {
+        super.onPreExecute();
+        textView.setText("Starting...");
+    }
+
+  // 一个方法，你需要在其中编写在后台线程执行的任务。当你执行一个 AsyncTask 时，doInBackground 方法会在一个新的工作线程上运行。你可以在这个方法中执行耗时操作，例如文件下载、数据库查询等。需要注意的是，doInBackground 方法不能直接访问 UI，因为它不是在主线程上运行。
+    @Override
+    protected String doInBackground(Void... voids) {
+        for (int i = 1; i <= 5; i++) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+          // 是 AsyncTask 类中的一个方法，它用于在后台任务中更新 UI。当你需要更新任务进度时，可以在 doInBackground 方法中调用 publishProgress。它不是一个需要重写的方法
+            publishProgress(i);
+        }
+        return "Finished!";
+    }
+
+  // 这个主要是用来显示进度
+    @Override
+    protected void onProgressUpdate(Integer... values) {
+        super.onProgressUpdate(values);
+        textView.setText("Counter: " + values[0]);
+    }
+
+    @Override
+    protected void onPostExecute(String result) {
+        super.onPostExecute(result);
+        textView.setText(result);
+    }
+}
+```
+
+`publishProgress` 和 `onProgressUpdate` 之间的关系是：`publishProgress` 负责从后台线程发布进度，而 `onProgressUpdate` 负责在主线程上处理进度更新。				
+
+​						
+
+`MyAsyncTask` 类有四个泛型参数：
+
+1. Params - 传递给后台任务的参数类型（在此示例中为 Void）
+2. Progress - 在任务执行期间发布进度更新的类型（在此示例中为 Integer）
+3. Result - 后台任务完成后返回的结果类型（在此示例中为 String）
+
+`doInBackground` 方法是在新线程中执行的，用于执行后台任务。在此示例中，我们将休眠 5 秒并更新计数器。`publishProgress` 方法用于发布进度更新，将触发 `onProgressUpdate` 方法的调用。
+
+`onProgressUpdate` 和 `onPostExecute` 方法将在 UI 线程上执行，因此可以直接更新 UI。
+
+​				
+
+接下来，你可以在 Activity 中使用这个 AsyncTask：
+
+```java
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+public class MainActivity extends AppCompatActivity {
+
+    private TextView textView;
+    private Button startButton;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textView);
+        startButton = findViewById(R.id.startButton);
+
+        startButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new MyAsyncTask(textView).execute();
+            }
+        });
+    }
+}
+```
+
+
+
+**体现可变参数的例子**
+
+```java
+package com.fu.tt;
+
+import android.os.AsyncTask;
+import android.widget.TextView;
+
+public class CounterTask extends AsyncTask<Integer, Integer, Void> {
+    private TextView counterTextView;
+
+    public CounterTask(TextView textView) {
+        this.counterTextView = textView;
+    }
+
+
+    @Override
+    protected Void doInBackground(Integer... params) {
+        int maxCount = params[0];
+        for (int i = 1; i <= maxCount; i++) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            publishProgress(i, maxCount);
+        }
+        return null;
+    }
+
+    @Override
+    protected void onProgressUpdate(Integer... values) {
+        int currentCount = values[0];
+        int totalCount = values[1];
+        counterTextView.setText("Counter: " + currentCount + " / " + totalCount);
+    }
+}
+```
+
+​					
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+public class MainActivity extends AppCompatActivity {
+
+    private TextView textView;
+    private Button startButton;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textView);
+        startButton = findViewById(R.id.startButton);
+
+        startButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                new CounterTask(textView).execute(10); // 他是可变参数他传递给 doInBackground
+            }
+        });
+    }
+}
+```
+
+```java
+new CounterTask(textView).execute(10);
+```
+
+`new CounterTask().execute(10)` 这行代码的作用是创建一个新的 `CounterTask` 对象，并调用其 `execute` 方法来执行异步任务。这里的 `10` 是传递给 `execute` 方法的参数。
+
+在我们的例子中，`10` 作为参数传递给了 `CounterTask` 类中的 `doInBackground` 方法。`AsyncTask` 类在执行 `doInBackground` 方法时，会将 `execute` 方法接收到的参数传递给它。
+
+在这个示例中，`10` 表示我们希望计数器从 1 计数到 10。因此，当我们在 `doInBackground` 方法中通过 `params[0]` 获取参数时，我们得到的值就是 `10`，这就是我们的最大计数值。						
+
+
+
+`AsyncTask` 类的 `execute` 方法可以接受可变数量的参数，这些参数将作为输入传递给 `doInBackground` 方法。参数的类型需要与 `AsyncTask` 的第一个泛型参数相匹配。例如，在我们的 `CounterTask` 示例中，我们使用了 `Integer` 类型的泛型参数，因此可以传递一个或多个 `Integer` 类型的参数。
+
+如果你想为 `doInBackground` 方法传递多个参数，你可以在调用 `execute` 方法时提供这些参数。例如：	
+
+```java
+new CounterTask().execute(10, 20, 30);
+
+// 在 doInBackground 方法中，你可以通过 params 数组访问这些参数：
+@Override
+protected String doInBackground(Integer... params) {
+    int firstParam = params[0]; // 10
+    int secondParam = params[1]; // 20
+    int thirdParam = params[2]; // 30
+    // ...
+}
+```
+
+​				
+
+`doInBackground` 方法可以接受任何类型的参数，而不仅仅是 `Void...` 或 `Integer...`。`AsyncTask` 类是泛型的，因此可以使用任何类型作为输入参数。例如，你可以使用 `String` 类型，`Double` 类型，自定义类等作为输入参数。泛型参数的类型与你在创建 `AsyncTask` 子类时指定的泛型参数类型相匹配。
+
+例如，如果你想使用 `String` 类型的参数，你可以这样创建 `AsyncTask` 子类：
+
+```java
+private class MyTask extends AsyncTask<String, Void, Void> {
+    @Override
+    protected Void doInBackground(String... params) {
+        // 在这里使用 String 类型的参数
+    }
+
+    // ...
+}
+```
+
+​			
+
+```java
+new MyTask().execute("parameter1", "parameter2");
+```
+
+​						
+
+```java
+@Override
+protected void onPostExecute(String result) {
+    textView.setText(result);
+}
+```
+
+`onPostExecute` 方法是 `AsyncTask` 的一个回调方法，它**在主线程（UI线程）上运行**。当 `doInBackground` 方法在后台线程执行完任务并返回结果时，`onPostExecute` 方法会被自动调用。在 `onPostExecute` 方法内，你可以使用 `doInBackground` 返回的结果来更新UI或执行其他与UI相关的操作。
+
+`onPostExecute` 方法接收一个参数，这个参数的类型与 `AsyncTask` 的第三个泛型参数（`Result`）相同。这个参数就是 `doInBackground` 方法返回的结果。			
+
+在这个例子中，`onPostExecute` 方法接收一个 `String` 类型的参数 `result`，这个参数就是 `doInBackground` 方法返回的结果。在这个方法内，我们使用 `result` 更新 `textView` 的文本。			
+
+总之，`onPostExecute` 方法的主要目的是在后台任务完成后，在主线程上更新UI或执行其他与UI相关的操作。	
+
+​				
+
+注意，`public class CounterTask extends AsyncTask<Integer, Integer, String>` 如果最后一个参数是 Void 就没有必要写这个，也没有啊办法拿返回。
+
+​				
+
+​			
+
+```java
+public class MyAsyncTask extends AsyncTask<Void, Integer, String>
+```
+
+在 `AsyncTask` 中，这三个泛型参数有如下含义：
+
+1. 第一个参数（`Params`）：这是传递给 `doInBackground` 方法的参数类型。在这个例子中，它是 `Void` 类型。`doInBackground` 方法会接收这种类型的参数，然后在后台线程上执行任务。当你调用 `execute()` 方法并传递参数时，这些参数会传递给 `doInBackground` 方法。
+2. 第二个参数（`Progress`）：这是用于报告任务进度的类型。在这个例子中，它是 `Integer` 类型。当任务需要报告进度时，可以调用 `publishProgress()` 方法，并传入相应类型的参数。这将触发 `onProgressUpdate()` 方法的调用，该方法在主线程上运行，允许你更新 UI 以显示进度信息。
+3. 第三个参数（`Result`）：这是 `doInBackground` 方法返回的结果类型。在这个例子中，它是 `String` 类型。当 `doInBackground` 方法执行完毕后，它会返回一个值，该值将传递给 `onPostExecute()` 方法。`onPostExecute()` 方法也在主线程上运行，允许你根据结果更新 UI。
+
+因此，在这个例子中：
+
+- `Void` 是传递给 `doInBackground` 方法的参数类型。
+- `Integer` 是用于报告任务进度的类型。
+- `String` 是 `doInBackground` 方法返回的结果类型。
+
+​										
+
+第一个参数 Void 对应的 protected String doInBackground(Void... voids) 的参数
+
+第二个参数 Integer 对应的 protected void onProgressUpdate(Integer... values) 和 publishProgress(i) 的参数类型
+
+第三个参数 String 对应的 protected void onPostExecute(String result) 的参数
+
+​					
+
+### AsyncTask 的替代方案
+
+在最新的Android开发中，`AsyncTask` 已经不再推荐使用。Google现在推荐使用`Kotlin coroutines`（协程）和`LiveData`来进行异步处理和UI更新。如果你仍然使用Java进行Android开发，可以使用`java.util.concurrent`包中的类，例如`ExecutorService`和`Future`来进行异步操作。
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+public class MainActivity extends AppCompatActivity {
+
+    private TextView textView;
+    private Button button;
+    private ExecutorService executorService;
+    private Handler handler;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textView);
+        button = findViewById(R.id.button);
+
+        executorService = Executors.newSingleThreadExecutor();
+        handler = new Handler(Looper.getMainLooper());
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startAsyncTask();
+            }
+        });
+    }
+
+    private void startAsyncTask() {
+        executorService.execute(new Runnable() {
+            @Override
+            public void run() {
+                // Simulate a long-running operation
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                final String result = "Updated text from AsyncTask";
+
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        textView.setText(result);
+                    }
+                });
+            }
+        });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        executorService.shutdown();
+    }
+}
+```
+
+​			
+
+### ExecutorService_submit
+
+`ExecutorService` 提供了一种管理线程执行的机制。它是 Java `java.util.concurrent` 包中的一个接口，提供了各种方法来管理和控制线程池中的线程。`submit` 是这个接口中的一个方法，用于提交一个可执行任务（`Runnable` 或 `Callable`）到线程池中进行异步执行。
+
+`submit` 方法的主要特点：
+
+1. 当你提交一个任务时，`ExecutorService` 将根据线程池中的配置来决定如何执行这个任务。如果线程池中有空闲线程，它会立即分配一个线程来执行任务。如果线程池已满，它会将任务加入到等待队列中，直到有可用线程。
+2. `submit` 方法可以接受一个 `Runnable` 或 `Callable` 类型的任务。`Runnable` 类型的任务没有返回值，而 `Callable` 类型的任务可以返回一个值。当你提交一个 `Callable` 类型的任务时，`submit` 方法会返回一个 `Future` 对象，你可以用这个对象来获取任务的返回值。
+3. `submit` 方法允许你提交任务后立即继续执行其他操作，而不需要等待任务完成。这使得你可以在应用程序中实现并发和异步操作。
+
+​			
+
+```java
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+public class Main {
+    public static void main(String[] args) {
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+
+        // Using execute() method
+        Runnable runnableTask = () -> {
+            System.out.println("Running a Runnable task using execute()");
+        };
+        executorService.execute(runnableTask);
+
+        // Using submit() method
+        Runnable runnableTaskWithSubmit = () -> {
+            System.out.println("Running a Runnable task using submit()");
+        };
+        Future<?> runnableFuture = executorService.submit(runnableTaskWithSubmit);
+
+        // Using submit() method with Callable
+        Callable<String> callableTask = () -> {
+            System.out.println("Running a Callable task using submit()");
+            return "Callable task result";
+        };
+        Future<String> callableFuture = executorService.submit(callableTask);
+
+        executorService.shutdown();
+    }
+}
+```
+
+​				
+
+`submit` 和 `execute` 在不同的场景下有各自的优势。选择哪一个取决于你的具体需求。
+
+如果你只需要执行一个简单的 `Runnable` 任务，并且不关心任务是否完成、任务的返回值或异常，那么使用 `execute` 就足够了。它更简单，因为你不需要处理返回的 `Future` 对象。
+
+然而，如果你需要执行一个返回值的任务（如 `Callable`），或者你需要查询任务的执行状态、处理任务中的异常，那么 `submit` 更适合这种情况，因为它返回一个 `Future` 对象，可以用来获取任务的返回值、检查任务是否完成，以及捕获任务中的异常。
+
+总之，`submit` 和 `execute` 都有各自的应用场景。根据你的需求选择合适的方法。在一些情况下，`submit` 可能是一个更优的选择，但在其他情况下，`execute` 可能更简单、更合适。	
+
+
+
+### Callable 和 Runnable 
+
+`Callable` 和 `Runnable` 都是 Java 中表示任务的接口，它们主要的区别在于是否有返回值和是否可以抛出异常：
+
+1. **返回值**：
+   - `Runnable` 接口的 `run` 方法没有返回值，即它的返回类型是 `void`。
+   - `Callable` 接口的 `call` 方法有返回值，返回类型是泛型 `V`，即 `V call()`。
+2. **异常处理**：
+   - `Runnable` 接口的 `run` 方法不能抛出已检查的异常（checked exceptions），只能处理运行时异常（runtime exceptions）。
+   - `Callable` 接口的 `call` 方法可以抛出已检查的异常，这使得异常处理更加灵活。
+
+根据你的需求选择 `Runnable` 或 `Callable`。如果你的任务需要返回一个结果，或者需要抛出已检查的异常，那么你应该使用 `Callable`。如果你的任务不需要返回结果，且只需处理运行时异常，那么 `Runnable` 更为简单。
+
+​				
+
+### ViewModel
+
+当 Android 设备发生配置更改，例如屏幕旋转，系统默认会重新创建当前活动（Activity）或片段（Fragment）。这可能导致当前界面控制器中的数据丢失，因为重新创建活动时，成员变量的状态会被重置。
+
+ViewModel 可以解决这个问题，它是一种特殊的类，用于在配置更改期间存储和管理 UI 相关数据。这意味着在设备旋转时，ViewModel 会保持其状态，而不会像普通 Activity 那样重置。
+
+为了更好地理解这个概念，让我们以一个计数器应用程序为例。在应用程序中，有一个按钮，用户可以点击它来增加计数器的值。如果我们将计数器值存储在 Activity 成员变量中，那么当屏幕旋转时，计数器值将丢失。然而，如果我们将计数器值存储在 ViewModel 中，即使在屏幕旋转时，计数器值也会保持不变。
+
+除了保持数据生存之外，ViewModel 还有助于实现解耦和更易于测试的代码。因为 ViewModel 不直接依赖于 Activity 或 Fragment，所以它可以独立于界面控制器进行测试。这使得编写单元测试变得更简单，因为你不需要模拟整个界面控制器，而只需关注 ViewModel 中的逻辑。
+
+简而言之，ViewModel 的主要优点是：
+
+1. 在配置更改（如设备旋转）期间保持 UI 相关数据。
+2. 实现代码解耦，使得 ViewModel 可以独立于界面控制器进行测试。
+
+​				
+
+Mainactivit.java
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+public class MainActivity extends AppCompatActivity {
+    private CounterViewModel viewModel;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        viewModel = new ViewModelProvider(this).get(CounterViewModel.class);
+
+        TextView counterTextView = findViewById(R.id.counterTextView);
+        Button incrementButton = findViewById(R.id.incrementButton);
+
+        incrementButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                viewModel.incrementCounter();
+                counterTextView.setText("Counter: " + viewModel.getCounter());
+            }
+        });
+    }
+}
+```
+
+​				
+
+CounterViewModel.java
+
+```java
+package com.fu.tt;
+
+
+import androidx.lifecycle.ViewModel;
+
+
+public class CounterViewModel extends ViewModel {
+    private int counter;
+
+    public CounterViewModel() {
+        counter = 0;
+    }
+
+    public int getCounter() {
+        return counter;
+    }
+
+    public void incrementCounter() {
+        counter++;
+    }
+}
+```
+
+​					
+
+Activity_main.xml					
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/counterTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Counter: 0" />
+
+    <Button
+        android:id="@+id/incrementButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Increment Counter" />
+
+</LinearLayout>
+```
+
+​					
+
+#### 两个build.gradle
+
+在 Android 项目中，通常有两个 `build.gradle` 文件，分别为：
+
+1. 项目级别的 `build.gradle`（Project-level build.gradle）：位于项目根目录下。此文件主要用于配置整个项目的构建设置，包括 Gradle 插件版本、gradle 版本等。这个文件还可以定义全局变量，例如通用的依赖库版本，这样在模块级别的 `build.gradle` 文件中就可以使用它们。
+2. 模块级别的 `build.gradle`（Module-level build.gradle）：位于每个模块（如 app 模块）的根目录下。此文件主要用于配置模块相关的构建设置，包括应用 ID、编译 SDK 版本、目标 SDK 版本、依赖库等。每个模块都有一个单独的 `build.gradle` 文件，允许您为每个模块单独配置构建设置。
+
+要区分这两个文件，您可以查看它们的路径和内容。项目级别的 `build.gradle` 位于项目根目录下，而模块级别的 `build.gradle` 位于模块目录下。另外，它们的内容也有所不同。项目级别的文件通常包含 `buildscript` 和 `allprojects` 块，而模块级别的文件包含 `android` 和 `dependencies` 块。			
+
+​				
+
+这里是一个简单的 **ViewModel** 示例，演示如何使用 ViewModel 存储和管理计数器数据。
+
+1. 在模块（app）的 `build.gradle` 文件中添加 ViewModel 依赖：				
+
+```xml
+dependencies {
+    // ...
+    implementation 'androidx.lifecycle:lifecycle-viewmodel:2.3.1'
+}
+```
+
+2. 创建一个名为 `CounterViewModel` 的 ViewModel 类，该类将存储计数器值并提供用于递增计数器的方法：
+
+```java
+import androidx.lifecycle.ViewModel;
+
+public class CounterViewModel extends ViewModel {
+    private int counter;
+
+    public CounterViewModel() {
+        counter = 0;
+    }
+
+    public int getCounter() {
+        return counter;
+    }
+
+    public void incrementCounter() {
+        counter++;
+    }
+}
+```
+
+2. 在 `MainActivity` 类中，使用 `ViewModelProvider` 创建 `CounterViewModel` 的实例，并在按钮点击时递增计数器值：
+
+```java
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+public class MainActivity extends AppCompatActivity {
+    private CounterViewModel viewModel;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        viewModel = new ViewModelProvider(this).get(CounterViewModel.class);
+
+        TextView counterTextView = findViewById(R.id.counterTextView);
+        Button incrementButton = findViewById(R.id.incrementButton);
+
+        incrementButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                viewModel.incrementCounter();
+                counterTextView.setText("Counter: " + viewModel.getCounter());
+            }
+        });
+    }
+}
+```
+
+4. 在 `activity_main.xml` 布局文件中，添加一个 `TextView` 用于显示计数器值，以及一个 `Button` 用于递增计数器：
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    tools:context=".MainActivity">
+
+    <TextView
+        android:id="@+id/counterTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Counter: 0" />
+
+    <Button
+        android:id="@+id/incrementButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Increment Counter" />
+
+</LinearLayout>
+```
+
+​			
+
+### LiveData
+
+LiveData 是 Android Jetpack 构件库中的一个核心组件，它是一个可观察的数据持有者类，可用于在应用程序的不同组件（如 Activity、Fragment 或 ViewModel）之间共享和观察数据。LiveData 遵循观察者模式，使 UI 组件（如 Activity 或 Fragment）能够在数据更改时自动更新。这有助于实现更简洁、可维护和可测试的代码。		
+
+​					
+
+1. **确保 UI 与数据状态一致**：因为 LiveData 遵循观察者模式，所以当数据更改时，所有订阅的 UI 组件都会自动更新。
+2. **生命周期感知**：LiveData 是生命周期感知的，这意味着它会自动管理观察者的订阅，确保只在活跃的生命周期（如 Activity 处于 started 或 resumed 状态）时更新 UI。这样可以避免在不活跃的生命周期（如 Activity 处于 paused 或 stopped 状态）中进行不必要的 UI 更新，从而提高性能。
+3. **无内存泄漏**：由于 LiveData 会自动管理订阅，所以在组件（如 Activity 或 Fragment）销毁时不会造成内存泄漏。
+4. **数据共享**：LiveData 可以在不同组件之间轻松共享数据，特别是与 ViewModel 一起使用时，可以实现 UI 逻辑与数据处理逻辑的解耦。
+
+​											
+
+可以了解到 **LiveData** 的最主要的作用是，共享数据，并且是共享实时数据，但是我们在前面的学习当中就已经学习了，通过多线程的数据共享的方式进行共享数据，为什么还需要这个东西？
+
+线程之间的数据共享是指多个线程同时访问和操作相同的数据。这种情况下，需要注意线程同步和互斥的问题，以避免数据不一致、数据竞争和其他潜在问题。线程之间的数据共享主要关注如何在多线程环境下正确处理数据。
+
+而 LiveData 提供的数据共享是指在应用程序的不同组件（如 Activity、Fragment 或 ViewModel）之间共享和观察数据。LiveData 的数据共享关注的是组件间的数据传递，以及在数据变化时自动更新 UI。LiveData 的优势在于生命周期感知、自动管理观察者订阅、避免内存泄漏等。
+
+LiveData 和线程间的数据共享有以下区别：
+
+1. **目的**：线程间的数据共享关注的是多线程环境下数据的正确处理，而 LiveData 关注的是组件间的数据传递和自动更新 UI。
+2. **生命周期感知**：LiveData 是生命周期感知的，这意味着它会根据组件的生命周期自动管理观察者订阅，从而避免在不活跃的生命周期中进行不必要的 UI 更新。线程间的数据共享不涉及生命周期感知。
+3. **线程安全**：LiveData 保证了数据的线程安全，因为它内部使用了线程安全的数据结构（如 AtomicReference）和同步机制。线程间的数据共享需要手动处理同步和互斥问题，以确保数据的正确性。
+
+总之，LiveData 的存在意义在于提供一种生命周期感知、线程安全且易于管理的数据共享方式，使组件间的数据传递更加简洁、可维护和可测试。而线程间的数据共享主要关注在多线程环境下如何正确处理数据。在实际应用中，可以根据需求和场景选择合适的方式进行数据共享。
+
+​					
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
