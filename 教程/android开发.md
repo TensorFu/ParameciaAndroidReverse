@@ -97,8 +97,15 @@
 - [ExecutorService\_submit](#executorservice_submit)
 - [Callable 和 Runnable](#callable-和-runnable)
 - [ViewModel](#viewmodel)
-  - [两个build.gradle](#两个buildgradle)
+- [两个build.gradle](#两个buildgradle)
 - [LiveData](#livedata)
+  - [observe和observeForever](#observe和observeforever)
+  - [observeForever](#observeforever)
+- [WorkManager](#workmanager)
+  - [WorkManager\_链式任务](#workmanager_链式任务)
+  - [WorkManager\_并行任务](#workmanager_并行任务)
+  - [WorkManager\_约束条件](#workmanager_约束条件)
+  - [WorkManager\_输入输出数据](#workmanager_输入输出数据)
 
 
 
@@ -10311,7 +10318,7 @@ Activity_main.xml
 
 ​					
 
-#### 两个build.gradle
+### 两个build.gradle
 
 在 Android 项目中，通常有两个 `build.gradle` 文件，分别为：
 
@@ -10422,6 +10429,8 @@ public class MainActivity extends AppCompatActivity {
 
 ### LiveData
 
+（简而言之就是，一个能够在 activity之间，Fragment之间，ViewModel之间，或者他们相互之间，实时更新，实时共享的数据，类似于多线程的，共享数据）
+
 LiveData 是 Android Jetpack 构件库中的一个核心组件，它是一个可观察的数据持有者类，可用于在应用程序的不同组件（如 Activity、Fragment 或 ViewModel）之间共享和观察数据。LiveData 遵循观察者模式，使 UI 组件（如 Activity 或 Fragment）能够在数据更改时自动更新。这有助于实现更简洁、可维护和可测试的代码。		
 
 ​					
@@ -10449,25 +10458,738 @@ LiveData 和线程间的数据共享有以下区别：
 
 ​					
 
+CounterViewModel.java
+
+```java
+package com.fu.tt;
+
+
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.ViewModel;
+
+
+public class CounterViewModel extends ViewModel {
+    private MutableLiveData<Integer> counter = new MutableLiveData<>(); // 新建一个 LiveData的数据
+
+    public CounterViewModel() {
+        counter.setValue(0);
+    }
+
+    public LiveData<Integer> getCounter() {
+        return counter;
+    }
+
+    public void incrementCounter() {
+        counter.setValue(counter.getValue() + 1);
+    }
+}
+```
+
+MutableLiveData `MutableLiveData`是一个类，它可以包含或持有某种类型的值，这种类型就是尖括号里的`Integer`。在这个例子中，`counter`是一个可以持有`Integer`类型值的			
+
+`MutableLiveData`实例。我们可以通过`counter.setValue()`来设置这个值，通过`counter.getValue()`来获取这个值。
+
+​					
+
+MainActivity.java
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+public class MainActivity extends AppCompatActivity {
+    private CounterViewModel viewModel;
+    private TextView counterTextView;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        counterTextView = findViewById(R.id.counterTextView);
+        viewModel = new ViewModelProvider(this).get(CounterViewModel.class);
+
+        // 因为 viewModel.getCounter() 的这个函数，方法被设计为返回一个 LiveData 对象，
+        // 因此它允许其他类（如你的 Activity 或 Fragment）观察并响应计数器值的更改
+        viewModel.getCounter().observe(this, new Observer<Integer>() {
+            // 当观察的数据发生更改的时候，执行
+            @Override
+            public void onChanged(Integer counterValue) {
+                counterTextView.setText("Counter: " + counterValue);
+            }
+        });
+
+        Button incrementButton = findViewById(R.id.incrementButton);
+        incrementButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                viewModel.incrementCounter();
+            }
+        });
+    }
+}
+```
+
+​				
+
+**多个 LiveData 的情况**
+
+ProductViewModel.java
+
+```java
+package com.fu.tt;
+
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.ViewModel;
+
+public class ProductViewModel extends ViewModel {
+    private MutableLiveData<String> productName = new MutableLiveData<>();
+    private MutableLiveData<Double> productPrice = new MutableLiveData<>();
+
+    public ProductViewModel() {
+        productName.setValue("Default Product");
+        productPrice.setValue(0.0);
+    }
+
+    public LiveData<String> getProductName() {
+        return productName;
+    }
+
+    public LiveData<Double> getProductPrice() {
+        return productPrice;
+    }
+
+    public void changeProductName(String newName) {
+        productName.setValue(newName);
+    }
+
+    public void changeProductPrice(Double newPrice) {
+        productPrice.setValue(newPrice);
+    }
+}
+```
+
+​				
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/counterTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Counter: 0" />
+
+    <TextView
+        android:id="@+id/productNameTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Product Name: " />
+
+    <TextView
+        android:id="@+id/productPriceTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Product Price: " />
+
+    <Button
+        android:id="@+id/changeNameButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Change Product Name" />
+
+    <Button
+        android:id="@+id/changePriceButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Change Product Price" />
 
 
 
+</LinearLayout>
+```
+
+​				
+
+#### observe和observeForever
+
+当 `LiveData` 对象的数据改变时，它会通知所有观察者。在 `LiveData` 中，你主要会看到 `observe` 和 `observeForever` 方法，用于注册观察者。
+
+- `observe(LifecycleOwner owner, Observer<? super T> observer)`: 注册一个观察者，这个观察者会在 `LifecycleOwner` （如 `Activity` 或 `Fragment`）的生命周期在 `STARTED` 或 `RESUMED` 状态时被通知。这是确保只有在 `Activity` 或 `Fragment` 处于活跃状态时才更新 UI 的好方法。
+- `observeForever(Observer<? super T> observer)`: 注册一个观察者，不受任何生命周期的限制，这个观察者会始终被通知数据变化。需要注意的是，使用 `observeForever` 需要更谨慎，因为如果你忘记了在不再需要观察者时取消注册，可能会导致内存泄漏。
 
 
 
+#### observeForever
 
+MainActivity.java
 
+```java
+package com.fu.tt;
 
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
 
+import android.os.Bundle;
+import android.util.Log;
 
+public class MainActivity extends AppCompatActivity {
+    private ExampleViewModel viewModel;
+    private Observer<Integer> observer;
 
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
+        viewModel = new ViewModelProvider(this).get(ExampleViewModel.class);
 
+        observer = new Observer<Integer>() {
+            @Override
+            public void onChanged(Integer counterValue) {
+                Log.i("Example", "Counter: " + counterValue);
+            }
+        };
 
+      // observeForever 
+        viewModel.getCounter().observeForever(observer);
 
+        viewModel.incrementCounter();  // This will trigger the observer
+    }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // 销毁 LiveData
+        viewModel.getCounter().removeObserver(observer);
+    }
+}
+```
 
+​				
 
+ExampleViewModel.java
+
+```java
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.ViewModel;
+
+public class ExampleViewModel extends ViewModel {
+    private MutableLiveData<Integer> counter = new MutableLiveData<>();
+
+    public ExampleViewModel() {
+        counter.setValue(0);
+    }
+
+    public LiveData<Integer> getCounter() {
+        return counter;
+    }
+
+    public void incrementCounter() {
+        counter.setValue(counter.getValue() + 1);
+    }
+}
+```
+
+​											
+
+viewModel.getCounter().observeForever(observer); 为什么不是写成  viewModel.getCounter().observeForever(this，observer);
+
+`observeForever()` 方法只需要一个参数：`Observer`。它不需要 `LifecycleOwner` 参数，因为这个方法被设计为在没有 `LifecycleOwner` 的情况下使用。这就是为什么你看到的调用形式是 `observeForever(observer)` 而不是 `observeForever(this, observer)`。
+
+这与 `observe()` 方法不同，`observe()` 方法需要一个 `LifecycleOwner` 参数，例如 `this`（在 `Activity` 或 `Fragment` 中），以及一个 `Observer`。这允许 `LiveData` 知道何时在 `LifecycleOwner` 的生命周期状态改变时开始或停止向 `Observer` 发送更新。
+
+所以，如果你使用 `observeForever()`，那么你必须在适当的时候手动调用 `removeObserver()` 以防止内存泄漏，例如在 `Activity` 或 `Fragment` 的 `onDestroy()` 方法中。这是因为 `observeForever()` 不会自动处理生命周期，因此 `LiveData` 不会知道何时停止向 `Observer` 发送更新。
+
+​					
+
+### WorkManager
+
+它确保了即使应用退出或设备重启，任务也能得到执行。WorkManager 适合用于那些对立即性要求不高，但必须确保执行的任务。例如，上传日志文件，同步应用数据等。
+
+使用 WorkManager 执行后台任务主要包括以下步骤：
+
+1. 创建一个 Worker 类：Worker 类是实际执行后台任务的地方。你需要继承 Worker 类，然后重写 doWork() 方法。
+2. 创建 WorkRequest：WorkRequest 代表一个待执行的工作。WorkManager 提供了两种类型的 WorkRequest：OneTimeWorkRequest（一次性任务）和 PeriodicWorkRequest（周期性任务）。
+3. 将 WorkRequest 提交给 WorkManager：通过调用 WorkManager 的 enqueue() 方法，你可以将 WorkRequest 添加到 WorkManager 的执行队列中。
+
+​				
+
+LoggingWorker.java
+
+```java
+package com.fu.tt;
+
+import android.content.Context;
+import androidx.work.Worker;
+import androidx.work.WorkerParameters;
+import android.util.Log;
+
+public class LoggingWorker extends Worker {
+    public LoggingWorker(Context context, WorkerParameters params) {
+        super(context, params);
+    }
+
+  // 一般来说只需要重写 doWork 
+    @Override
+    public Result doWork() {
+        Log.d("LoggingWorker", "This is a message from LoggingWorker");
+      // 一定要返回的内容表示已经成功执行
+        return Result.success();
+    }
+}
+```
+
+​										
+
+MainActivity.java	
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
+
+import android.os.Bundle;
+
+import java.util.concurrent.TimeUnit;
+
+public class MainActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        OneTimeWorkRequest loggingWorkRequest = new OneTimeWorkRequest.Builder(LoggingWorker.class).build();
+
+        WorkManager.getInstance(this).enqueue(loggingWorkRequest);
+    }
+}
+```
+
+​							
+
+WorkManager 的任务模式有两种					
+
+OneTimeWorkRequest 是一次性的任务，当任务被执行后，就不会再次执行。			
+
+PeriodicWorkRequest 是周期性的任务，任务会按照预设的间隔时间反复执行。	(最小的执行周期是 15min )		
+
+​					
+
+```java
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
+
+import android.os.Bundle;
+
+import java.util.concurrent.TimeUnit;
+
+public class MainActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        PeriodicWorkRequest loggingWorkRequest = new PeriodicWorkRequest.Builder(LoggingWorker.class, 15, TimeUnit.MINUTES)
+                .build();
+
+        WorkManager.getInstance(this).enqueue(loggingWorkRequest);
+    }
+}
+```
+
+​				
+
+####  WorkManager_链式任务
+
+你可以设置一系列的任务，按照一定的顺序依次执行。例如，你可以先执行一个下载任务，然后再执行一个解析任务，最后再执行一个更新 UI 的任务			
+
+​					
+
+FirstWorker.java
+
+```java
+package com.fu.tt;
+
+// FirstWorker.java
+import android.content.Context;
+import android.util.Log;
+
+import androidx.work.Worker;
+import androidx.work.WorkerParameters;
+
+public class FirstWorker extends Worker {
+    public FirstWorker(Context context, WorkerParameters workerParams) {
+        super(context, workerParams);
+    }
+
+    @Override
+    public Result doWork() {
+        // 执行任务...
+        Log.i("tag","First task is done.");
+        return Result.success();
+    }
+}
+```
+
+​					
+
+SecondWorker.java
+
+```java
+package com.fu.tt;
+
+// SecondWorker.java
+import android.content.Context;
+import android.util.Log;
+
+import androidx.work.Worker;
+import androidx.work.WorkerParameters;
+
+public class SecondWorker extends Worker {
+    public SecondWorker(Context context, WorkerParameters workerParams) {
+        super(context, workerParams);
+    }
+
+    @Override
+    public Result doWork() {
+        // 执行任务...
+        Log.i("tag","Second task is done.");
+        return Result.success();
+    }
+}
+```
+
+​					
+
+MainActivity.java
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkManager;
+
+import android.os.Bundle;
+
+public class MainActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        OneTimeWorkRequest firstWorkRequest = new OneTimeWorkRequest.Builder(FirstWorker.class).build();
+        OneTimeWorkRequest secondWorkRequest = new OneTimeWorkRequest.Builder(SecondWorker.class).build();
+
+        WorkManager.getInstance(this)
+                .beginWith(firstWorkRequest)
+                .then(secondWorkRequest)
+                .enqueue();
+    }
+}
+```
+
+​					
+
+如果有多个任务，就一直 then
+
+```java
+OneTimeWorkRequest downloadWorkRequest = new OneTimeWorkRequest.Builder(DownloadWorker.class).build();
+OneTimeWorkRequest compressWorkRequest = new OneTimeWorkRequest.Builder(CompressWorker.class).build();
+OneTimeWorkRequest processWorkRequest = new OneTimeWorkRequest.Builder(ProcessWorker.class).build();
+
+WorkManager.getInstance(this)
+        .beginWith(downloadWorkRequest)
+        .then(compressWorkRequest)
+        .then(processWorkRequest)
+        .enqueue();
+```
+
+​				
+
+#### WorkManager_并行任务
+
+就是开多条工作任务链
+
+```java
+package com.fu.tt;
+
+// FirstWorker.java
+import android.content.Context;
+import android.util.Log;
+
+import androidx.work.Worker;
+import androidx.work.WorkerParameters;
+
+public class FirstWorker extends Worker {
+    public FirstWorker(Context context, WorkerParameters workerParams) {
+        super(context, workerParams);
+    }
+
+    @Override
+    public Result doWork() {
+        // 执行任务...
+        Log.i("tag","First task is done.");
+        return Result.success();
+    }
+}
+```
+
+​					
+
+```java
+package com.fu.tt;
+
+// SecondWorker.java
+import android.content.Context;
+import android.util.Log;
+
+import androidx.work.Worker;
+import androidx.work.WorkerParameters;
+
+public class SecondWorker extends Worker {
+    public SecondWorker(Context context, WorkerParameters workerParams) {
+        super(context, workerParams);
+    }
+
+    @Override
+    public Result doWork() {
+        // 执行任务...
+        Log.i("tag","Second task is done.");
+        return Result.success();
+    }
+}
+```
+
+​					
+
+```java
+package com.fu.tt;
+
+// ThirdWorker.java
+import android.content.Context;
+import android.util.Log;
+
+import androidx.work.Worker;
+import androidx.work.WorkerParameters;
+
+public class ThirdWorker extends Worker {
+    public ThirdWorker(Context context, WorkerParameters workerParams) {
+        super(context, workerParams);
+    }
+
+    @Override
+    public Result doWork() {
+        // 执行任务...
+        Log.i("tag","Third task is done.");
+        return Result.success();
+    }
+}
+```
+
+​				
+
+MainActivity.java
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkContinuation;
+import androidx.work.WorkManager;
+
+import android.os.Bundle;
+
+import java.util.Arrays;
+
+public class MainActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        // 新建三个任务
+        OneTimeWorkRequest firstWorkRequest = new OneTimeWorkRequest.Builder(FirstWorker.class).build();
+        OneTimeWorkRequest secondWorkRequest = new OneTimeWorkRequest.Builder(SecondWorker.class).build();
+        OneTimeWorkRequest thirdWorkRequest = new OneTimeWorkRequest.Builder(ThirdWorker.class).build();
+
+        // 开始两个任务链
+        WorkContinuation chain1 = WorkManager.getInstance(this).beginWith(firstWorkRequest);
+        WorkContinuation chain2 = WorkManager.getInstance(this).beginWith(secondWorkRequest);
+
+        WorkContinuation combinedChain = WorkContinuation
+                .combine(Arrays.asList(chain1, chain2))
+                .then(thirdWorkRequest);
+
+        combinedChain.enqueue();
+    }
+}
+```
+
+翻译				
+
+combine：合并				
+
+​				
+
+#### WorkManager_约束条件
+
+你可以为你的工作请求设置一些约束条件，只有当这些条件满足时，你的工作请求才会被执行。这些约束条件可以是网络连接状态，设备充电状态，设备空闲状态等。				
+
+以下是一个例子，展示了如何设置约束条件，以便你的工作只在设备处于充电状态且网络连接可用时执行：	
+
+​				
+
+MyWorker.java
+
+```java
+package com.fu.tt;
+
+import android.content.Context;
+import androidx.work.Worker;
+import androidx.work.WorkerParameters;
+import android.util.Log;
+
+public class MyWorker extends Worker {
+    public MyWorker(Context context, WorkerParameters params) {
+        super(context, params);
+    }
+
+    @Override
+    public Result doWork() {
+        Log.i("MyWorker", "Work is done!ok");
+        return Result.success();
+    }
+}
+```
+
+​					
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.work.Constraints;
+import androidx.work.NetworkType;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkContinuation;
+import androidx.work.WorkManager;
+
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+
+import java.util.Arrays;
+
+public class MainActivity extends AppCompatActivity {
+    private Button startWorkButton;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        startWorkButton = findViewById(R.id.startWorkButton);
+        startWorkButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startWork();
+            }
+        });
+    }
+
+    private void startWork() {
+        Constraints constraints = new Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED) // 在有网络的时候才会执行，如果没有网络就会进入 WorkManager 的队列中等待
+                .build();
+
+        OneTimeWorkRequest workRequest = new OneTimeWorkRequest.Builder(MyWorker.class)
+                .setConstraints(constraints)
+                .build();
+
+        WorkManager.getInstance(this).enqueue(workRequest);
+    }
+}
+```
+
+​				
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="16dp">
+
+    <Button
+        android:id="@+id/startWorkButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Start Work" />
+
+</LinearLayout>
+```
+
+​				
+
+WorkManager 提供了一系列的约束条件，你可以根据需要选择使用。以下是你可以设置的所有约束条件：
+
+1. **NetworkType（网络类型）**：你可以指定工作需要的网络类型。例如，你可以指定工作只在 Wi-Fi 连接时执行，或者只在有任何类型的网络连接（包括蜂窝数据）时执行。可用的值有 `NetworkType.NOT_REQUIRED`、`NetworkType.CONNECTED`、`NetworkType.UNMETERED`、`NetworkType.NOT_ROAMING` 和 `NetworkType.METERED`。
+2. **BatteryNotLow（电池电量不低）**：你可以指定只有当设备电池电量充足时，工作才会执行。如果设置为 `true`，那么工作只会在设备电池电量不低时执行。
+3. **RequiresCharging（需要充电）**：你可以指定只有当设备处于充电状态时，工作才会执行。如果设置为 `true`，那么工作只会在设备正在充电时执行。
+4. **StorageNotLow（存储空间不低）**：你可以指定只有当设备的存储空间充足时，工作才会执行。如果设置为 `true`，那么工作只会在设备的存储空间不低时执行。
+5. **RequiresDeviceIdle（需要设备空闲）**：你可以指定只有当设备处于空闲状态时，工作才会执行。这通常用于那些不需要用户交互，并且可以在设备空闲时执行的工作。如果设置为 `true`，那么工作只会在设备处于空闲状态时执行。
+
+​						
+
+```java
+Constraints constraints = new Constraints.Builder()
+    .setRequiredNetworkType(NetworkType.UNMETERED)  // 只在有 Wi-Fi 连接时执行
+    .setRequiresCharging(true)                       // 只在设备正在充电时执行
+    .setRequiresBatteryNotLow(true)                  // 只在设备电池电量不低时执行
+    .setRequiresStorageNotLow(true)                  // 只在设备的存储空间不低时执行
+    .setRequiresDeviceIdle(true)                     // 只在设备处于空闲状态时执行
+    .build();
+```
+
+​					
+
+**并且需要注意的是**
+
+当你在构建约束条件时，使用的逻辑是 "AND" 逻辑，也就是说，所有的条件都需要满足，工作才会被执行。所以在你提供的例子中，网络必须是无线网络，设备必须正在充电，电池电量不能低，存储空间不能低，设备必须空闲，所有这些条件都满足时，任务才会执行。				
+
+​				
+
+#### WorkManager_输入输出数据
 
 
 
