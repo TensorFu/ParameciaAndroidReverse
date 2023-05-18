@@ -58,7 +58,6 @@
   - [使用线程池执行 Runnable 任务\_ScheduledThreadPool](#使用线程池执行-runnable-任务_scheduledthreadpool)
   - [使用线程池执行 Runnable 任务\_SingleThreadExecutor](#使用线程池执行-runnable-任务_singlethreadexecutor)
 - [多线程\_Android 中与其他组件配合使用 Runnable](#多线程_android-中与其他组件配合使用-runnable)
-- [多线程 AsyncTask](#多线程-asynctask)
 - [Handler\_通信](#handler_通信)
 - [在其他的线程当中创建 looper](#在其他的线程当中创建-looper)
 - [import android.os.Message](#import-androidosmessage)
@@ -106,6 +105,11 @@
   - [WorkManager\_并行任务](#workmanager_并行任务)
   - [WorkManager\_约束条件](#workmanager_约束条件)
   - [WorkManager\_输入输出数据](#workmanager_输入输出数据)
+  - [WorkManager\_Result.failure](#workmanager_resultfailure)
+  - [WorkManager\_Result.retry()](#workmanager_resultretry)
+  - [WorkManager\_Result.failure()](#workmanager_resultfailure-1)
+  - [getWorkInfoById](#getworkinfobyid)
+- [JobScheduler](#jobscheduler)
 
 
 
@@ -6224,27 +6228,122 @@ public class MainActivity extends AppCompatActivity {
 
 ### 多线程_Android 中与其他组件配合使用 Runnable
 
+**Handler** 是 Android 中一种非常重要的组件，它可以让你发送和处理消息或者 Runnable 对象到应用程序的主线程的 MessageQueue 中。每个 Handler 实例都与一个线程和这个线程的消息队列相关联。			
 
+你可以创建一个新的 Handler，然后提供一个 Runnable 对象给它执行。Handler 会将这个 Runnable 对象添加到消息队列中，等到轮到这个 Runnable 对象执行时，Handler 就会调用 Runnable 的 run() 方法。			
 
+​				
 
+```java
+package com.fu.tt;
 
+import android.os.Bundle;
+import android.os.Handler;
+import android.util.Log;
+import androidx.appcompat.app.AppCompatActivity;
 
+public class MainActivity extends AppCompatActivity {
+    private Handler mHandler;
 
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        mHandler = new Handler();
+        mHandler.postDelayed(mRunnable, 5000);
+    }
 
+    private final Runnable mRunnable = new Runnable() {
+        @Override
+        public void run() {
+            Log.d("MainActivity", "This message is logged after 5 seconds");
+        }
+    };
+}
+```
 
-### 多线程 AsyncTask
+​					
 
-**自 Android 11（API 级别 30）开始已被弃用**				
+Handler 类提供了一些方法来管理消息和 Runnable 对象。以下是一些最常用的方法：
 
-AsyncTask 类是 Android 提供的一个便捷的类，用于在后台线程上执行异步任务，同时在 UI 线程上更新用户界面。AsyncTask 通常用于执行较短时间的后台任务，如从网络加载数据、文件操作或者数据库查询等。
+1. `post(Runnable r)`: 将 Runnable 对象加入到消息队列中，当轮到它执行时，就会调用 Runnable 的 run() 方法。
+2. `postDelayed(Runnable r, long delayMillis)`: 这个方法和 post() 方法很类似，但是它允许你设置一个延迟时间。Runnable 对象会在延迟了 delayMillis 毫秒之后执行。
+3. `postAtTime(Runnable r, long uptimeMillis)`: 这个方法让你能够设置一个特定的时间，当系统的“正常运行时间”达到这个时间时，Runnable 对象就会被执行。系统的“正常运行时间”是一种时间计数，从系统启动开始，包括深度睡眠时间。
+4. `sendEmptyMessage(int what)`: 这个方法发送一个包含了一个整型值的空消息。
+5. `sendMessage(Message msg)`: 这个方法发送一个 Message 对象。Message 对象包含了一个描述和任意的数据对象。
+6. `sendMessageDelayed(Message msg, long delayMillis)`: 这个方法和 sendMessage() 方法类似，但是它允许你设置一个延迟时间。Message 对象会在延迟了 delayMillis 毫秒之后发送。
+7. `sendMessageAtTime(Message msg, long uptimeMillis)`: 这个方法让你能够设置一个特定的时间，当系统的“正常运行时间”达到这个时间时，Message 对象就会被发送。
+8. `removeCallbacks(Runnable r)`: 这个方法移除所有挂起的 posts 的 Runnable 对象和 associated 的消息。
+9. `removeMessages(int what)`: 这个方法移除所有的 what 值为 what 参数值的消息。
 
-AsyncTask 的工作原理是在后台线程上执行任务，然后在任务完成时，通知 UI 线程进行界面更新。这样可以确保用户界面保持响应，避免因为耗时操作而卡住。			
+Handler 类还有其他一些方法，但这些是最常用的。不同的方法可以适用于不同的场景，你可以根据你的需求选择合适的方法。					
 
+​					
 
+**View** 在 Android 中，`View` 是用户界面元素的基础类，比如按钮和文本框等等。在主线程中，我们经常需要更改 `View` 的状态，比如更改文本框的文本或者改变按钮的颜色。然而，这些操作如果在子线程中执行的话，会抛出 `CalledFromWrongThreadException` 异常，因为 Android 的 UI 组件不是线程安全的，不允许在子线程中直接操作。
 
-&&&
+这时，我们就可以用 `View.post(Runnable)` 方法来解决这个问题。这个方法可以保证 `Runnable` 中的代码在主线程中执行，从而可以安全地操作 UI 组件。下面是一个使用 `View.post(Runnable)` 来更改文本框文本的例子
 
+```java
+public class MainActivity extends AppCompatActivity {
+    private TextView textView;
 
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        textView = (TextView) findViewById(R.id.textview);
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                // 模拟耗时操作
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                // 使用 View.post(Runnable) 在主线程中更改文本框的文本
+                textView.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        textView.setText("Text updated.");
+                    }
+                });
+            }
+        }).start();
+    }
+}
+```
+
+​					
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="16dp">
+
+    <Button
+        android:id="@+id/startWorkButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Start Work" />
+
+    <TextView
+        android:id="@+id/textview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hello World!" />
+
+</LinearLayout>
+```
+
+​				
 
 
 
@@ -9768,6 +9867,14 @@ addMammal(mammalList);
 
 ### AsyncTask 类
 
+**自 Android 11（API 级别 30）开始已被弃用**				
+
+AsyncTask 类是 Android 提供的一个便捷的类，用于在后台线程上执行异步任务，同时在 UI 线程上更新用户界面。AsyncTask 通常用于执行较短时间的后台任务，如从网络加载数据、文件操作或者数据库查询等。
+
+AsyncTask 的工作原理是在后台线程上执行任务，然后在任务完成时，通知 UI 线程进行界面更新。这样可以确保用户界面保持响应，避免因为耗时操作而卡住。			
+
+​			
+
 它允许你在 UI 线程之外执行耗时操作，然后将结果发布到 UI 线程，从而避免阻塞主线程。AsyncTask 类提供了一个简单的方法来实现异步操作。					
 
 他跟，Thread 单开一个线程，然后通过 runOnUiThread 或者是通过 Handle 发送任务的方式更新 UI 线程的 UI 有什么区别？    			
@@ -9787,6 +9894,7 @@ AsyncTask 存在的意义在于它提供了一个简化的、更易于理解和�
 import android.os.AsyncTask;
 import android.widget.TextView;
 
+// 注意这里的，参数就是下面的函数的参数，并且，这里的参数不是固定的，比方说 Void 就可以换成其他的类型的数据 UUID
 public class MyAsyncTask extends AsyncTask<Void, Integer, String> {
 
     private TextView textView;
@@ -9795,6 +9903,7 @@ public class MyAsyncTask extends AsyncTask<Void, Integer, String> {
         this.textView = textView;
     }
 
+  // 这个方法在主线程上执行，在异步任务开始之前调用。通常用于进行一些 UI 相关的准备工作，例如显示一个进度条。
     @Override
     protected void onPreExecute() {
         super.onPreExecute();
@@ -11190,6 +11299,1288 @@ Constraints constraints = new Constraints.Builder()
 ​				
 
 #### WorkManager_输入输出数据
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkManager;
+import android.os.Bundle;
+import androidx.lifecycle.Observer;
+import androidx.work.Data;
+import androidx.work.WorkInfo;
+import android.util.Log;
+
+public class MainActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        OneTimeWorkRequest incrementWorkRequest = new OneTimeWorkRequest.Builder(IncrementWorker.class)
+                .setInputData(new Data.Builder().putInt(IncrementWorker.KEY_INPUT, 5).build())
+                .build();
+
+        WorkManager.getInstance(this).enqueue(incrementWorkRequest);
+
+        WorkManager.getInstance(this).getWorkInfoByIdLiveData(incrementWorkRequest.getId())
+                .observe(this, new Observer<WorkInfo>() {
+                    @Override
+                    public void onChanged(WorkInfo workInfo) {
+                        if (workInfo != null && workInfo.getState() == WorkInfo.State.SUCCEEDED) {
+                            int output = workInfo.getOutputData().getInt(IncrementWorker.KEY_OUTPUT, 0);
+                            Log.d("MainActivity", "Received output: " + output);
+                        }
+                    }
+                });
+    }
+}
+```
+
+​						
+
+```java
+package com.fu.tt;
+
+
+import android.content.Context;
+import android.util.Log;
+
+import androidx.annotation.NonNull;
+import androidx.work.Data;
+import androidx.work.Worker;
+import androidx.work.WorkerParameters;
+
+public class IncrementWorker extends Worker {
+    public static final String KEY_INPUT = "input";
+    public static final String KEY_OUTPUT = "output";
+
+    public IncrementWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
+        super(context, workerParams);
+    }
+
+    @NonNull
+    @Override
+    public Result doWork() {
+        int input = getInputData().getInt(KEY_INPUT, 0);
+        int output = input + 1;
+
+        Data outputData = new Data.Builder()
+                .putInt(KEY_OUTPUT, output)
+                .build();
+
+        Log.d("IncrementWorker", "Incremented value: " + output);
+        return Result.success(outputData); // 并且输出内容
+    }
+}
+```
+
+​				
+
+#### WorkManager_Result.failure
+
+```java
+package com.fu.tt;
+
+import android.content.Context;
+import android.util.Log;
+
+import androidx.annotation.NonNull;
+import androidx.work.Data;
+import androidx.work.Worker;
+import androidx.work.WorkerParameters;
+
+public class FailingWorker extends Worker {
+    public static final String KEY_ERROR_MESSAGE = "error_message";
+
+    public FailingWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
+        super(context, workerParams);
+    }
+
+    @NonNull
+    @Override
+    public Result doWork() {
+        try{
+            return Result.success();
+        }catch (Exception e)
+        {
+            Data failureData = new Data.Builder()
+                    .putString(KEY_ERROR_MESSAGE, "Something went wrong in FailingWorker")
+                    .build();
+
+            Log.d("FailingWorker", "Failing as expected");
+            return Result.failure(failureData);
+        }
+
+    }
+}
+```
+
+​				
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkInfo;
+import androidx.work.WorkManager;
+
+import android.os.Bundle;
+import android.util.Log;
+
+public class MainActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        OneTimeWorkRequest failingWorkRequest = new OneTimeWorkRequest.Builder(FailingWorker.class)
+                .build();
+
+        WorkManager.getInstance(this).enqueue(failingWorkRequest);
+
+        WorkManager.getInstance(this).getWorkInfoByIdLiveData(failingWorkRequest.getId())
+                .observe(this, new Observer<WorkInfo>() {
+                    @Override
+                    public void onChanged(WorkInfo workInfo) {
+                        if (workInfo != null && workInfo.getState() == WorkInfo.State.FAILED) {
+                            String errorMessage = workInfo.getOutputData().getString(FailingWorker.KEY_ERROR_MESSAGE);
+                            Log.d("MainActivity", "FailingWorker failed with message: " + errorMessage);
+                        }
+                    }
+                });
+    }
+}
+```
+
+​				
+
+#### WorkManager_Result.retry()
+
+当你的工作项可能因暂时的问题（例如网络连接问题）而失败时，你可能希望稍后再次尝试执行该工作项，而不是立即将其标记为失败。在这种情况下，你可以在 `doWork()` 方法中返回 `Result.retry()`，来告诉 WorkManager 你希望再次尝试执行这项工作				
+
+​				
+
+RetryWorker.java
+
+```java
+import android.content.Context;
+import androidx.annotation.NonNull;
+import androidx.work.Worker;
+import androidx.work.WorkerParameters;
+
+public class RetryWorker extends Worker {
+
+    public RetryWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
+        super(context, workerParams);
+    }
+
+    @NonNull
+    @Override
+    public Result doWork() {
+        // 模拟一项需要网络连接的任务，但网络当前不可用
+        if (checkNetworkConnection()) {
+            // 网络连接正常，执行任务...
+            return Result.success();
+        } else {
+            // 网络连接不可用，稍后重试
+            return Result.retry();
+        }
+    }
+
+    private boolean checkNetworkConnection() {
+        // 这里只是一个示例，实际上你需要检查实际的网络连接状态
+        return false;
+    }
+}
+```
+
+​						
+
+MainActivity.java
+
+```java
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkInfo;
+import androidx.work.WorkManager;
+
+import android.os.Bundle;
+import android.util.Log;
+
+public class MainActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        OneTimeWorkRequest retryWorkRequest = new OneTimeWorkRequest.Builder(RetryWorker.class)
+                .build();
+
+        WorkManager.getInstance(this).enqueue(retryWorkRequest);
+
+        WorkManager.getInstance(this).getWorkInfoByIdLiveData(retryWorkRequest.getId())
+            .observe(this, new Observer<WorkInfo>() {
+                @Override
+                public void onChanged(WorkInfo workInfo) {
+                    if (workInfo != null) {
+                        Log.d("MainActivity", "Work state: " + workInfo.getState().name());
+                    }
+                }
+            });
+    }
+}
+```
+
+​					
+
+#### WorkManager_Result.failure()
+
+```java
+package com.fu.tt;
+
+import android.content.Context;
+
+import androidx.annotation.NonNull;
+import androidx.work.Worker;
+import androidx.work.WorkerParameters;
+
+import android.util.Log;
+
+public class FailureWorker extends Worker {
+    public FailureWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
+        super(context, workerParams);
+    }
+
+    @NonNull
+    @Override
+    public Result doWork() {
+        Log.d("FailureWorker", "Doing work...");
+        return Result.failure();
+    }
+}
+```
+
+​					
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkInfo;
+import androidx.work.WorkManager;
+
+import android.os.Bundle;
+import android.util.Log;
+
+public class MainActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        OneTimeWorkRequest failureWorkRequest = new OneTimeWorkRequest.Builder(FailureWorker.class)
+                .build();
+
+      // 将任务进行排队
+        WorkManager.getInstance(this).enqueue(failureWorkRequest);
+
+      // getWorkInfoByIdLiveData 只会返回一个包含工作状态的 WorkInfo 的数据类型的数据
+        WorkManager.getInstance(this).getWorkInfoByIdLiveData(failureWorkRequest.getId())
+                .observe(this, new Observer<WorkInfo>() {
+                    @Override
+                    public void onChanged(WorkInfo workInfo) {
+                        if (workInfo != null) {
+                            Log.d("FailureWorker", "Work state: " + workInfo.getState().name());
+                        }
+                    }
+                });
+    }
+}
+```
+
+在这个示例中，当 `FailureWorker` 的 `doWork()` 方法执行时，它将返回 `Result.failure()`，标识工作执行失败。在 `MainActivity` 中，我们观察这个工作的状态，当 `FailureWorker` 执行完毕，状态将会变为 `FAILED`，并在日志中输出这个状态。			
+
+​					
+
+**他是如何做到监听的**
+
+在 `WorkManager` 中，每个 `WorkRequest`（无论是 `OneTimeWorkRequest` 还是 `PeriodicWorkRequest`）都有一个唯一的 ID，这个 ID 在创建 `WorkRequest` 时自动生成。当你将 `WorkRequest` 提交给 `WorkManager` 进行排队时，`WorkManager` 就会在内部数据库中为这个 `WorkRequest` 创建一个条目，并将其状态设置为 `ENQUEUED`。
+
+每当 `WorkRequest` 的状态发生改变时，例如当 `WorkManager` 开始执行它时，或者当它完成、失败或被取消时，`WorkManager` 都会更新这个内部数据库条目的状态。这就是 `WorkManager` 是如何跟踪每个 `WorkRequest` 状态的方式。
+
+你可以通过调用 `WorkManager` 的 `getWorkInfoById()` 或 `getWorkInfoByIdLiveData()` 方法，传入 `WorkRequest` 的 ID，来获取该 `WorkRequest` 的 `WorkInfo` 对象。`WorkInfo` 对象包含了 `WorkRequest` 的当前状态和其他信息。在你的代码中，你可以观察这个 `WorkInfo` 对象，以便在 `WorkRequest` 的状态发生改变时得到通知。
+
+`getWorkInfoByIdLiveData()` 方法返回的是一个 `LiveData<WorkInfo>` 对象。`LiveData` 是一个在 Android Architecture Components 中引入的类，它遵循观察者模式，允许你添加一个观察者来监听数据的改变。当你观察 `WorkInfo` 的 `LiveData` 时，每当 `WorkRequest` 的状态在 `WorkManager` 的内部数据库中发生改变时，你的观察者就会收到通知。
+
+这就是你如何能够监听 `WorkRequest` 的运行状态，包括它是否运行失败。
+
+​					
+
+**如何理解 WorkManager.getInstance(this).getWorkInfoByIdLiveData(failureWorkRequest.getId()))**
+
+首先，`WorkManager`是一个类，你可以把它想象成一个负责管理工作任务的“经理”。这个经理只有一个，所以我们称之为单例（Singleton）。这就是我们需要调用`getInstance()`的原因，因为我们希望获取这个唯一的“经理”。
+
+然后，括号里的`this`是一个指向当前环境或当前活动的引用。在这个案例中，`this`指的就是你当前的活动或应用。这个`this`是`WorkManager`所需要的，因为它需要了解当前的环境，以便能够正确地调度和执行工作任务。
+
+接下来，`enqueue(failureWorkRequest)`这个操作就像是你告诉“经理”：“嘿，我有一个任务需要你去处理。”你把`failureWorkRequest`这个任务交给了“经理”，然后“经理”就会把它放到待办任务的列表里。
+
+总的来说，`WorkManager.getInstance(this).enqueue(failureWorkRequest)`这行代码的意思就是：找到管理工作的“经理”，并给他一个任务去做。			
+
+在这个例子中，当`WorkInfo`的`LiveData`对象的数据发生变化时，就会调用这个`onChanged(WorkInfo workInfo)`方法，并把最新的`WorkInfo`数据作为参数传入。这就是如何实现监听`WorkInfo`的`LiveData`		
+
+​				
+
+**为什么要设计成单例模式？**
+
+在许多情况下，一个类确实可以生成很多个实例。但有时候，我们需要一个全局可访问的单一实例来协调系统中的各种操作，这就是单例（Singleton）设计模式的应用场景。
+
+在Android中，`WorkManager`就被设计成单例，这样不论在应用的任何地方，我们都可以通过`WorkManager.getInstance()`获取到同一个`WorkManager`实例，来进行工作的调度和管理。
+
+这种设计主要有以下优点：
+
+1. 资源共享：所有的地方都使用同一个`WorkManager`实例，意味着他们都共享同一份资源（比如内存、磁盘等），不会出现资源的浪费。
+2. 全局控制：`WorkManager`能够协调和管理应用中所有的工作任务，避免了因为存在多个实例而可能出现的任务冲突或不一致的问题。
+
+总的来说，`WorkManager`设计成单例主要是为了提高资源利用效率和保证工作任务的全局一致性。			
+
+​						
+
+#### getWorkInfoById
+
+`getWorkInfoById()` 是一个同步方法，它会直接返回 `WorkInfo` 对象，而不是返回 `LiveData<WorkInfo>`。这意味着，你需要在一个后台线程中调用此方法，因为在 Android 中，在主线程中进行耗时操作（例如从数据库中获取数据）是不被允许的。下面是一个使用 `getWorkInfoById()` 的例子：
+
+​					
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkInfo;
+import androidx.work.WorkManager;
+
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.util.Log;
+
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+
+public class MainActivity extends AppCompatActivity {
+
+    private OneTimeWorkRequest failureWorkRequest;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        failureWorkRequest = new OneTimeWorkRequest.Builder(FailureWorker.class)
+                .build();
+
+        WorkManager.getInstance(this).enqueue(failureWorkRequest);
+
+        new WorkInfoAsyncTask().execute(failureWorkRequest.getId());
+    }
+
+    private class WorkInfoAsyncTask extends AsyncTask<UUID, Void, WorkInfo> {
+
+        @Override
+        protected WorkInfo doInBackground(UUID... uuids) {
+            try {
+                return WorkManager.getInstance(getApplicationContext()).getWorkInfoById(uuids[0]).get();
+            } catch (ExecutionException | InterruptedException e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(WorkInfo workInfo) {
+            if (workInfo != null) {
+                Log.d("MainActivity", "Work state: " + workInfo.getState().name());
+            }
+        }
+    }
+}
+```
+
+​						
+
+### JobScheduler
+
+`JobService` 是一种服务，它用来执行那些可以在任何时间点运行并且不需要用户交互的工作			
+
+`JobScheduler` 是用于在特定的条件下执行后台任务。这些条件可能包括设备的充电状态、网络连接状态、设备闲置状态等。						
+
+"设备闲置"是指设备处于空闲状态，即用户没有使用设备的时候。在 Android 设备中，这通常指的是屏幕熄灭且设备未插入充电器的情况。当设备闲置时，系统会尽可能地减少电池消耗，例如通过降低 CPU 的速度、关闭 Wi-Fi 扫描、限制应用的后台活动等方式。				
+
+对于后台任务，这个状态是很重要的，因为在设备闲置时运行任务可能会消耗电池并打扰用户。因此，Android 提供了一种机制（如 JobScheduler 和 WorkManager），允许你指定任务在设备闲置时是否可以运行，或者在设备不再闲置时自动开始运行。这样可以帮助你的应用在尽可能减少对用户的打扰和电池消耗的同时，完成必要的后台工作。			
+
+​						
+
+你可以为 `JobScheduler` 设置多个约束条件，比如，你可以设置只有当设备在充电并且连接到 Wi-Fi 时，才执行某个任务。当这些条件都满足时，`JobScheduler` 会执行这个任务。			
+
+​					
+
+`JobScheduler`和`WorkManager`都提供了在满足特定约束条件时执行任务的功能，但它们之间存在一些重要的差异。
+
+1. 兼容性：`WorkManager`是兼容所有Android版本的一种解决方案。对于那些不支持`JobScheduler`API的旧版Android（API版本小于21），`WorkManager`将会使用`AlarmManager`和`BroadcastReceiver`等旧的API来进行后台任务的调度。而`JobScheduler`只能在Android 5.0（API 21）及以上版本使用。
+2. 任务持久性：`WorkManager`的工作请求（`WorkRequest`）是持久性的，这意味着即使应用程序或设备重新启动，这些工作请求也会被保存并在条件满足时继续执行。而`JobScheduler`的工作（`JobInfo`）则不是持久性的，如果设备重新启动，你需要重新调度它们。
+3. 任务链：`WorkManager`提供了一个强大的功能，允许你创建任务链和复杂的任务依赖关系。例如，你可以创建一个任务链，其中一个任务的输出是下一个任务的输入。或者，你可以创建一个任务，只有当多个其他任务全部完成时才会执行。`JobScheduler`没有提供这样的功能。
+
+综上所述，虽然`JobScheduler`和`WorkManager`在一些方面有相似之处，但`WorkManager`提供了更高级的功能和更广泛的兼容性。因此，如果你正在开发一个需要在所有Android版本上运行的应用，或者你需要使用到任务链或持久性任务等高级功能，你应该使用`WorkManager`。如果你只需要在Android 5.0及以上版本上执行简单的后台任务，`JobScheduler`可能会是一个更轻量级的选择。				
+
+​				
+
+
+
+```java
+package com.fu.tt;
+
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Bundle;
+import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+public class MainActivity extends AppCompatActivity {
+    private TextView textView;
+    private BroadcastReceiver receiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String message = intent.getStringExtra("message");
+            textView.setText(message);
+        }
+    };
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textview);
+
+        IntentFilter filter = new IntentFilter(MyJobService.ACTION_JOB_EXECUTED);
+        registerReceiver(receiver, filter);
+
+        ComponentName serviceName = new ComponentName(this, MyJobService.class);
+        JobInfo jobInfo = new JobInfo.Builder(1149248367, serviceName)
+                .setOverrideDeadline(0)
+                .build();
+
+        JobScheduler jobScheduler = (JobScheduler) getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        jobScheduler.schedule(jobInfo);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(receiver);
+    }
+}
+```
+
+翻译				
+
+Component：组件									
+
+```java
+package com.fu.tt;
+
+import android.annotation.SuppressLint;
+import android.app.job.JobParameters;
+import android.app.job.JobService;
+import android.content.Intent;
+import android.util.Log;
+
+
+@SuppressLint("SpecifyJobSchedulerIdRange")
+public class MyJobService extends JobService {
+    public static final String ACTION_JOB_EXECUTED = "com.example.myjobservice.JOB_EXECUTED";
+
+    @Override
+    public boolean onStartJob(JobParameters params) {
+        new Thread(() -> {
+            try {
+                Thread.sleep(5000);  // 线程睡眠5秒
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            Intent intent = new Intent(ACTION_JOB_EXECUTED);
+            intent.putExtra("message", "Job executed!");
+            sendBroadcast(intent);
+        }).start();
+        return true;
+    }
+
+
+    @Override
+    public boolean onStopJob(JobParameters params) {
+        return false;
+    }
+}
+```
+
+​						
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
+    <uses-permission android:name="com.example.permission.MODULE_A" />
+    <uses-permission android:name="com.example.permission.MODULE_B" />
+
+
+    <permission
+        android:name="com.example.permission.MY_BROADCAST_PERMISSION"
+        android:protectionLevel="normal" />
+
+    <uses-permission android:name="com.example.permission.MY_BROADCAST_PERMISSION" />
+
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.TT"
+        tools:targetApi="31">
+
+        <service
+            android:name=".MyJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="true">
+        </service>
+
+    </application>
+</manifest>
+```
+
+​					
+
+`ComponentName` 是一个Android类，用于明确地指定应用程序的一个特定组件，比如一个服务(Service)。
+
+在我们的例子中，我们正在创建一个任务(Job)，我们需要告诉Android系统，我们的这个任务应该由哪个服务来处理。为了这样做，我们需要创建一个 `ComponentName`，这个 `ComponentName` 就像是我们服务的名字牌，可以告诉Android系统：“嘿，这个任务应该交给这个服务来处理”。			
+
+```java
+ComponentName serviceName = new ComponentName(this, MyJobService.class);
+```
+
+其实就在做这样的事情：它创建了一个 `ComponentName`，这个 `ComponentName` 包含了当前应用（由 `this` 表示）和 `MyJobService` 服务的信息。这样，当我们在创建任务时，我们可以使用这个 `ComponentName` 来明确地告诉Android系统，这个任务应该由 `MyJobService` 来处理。				
+
+​					
+
+```java
+JobInfo jobInfo = new JobInfo.Builder(1149248367, serviceName)
+                .setOverrideDeadline(0)
+                .build();
+```
+
+这段代码的目的是建立一个Job信息，这个信息将告诉Android系统关于我们希望执行的Job的详细信息。
+
+`JobInfo` 是一个包含有关您希望系统执行的任务的信息的类。这些信息包括：			
+
+- 要执行的任务的ID			
+- 要执行任务的服务（我们之前讨论过的 `ComponentName`）
+- 任务执行的条件（比如设备是否在充电，是否有网络连接等）		
+
+​				
+
+个 `JobInfo.Builder` 是一个用来构建 `JobInfo` 的辅助类，我们给这个 `Builder` 提供了任务ID和服务名称，然后使用 `setOverrideDeadline(0)` 来设置一个执行任务的最后期限。在这个例子中，我们设置了0，意味着这个任务应该立即执行。					
+
+最后，我们调用 `build()` 方法，这将返回一个 `JobInfo` 对象，我们可以将这个对象传递给 `JobScheduler` 来安排任务。					
+
+总的来说，这段代码就是在创建一个 `JobInfo` 对象，这个对象包含了我们希望执行的任务的所有信息，然后我们可以将这个对象传递给 `JobScheduler` 来安排任务。					
+
+​				
+
+**这里还可以添加其他的限制条件	**			
+
+JobInfo.Builder 提供了一系列的方法，用于设置任务的执行条件。以下是一些常用的设置条件的方法：
+
+1. `setRequiredNetworkType(int networkType)`：设置任务执行需要的网络类型。例如，JobInfo.NETWORK_TYPE_UNMETERED 表示任务在 Wi-Fi 连接下执行。
+2. `setRequiresCharging(boolean requiresCharging)`：设置设备是否需要在充电时才执行任务。
+3. `setRequiresDeviceIdle(boolean requiresDeviceIdle)`：设置设备是否需要在空闲状态下才执行任务。
+4. `setPersisted(boolean isPersisted)`：设置设备重启后，任务是否继续。
+5. `setRequiresBatteryNotLow(boolean requiresBatteryNotLow)`：设置设备的电量是否需要不低于某个阈值才执行任务。
+6. `setRequiresStorageNotLow(boolean requiresStorageNotLow)`：设置设备的存储空间是否需要不低于某个阈值才执行任务。
+7. `setPeriodic(long intervalMillis)`：设置周期性执行的任务。
+8. `setOverrideDeadline(long maxExecutionDelayMillis)`：设置任务的最大延迟执行时间。
+9. `setMinimumLatency(long minLatencyMillis)`：设置任务的最小延迟执行时间。
+
+​					
+
+JobService 是 Android 中用于执行后台任务的服务。在 Android 5.0 及更高版本中引入。JobService 提供了两个主要方法需要重写，以实现任务的执行逻辑和停止逻辑。				
+
+1. `onStartJob(JobParameters params)`: 当系统判断任务的执行条件满足时，会调用此方法。在这个方法中，你需要实现你的任务逻辑。这个方法运行在主线程中，因此如果有耗时操作，需要开启新线程来处理。这个方法需要返回一个布尔值，如果返回 true，表示任务还在执行，当任务执行完毕时，需要调用 jobFinished() 方法来通知系统；如果返回 false，表示任务已经执行完毕。
+2. `onStopJob(JobParameters params)`: 当系统判断任务需要被停止时，会调用此方法。在这个方法中，你需要实现任务的停止逻辑。这个方法也需要返回一个布尔值，如果返回 true，表示任务需要重新调度；如果返回 false，表示任务不需要再次执行。
+
+​						
+
+```java
+public class MyJobService extends JobService {
+
+    private boolean jobCancelled = false;
+
+    @Override
+    public boolean onStartJob(JobParameters params) {
+        doBackgroundWork(params);
+        return true; // 表示任务还在执行
+    }
+
+    private void doBackgroundWork(final JobParameters params) {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < 10; i++) {
+                    if (jobCancelled) {
+                        return;
+                    }
+
+                    Log.d("JobService", "run: " + i);
+
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                Log.d("JobService", "Job finished");
+                jobFinished(params, false); // 任务执行完毕，通知系统
+            }
+        }).start();
+    }
+
+    @Override
+    public boolean onStopJob(JobParameters params) {
+        Log.d("JobService", "Job cancelled before completion");
+        jobCancelled = true; // 任务被取消，更新状态
+        return true; // 表示任务需要重新调度
+    }
+}
+```
+
+​						
+
+`jobFinished(JobParameters params, boolean needsReschedule)` 是 JobService 中的一个方法，当你的任务执行完成时，你应该调用这个方法来告诉系统你的任务已经完成。这个方法接收两个参数：
+
+1. `params`：这是你在 `onStartJob(JobParameters params)` 方法中接收到的 JobParameters 对象，它包含了你的任务的一些参数和配置信息。
+2. `needsReschedule`：这是一个布尔值，如果你的任务由于某种原因（比如设备重启）没有完成，你希望系统在条件满足时重新调度你的任务，你可以将这个值设为 true。如果你的任务已经成功完成，或者你不希望任务被重新调度，你应该将这个值设为 false。
+
+​					
+
+```java
+@Override
+public boolean onStartJob(JobParameters params) {
+    // 在这里执行你的任务...
+    // 当任务完成时，调用 jobFinished() 方法
+    jobFinished(params, false); // 任务完成，不需要重新调度
+    return true; // 任务正在执行
+}
+```
+
+在这个示例中，当 `onStartJob()` 被调用时，任务开始执行。任务执行完成后，`jobFinished()` 被调用，告诉系统任务已经完成，不需要重新调度。				
+
+​					
+
+### IntentService 类
+
+`IntentService` 是 Android 中一种特殊的 `Service`，它用于处理异步请求并在后台线程中执行操作。`IntentService` 是一种简化了线程管理的服务，它会在一个单独的工作线程中处理传入的 `Intent` 请求。当任务完成后，`IntentService` 会自动停止。这使得 `IntentService` 成为处理后台任务的理想选择，特别是当任务不需要与用户界面交互时。
+
+要使用 `IntentService`，你需要执行以下步骤：
+
+1. 创建一个继承自 `IntentService` 的类。
+2. 在类中实现 `onHandleIntent(Intent intent)` 方法。
+3. 通过在应用中发送 `Intent` 启动你的 `IntentService`。
+
+下面是一个简单的 `IntentService` 示例：
+
+```java
+public class MyIntentService extends IntentService {
+
+    // 一个用于处理任务的构造函数
+    public MyIntentService() {
+        super("MyIntentService");
+    }
+
+    @Override
+    protected void onHandleIntent(@Nullable Intent intent) {
+        // 这里执行后台任务，这个方法运行在一个单独的工作线程中
+        // 从 Intent 中获取你需要处理的数据
+        String data = intent.getStringExtra("data");
+
+        // 执行你的任务，例如：下载文件、上传数据等
+        // ...
+
+        // 当任务完成，IntentService 将自动停止
+    }
+}
+```
+
+​				
+
+要启动这个 `IntentService`，你可以在你的 `Activity` 或其他组件中发送一个 `Intent`，如下所示：		
+
+```java
+Intent intent = new Intent(this, MyIntentService.class);
+intent.putExtra("data", "Some data to process");
+startService(intent);
+```
+
+总结一下，`IntentService` 是一个用于处理后台任务的服务，它具有简化线程管理的优势，并在任务完成后自动停止。你可以通过继承 `IntentService` 并实现 `onHandleIntent(Intent intent)` 方法来创建自己的 `IntentService`。					
+
+​							
+
+首先，我来解释一下什么是异步请求。在编程中，异步操作意味着你可以在不等待一个任务完成的情况下继续执行其他任务。例如，假设你有一个程序需要下载一个大文件。如果你在主线程中进行这个操作，你的程序会被阻塞，也就是说，你不能进行其他操作直到文件下载完成。但如果你在一个单独的线程（或者使用异步方式）中进行下载，你的程序可以在文件下载的同时继续进行其他操作。这就是异步的概念。				
+
+​				
+
+现在，我来提供一个`IntentService`的简单示例。假设我们创建一个`IntentService`，它在后台获取一个网页的内容。
+
+首先，我们创建一个继承自 `IntentService` 的类：			
+
+```java
+package com.fu.tt;
+
+import android.app.IntentService;
+import android.content.Intent;
+import android.os.Bundle;
+import android.os.ResultReceiver;
+import java.util.Locale;
+
+public class MyIntentService extends IntentService {
+    public static final String PARAM_INPUT = "input";
+    public static final String PARAM_RESULT_RECEIVER = "resultReceiver";
+    public static final int RESULT_CODE = 100;
+
+    // 这个构造函数调用了父类IntentService的构造函数，并传递了一个线程的名字。这个名字用于命名运行任务的线程，有助于在调试或分析应用的性能时理解其行为。
+    public MyIntentService() {
+        super("MyIntentService");
+    }
+
+    @Override
+    protected void onHandleIntent(Intent intent) {
+        if (intent != null) {
+            String input = intent.getStringExtra(PARAM_INPUT);
+            ResultReceiver resultReceiver = intent.getParcelableExtra(PARAM_RESULT_RECEIVER);
+
+            // 模拟一个耗时任务
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            String result = String.format(Locale.getDefault(), "Processed: %s", input);
+
+            if (resultReceiver != null) {
+                Bundle bundle = new Bundle();
+                bundle.putString("result", result);
+                resultReceiver.send(RESULT_CODE, bundle);
+            }
+        }
+    }
+}
+```
+
+​						
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.ResultReceiver;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import android.content.Intent;
+
+public class MainActivity extends AppCompatActivity {
+    private TextView textView;
+    private Button button;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textview);
+        button = findViewById(R.id.button);
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(MainActivity.this, MyIntentService.class);
+                intent.putExtra(MyIntentService.PARAM_INPUT, "Sample Text");
+                intent.putExtra(MyIntentService.PARAM_RESULT_RECEIVER, new MyResultReceiver(new Handler()));
+                startService(intent);
+            }
+        });
+    }
+
+    private class MyResultReceiver extends ResultReceiver {
+        MyResultReceiver(Handler handler) {
+            super(handler);
+        }
+
+        @Override
+        protected void onReceiveResult(int resultCode, Bundle resultData) {
+            if (resultCode == MyIntentService.RESULT_CODE && resultData != null) {
+                String result = resultData.getString("result");
+                textView.setText(result);
+            }
+        }
+    }
+}
+```
+
+​					
+
+```java
+    // 这个构造函数调用了父类IntentService的构造函数，并传递了一个线程的名字。这个名字用于命名运行任务的线程，有助于在调试或分析应用的性能时理解其行为。
+    public MyIntentService() {
+        super("MyIntentService");
+    }
+```
+
+给线程命名的主要原因是为了便于调试和监控。
+
+1. **调试**：当你的应用出现问题，需要查看错误或异常时，线程的名字可以帮助你快速定位问题发生在哪个线程。特别是在多线程并发的情况下，如果线程没有具体的名字，只有默认的线程名（如Thread-0、Thread-1等），在查看日志或异常堆栈时，将很难分辨出问题发生在哪个线程。给线程命名，可以使问题定位更加清晰。
+2. **性能监控**：在对程序进行性能分析（如CPU使用率、线程阻塞等）时，线程名也非常重要。性能监控工具（如Android Studio的Profiler工具）会显示各个线程的状态和活动，如果线程有具体的名字，你可以更好地理解每个线程的行为和它们如何影响应用的性能。
+
+所以，为线程提供一个有意义的名字是一个好的编程实践，可以提高代码的可读性和可维护性。在上述的`IntentService`中，线程的名字被用于创建后台处理任务的工作线程。
+
+​					
+
+```java
+ 		@Override
+    protected void onHandleIntent(Intent intent) {
+        if (intent != null) {
+            String input = intent.getStringExtra(PARAM_INPUT);
+            ResultReceiver resultReceiver = intent.getParcelableExtra(PARAM_RESULT_RECEIVER);
+
+            // 模拟一个耗时任务
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            String result = String.format(Locale.getDefault(), "Processed: %s", input);
+
+            if (resultReceiver != null) {
+                Bundle bundle = new Bundle();
+                bundle.putString("result", result);
+                resultReceiver.send(RESULT_CODE, bundle);
+            }
+        }
+    }
+```
+
+这个方法是处理接收到的`Intent`的地方。当你使用`startService(Intent)`方法启动`IntentService`时，这个方法会在后台线程上被调用。这意味着你可以在这里进行耗时的操作，而不会影响到主线程。				
+
+在`onHandleIntent`方法内部，我们首先检查传入的`Intent`是否为null，然后从中取出需要处理的输入字符串和`ResultReceiver`对象。`ResultReceiver`是一个可以接收异步结果的类。						
+
+​					
+
+```java
+            if (resultReceiver != null) {
+                Bundle bundle = new Bundle();
+                bundle.putString("result", result);
+                resultReceiver.send(RESULT_CODE, bundle);
+            }
+```
+
+最后，我们检查`ResultReceiver`是否存在，并将处理后的结果发送回去			
+
+​				
+
+&&&&
+
+### ResultReceiver
+
+ResultReceiver 是 Android 提供的一个类，它可以接收跨进程的结果。这个类非常适合在需要跨进程通信时使用，比如从 Service（可能在不同的进程中）返回结果到 Activity。				
+
+通过一个简单的 Activity-to-Activity 示例来理解 ResultReceiver。在这个示例中，我们有两个 Activity：MainActivity 和 SecondActivity。MainActivity 有一个按钮和一个 TextView。点击按钮会启动 SecondActivity，SecondActivity 做一些计算然后把结果发送回 MainActivity。				
+
+​					
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+
+    <uses-permission android:name="com.example.permission.MODULE_A" />
+    <uses-permission android:name="com.example.permission.MODULE_B" />
+
+
+    <permission
+        android:name="com.example.permission.MY_BROADCAST_PERMISSION"
+        android:protectionLevel="normal" />
+
+    <uses-permission android:name="com.example.permission.MY_BROADCAST_PERMISSION" />
+
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.TT"
+        tools:targetApi="31">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
+        <activity android:name=".SecondActivity" />
+
+    </application>
+</manifest>
+```
+
+​					
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hello World!" />
+
+    <Button
+        android:id="@+id/button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="a button" />
+
+</LinearLayout>
+```
+
+​					
+
+```java
+package com.fu.tt;
+
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.ResultReceiver;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+public class MainActivity extends AppCompatActivity {
+    private TextView textView;
+    private Button button;
+
+    public static final String EXTRA_RECEIVER = "com.example.resultreceiverdemo.RECEIVER";
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        textView = findViewById(R.id.textView);
+        button = findViewById(R.id.button);
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, SecondActivity.class);
+                intent.putExtra(EXTRA_RECEIVER, new MyResultReceiver(null));
+                startActivity(intent);
+            }
+        });
+    }
+
+    private class MyResultReceiver extends ResultReceiver {
+        public MyResultReceiver(Handler handler) {
+            super(handler);
+        }
+
+        @Override
+        protected void onReceiveResult(int resultCode, Bundle resultData) {
+            if (resultCode == 200 && resultData != null) {
+                final String result = resultData.getString("result");
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        textView.setText(result);
+                    }
+                });
+            }
+        }
+    }
+}
+```
+
+​					
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.os.ResultReceiver;
+
+public class SecondActivity extends AppCompatActivity {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_second);
+
+        Intent intent = getIntent();
+        ResultReceiver receiver = intent.getParcelableExtra(MainActivity.EXTRA_RECEIVER);
+
+        if (receiver != null) {
+            Bundle bundle = new Bundle();
+            bundle.putString("result", "Here is the result from SecondActivity!");
+            receiver.send(200, bundle);
+            finish();
+        }
+    }
+}
+```
+
+​					
+
+&&&&&&&&
+
+
+
+### Bundle
+
+```java
+package com.fu.tt;
+
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+
+public class MainActivity extends AppCompatActivity {
+    private Button button;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        button = findViewById(R.id.button);
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(MainActivity.this, SecondActivity.class);
+                Bundle bundle = new Bundle();
+                bundle.putString("message", "Hello from MainActivity!");
+                bundle.putInt("number", 123);
+                intent.putExtras(bundle);
+                startActivity(intent);
+            }
+        });
+    }
+}
+```
+
+​					
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hello World!" />
+
+    <Button
+        android:id="@+id/button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="a button" />
+
+</LinearLayout>
+```
+
+​					
+
+```java
+package com.fu.tt;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.widget.TextView;
+
+public class SecondActivity extends AppCompatActivity {
+    private TextView textView;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_second);
+
+        textView = findViewById(R.id.textView);
+
+        Intent intent = getIntent();
+        
+        // intent.putExtras(bundle);
+        Bundle bundle = intent.getExtras();
+
+        if (bundle != null) {
+            String message = bundle.getString("message");
+            int number = bundle.getInt("number");
+            textView.setText(message + " " + number);
+        }
+    }
+}
+```
+
+1. `getIntent()`: 这是一个 Activity 类中的方法，它返回用来启动此 Activity 的 Intent。每个 Activity 都是由某个 Intent 触发并启动的，这个 Intent 可以包含一些附加的数据，例如我们刚刚在例子中通过 Bundle 传递的数据。当你在一个 Activity 中调用 `getIntent()` 方法时，它会返回启动该 Activity 的原始 Intent。
+2. `getExtras()`: 这是 Intent 类中的方法，它返回此 Intent 中包含的所有附加数据，这些数据以 Bundle 的形式返回。在我们的例子中，我们将包含消息和数字的 Bundle 添加到了 Intent 中，然后通过 `getExtras()` 方法在 SecondActivity 中取回了这个 Bundle。
+
+​									
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".SecondActivity">
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Welcome to Second Activity!"
+        android:textSize="24sp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+```
+
+​							
+
+### Parcelable
+
+翻译			
+
+Parcelable：可打包的				
+
+​					
+
+在 Android 中，有时你可能需要在不同的组件之间传递复杂的对象数据，比如从一个 Activity 到另一个 Activity。但是，Intent 中只能携带基本的数据类型，所以为了传递复杂的对象，我们需要将它们转换为可以轻松传输的形式。这就是 `Parcelable` 接口的作用。					
+
+`Parcelable` 是 Android 提供的一个接口，你可以通过实现这个接口，然后定义如何将对象的状态写入和恢复出“Parcel（包裹）”对象，来实现对象的序列化和反序列化。这样，就可以将对象放入 Intent 或 Bundle 中，进行传递了。			
+
+​					
+
+`Bundle` 和 `Parcelable` 是两个用于不同场景的工具，但它们都是 Android 中数据传输的基本机制。在理解它们的区别之前，让我们先来看看它们的主要用途。
+
+1. **`Bundle`**: `Bundle` 是一个 Android 类，用于将数据封装为键值对（Key-Value Pairs）的形式。`Bundle` 通常在 Activities、Fragments 和 Services 之间传递数据时使用，它可以容纳不同类型的数据，如 boolean、byte、char、int、long、float、String、Parcelable 等。
+2. **`Parcelable`**: `Parcelable` 是一个 Android 接口，它定义了如何将复杂对象序列化为一种可以在内存中传递的格式。这使得对象可以被存储到磁盘或通过 IPC（进程间通信）发送到另一个进程。
+
+现在，让我们来看看它们的区别：
+
+- **数据类型**：`Bundle` 可以存储各种基本类型和一些 Android 特定类型的数据，如 `Bundle`, `CharSequence`, `Parcelable`, `Serializable` 等。而 `Parcelable` 是一种序列化机制，允许自定义对象进行序列化，以便可以在内存中传输。
+- **性能**：由于 `Parcelable` 是在内存中进行数据传输，因此比使用 `Serializable`（Java 自带的序列化接口）进行序列化的 `Bundle` 更高效。这就是为什么 Android 官方推荐使用 `Parcelable` 而不是 `Serializable`。
+- **复杂性**：虽然 `Parcelable` 性能更高，但使用起来相对复杂，需要编写更多的代码。而 `Bundle` 则简单易用，无需编写额外的代码。
+
+总的来说，`Bundle` 与 `Parcelable` 是 Android 数据传输的两种方式，它们各有优势。通常来说，如果你只需要传输一些简单的数据类型（如 int、String 等），那么 `Bundle` 就足够了。但是，如果你需要传输的是自定义对象，那么你可能需要实现 `Parcelable` 接口。					
+
+​						
+
+&&&&&&&&&&&&&&&
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
