@@ -110,6 +110,11 @@
   - [WorkManager\_Result.failure()](#workmanager_resultfailure-1)
   - [getWorkInfoById](#getworkinfobyid)
 - [JobScheduler](#jobscheduler)
+- [IntentService 类](#intentservice-类)
+- [ResultReceiver](#resultreceiver)
+- [Bundle](#bundle)
+- [Parcelable](#parcelable)
+- [apk的签名](#apk的签名)
 
 
 
@@ -12404,7 +12409,7 @@ public class SecondActivity extends AppCompatActivity {
 
 ​					
 
-&&&&&&&&
+&&&
 
 
 
@@ -12566,13 +12571,31 @@ Parcelable：可打包的
 
 ​						
 
-&&&&&&&&&&&&&&&
+&&&
 
 
 
+### apk的签名
+
+keytool -genkey -keystore **my-release-key.keystore** -alias **my_alias** -keyalg RSA -keysize 4096 -validity 10000 
+
+my-release-key.keystore 密钥库的名字
+
+my_alias 秘钥的别名
 
 
 
+jarsigner -sigalg MD5withRSA -digestalg SHA1 -keystore **mykey.keystore** -signedjar **/Users/faker/Downloads/Autox.js_6.3.6sig.apk** **/Users/faker/Downloads/Autox.js_6.3.6.apk** **my_alias**
+
+mykey.keystore 就是你生成的秘钥库
+
+/Users/faker/Downloads/Autox.js_6.3.6sig.apk 这个是签名以后得文件的名字			
+
+/Users/faker/Downloads/Autox.js_6.3.6.apk 这个是没有签名的 apk 的名字			
+
+my_alias 这个是密钥库的别名		
+
+​				
 
 
 

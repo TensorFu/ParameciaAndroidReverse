@@ -69,6 +69,14 @@
 
 目前我们所使用的语言是 Java 语言，在后续的完善当中我们会跟进kotlin语言的Android开发
 
+---
+
+## Android项目的文件结构
+
+[Android项目的文件结构](教程/Android项目的文件结构.md)
+
+
+
 ## APK 文件结构
 
 [APK文件结构](教程/APK文件结构.md)
