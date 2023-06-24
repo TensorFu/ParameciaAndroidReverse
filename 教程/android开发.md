@@ -12575,6 +12575,973 @@ Parcelable：可打包的
 
 
 
+### TextUtils
+
+`TextUtils` 是 Android 开发中非常有用的一个工具类，它包含了一些操作和处理 `CharSequence` 和 `String` 的实用方法。注意，`TextUtils` 是一个 `final` 类，所以不能被继承。				
+
+​					
+
+主要用于处理 `CharSequence` 和 `String`。这个类提供的各种实用方法使得在编程中处理字符串变得更加方便和高效。		
+
+1. **简化代码**：`TextUtils` 类的方法可以帮助开发者避免编写冗长和重复的代码。例如，当你需要检查一个字符串是否为空或长度为0，你可能需要写 `str == null || str.length() == 0`。但使用 `TextUtils.isEmpty(str)`，你可以更简洁地完成同样的工作。
+2. **增加代码的可读性和易维护性**：`TextUtils` 类的方法名清晰直观，这让代码更容易理解。当其他开发者（或未来的你）阅读使用了 `TextUtils` 方法的代码时，他们可以更快地理解代码的意图。
+3. **提高代码的稳定性**：`TextUtils` 类的方法通常会内部处理可能的异常和边界情况，这有助于减少在编程中出现的错误。例如，`TextUtils.isEmpty(str)` 不仅检查字符串是否长度为0，也检查它是否为 `null`。
+4. **提供常用的字符串操作**：`TextUtils` 类提供了一些常用的字符串操作，如连接字符串、分割字符串、查找和替换等。这些方法大大提高了处理字符串的效率。
+5. **提供更高效的字符串处理方法**：在某些情况下，`TextUtils` 类提供的方法比 Java 标准库的方法更高效。例如，`TextUtils.concat(CharSequence...)` 比 `String.concat(String)` 更高效，因为前者使用 `SpannableStringBuilder` 而非 `StringBuilder`，避免了不必要的字符数组拷贝。
+
+​						
+
+以下是 `TextUtils` 类中的一些常用方法：
+
+1. `isEmpty(CharSequence str)`: 这个函数检查给定的 `CharSequence` 是否为空或长度为0。如果为空或长度为0，它返回 `true`，否则返回 `false`。
+
+   例如：
+
+   ```
+   javaCopy code
+   if (TextUtils.isEmpty(myString)) {
+       // myString 是空的或长度为0
+   }
+   ```
+
+2. `equals(CharSequence a, CharSequence b)`: 这个函数比较两个 `CharSequence` 是否相等。如果两者都为空，或者两者的长度相同且相应位置的字符都相同（不区分大小写），它返回 `true`，否则返回 `false`。
+
+   例如：
+
+   ```
+   javaCopy code
+   if (TextUtils.equals(str1, str2)) {
+       // str1 和 str2 相等
+   }
+   ```
+
+3. `concat(CharSequence... text)`: 这个函数接受一个或多个 `CharSequence` 参数，将它们连接起来，然后返回连接结果。
+
+   例如：
+
+   ```
+   javaCopy code
+   String result = TextUtils.concat("Hello", " ", "World").toString();
+   // 结果为 "Hello World"
+   ```
+
+4. `join(CharSequence delimiter, Iterable tokens)`: 这个函数接受一个分隔符和一个 `Iterable`（如 `List` 或 `Set`），将 `Iterable` 中的元素连接起来，用给定的分隔符分隔，然后返回连接结果。
+
+   例如：
+
+   ```
+   javaCopy code
+   List<String> list = Arrays.asList("Apple", "Banana", "Cherry");
+   String result = TextUtils.join(", ", list);
+   // 结果为 "Apple, Banana, Cherry"
+   ```
+
+​					
+
+### Android 当中的账户
+
+#### account和AccountManager
+
+`Account` 是 Android 中表示用户账户的一个基本类。每个 `Account` 对象由两部分组成：账户名称（通常是用户的电子邮件地址或用户名）和账户类型（例如 `"com.google"` 代表 Google 账户）。					
+
+由于 Android6.0（API 23）之后，权限获取有很大的变化，涉及到运行时权限的获取，账户相关操作中的一些方法如`getAccountsByType`，`getAccounts`等在Android 6.0之后已经被标记为`@RequiresPermission(Manifest.permission.GET_ACCOUNTS)`，也就是说在调用这些方法之前需要动态获取 `GET_ACCOUNTS` 权限。同时在Android 8.0（API 26）以后，`GET_ACCOUNTS` 权限被移入了 `dangerous` 权限组，需要用户明确授权，而在Android 10（API 29）之后更是被废弃，不再允许第三方应用获取，除非应用已经成为了设备的设备策略控制器，否则获取会返回空数组。						
+
+在 Android 设备中，用户可以有多个不同类型的账户，例如 Google 账户，Facebook 账户等。每种类型的账户可能提供不同的服务，例如邮件，联系人，日历等。`Account` 类就是用来表示这些账户的。							
+
+一般来说，我们不会直接创建 `Account` 对象，而是通过 `AccountManager` 类来获取设备中已经存在的账户。例如：
+
+```java
+AccountManager accountManager = AccountManager.get(context);
+Account[] accounts = accountManager.getAccountsByType("com.google");
+```
+
+
+
+段代码会返回设备中所有的 Google 账户。每个 `Account` 对象都表示一个账户。
+
+我们可以使用 `Account` 对象来访问账户的相关信息，例如账户名称和类型：
+
+```
+javaCopy code
+String name = account.name;  // 账户名称
+String type = account.type;  // 账户类型
+```
+
+我们也可以使用 `AccountManager` 类的其他方法来对账户进行操作，例如获取账户的认证令牌，或者添加和删除账户等。			
+
+​				
+
+创建账户的一个示例
+
+```java
+package com.fu.tt;
+
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import android.accounts.Account;
+import android.accounts.AccountManager;
+import android.accounts.AccountManagerCallback;
+import android.accounts.AccountManagerFuture;
+import android.accounts.AuthenticatorException;
+import android.accounts.OperationCanceledException;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Process;
+import android.os.ResultReceiver;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+
+import android.Manifest;
+
+public class MainActivity extends AppCompatActivity {
+
+    private static final int REQUEST_PICK_ACCOUNT = 1;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        Button selectAccountButton = findViewById(R.id.button);
+        selectAccountButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Account selectedAccount = new Account("zhizhongemail@gmail.com", "com.google");
+                Intent intent = AccountManager.newChooseAccountIntent(
+                        selectedAccount,
+                        null,
+                        new String[]{"com.google"},
+                        true,
+                        null,
+                        null,
+                        null,
+                        null);
+                startActivityForResult(intent, REQUEST_PICK_ACCOUNT);
+            }
+        });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == REQUEST_PICK_ACCOUNT && resultCode == RESULT_OK) {
+            String accountName = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+            Log.i("accountFU","accountName -> " + accountName);
+            String accountType = data.getStringExtra(AccountManager.KEY_ACCOUNT_TYPE);
+            Log.i("accountFU","accountType -> " + accountType);
+            Account account = new Account(accountName, accountType);
+        }
+    }
+}
+```
+
+​				
+
+分析这个代码
+
+在 onCreate 函数当中最重要的就是 `newChooseAccountIntent` 这个函数
+
+`AccountManager.newChooseAccountIntent()` 是一个静态方法，用于创建一个`Intent`。这个 `Intent` 在启动时会打开一个系统提供的界面，让用户在其中选择一个账户，然后返回用户选择的账户。
+
+前面的四个参数值得关注
+
+1. 第一个参数，指定默认的账户
+2. 第二个参数是，指定显示默认的几个账户（Android 6.0 及以上版本，这个参数已经不起作用了）
+3. 第三个参数是，显示指定的某种类型的账户
+4. 第四个参数，指的是，是否始终显示对话框，但是在目前的Android版本当中，这个参数已经被说明为，`alwaysPromptForAccount boolean that is ignored` 也就是不再起作用
+5. 第五个参数，就是指定，选择界面的描述
+
+```java
+public class MainActivity extends AppCompatActivity {
+
+    private static final int REQUEST_PICK_ACCOUNT = 1;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        Button selectAccountButton = findViewById(R.id.button);
+        selectAccountButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Account selectedAccount = new Account("zhizhongemail@gmail.com", "com.google");
+                Intent intent = AccountManager.newChooseAccountIntent(
+                        selectedAccount,
+                        null,
+                        new String[]{"com.google"},
+                        true,
+                        null,
+                        null,
+                        null,
+                        null);
+                startActivityForResult(intent, REQUEST_PICK_ACCOUNT);
+            }
+        });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == REQUEST_PICK_ACCOUNT && resultCode == RESULT_OK) {
+            String accountName = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+            Log.i("accountFU","accountName -> " + accountName);
+            String accountType = data.getStringExtra(AccountManager.KEY_ACCOUNT_TYPE);
+            Log.i("accountFU","accountType -> " + accountType);
+            Account account = new Account(accountName, accountType);
+        }
+    }
+}
+```
+
+​				
+
+```java
+@Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == REQUEST_PICK_ACCOUNT && resultCode == RESULT_OK) {
+            String accountName = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+            Log.i("accountFU","accountName -> " + accountName);
+            String accountType = data.getStringExtra(AccountManager.KEY_ACCOUNT_TYPE);
+            Log.i("accountFU","accountType -> " + accountType);
+            Account account = new Account(accountName, accountType);
+        }
+    }
+```
+
+这个部分的代码就是获取，选择的账户的信息，创建一个账户
+
+​				
+
+**添加和删除账户**
+
+从Android 6.0（API 23）开始，应用需要在运行时请求账户管理相关的权限，而不仅仅是在应用的manifest中声明。从Android 8.0（API 26）开始，非系统应用无法使用`GET_ACCOUNTS_PRIVILEGED`权限，这使得非系统应用无法直接添加或者删除账户。
+
+```java
+package com.fu.tt;
+
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
+import android.accounts.Account;
+import android.accounts.AccountManager;
+import android.accounts.AccountManagerCallback;
+import android.accounts.AccountManagerFuture;
+import android.accounts.AuthenticatorException;
+import android.accounts.OperationCanceledException;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Process;
+import android.os.ResultReceiver;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+
+import android.Manifest;
+
+public class MainActivity extends AppCompatActivity {
+
+    private static final String ACCOUNT_TYPE = "com.fu.tt";
+    private static final String ACCOUNT_NAME = "MyAccount";
+    private AccountManager accountManager;
+    private Account account;
+
+
+    private static final int REQUEST_PICK_ACCOUNT = 1;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        accountManager = AccountManager.get(this);
+        account = new Account(ACCOUNT_NAME, ACCOUNT_TYPE);
+
+        Button addAccountButton = findViewById(R.id.addAccountButton);
+        addAccountButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                boolean accountCreated = accountManager.addAccountExplicitly(account, null, null);
+                if (accountCreated) {
+                    // 账户创建成功，可以在这里更新 UI
+                    Toast.makeText(MainActivity.this, "Account created", Toast.LENGTH_SHORT).show();
+                } else {
+                    // 账户创建失败，可能是因为已经存在同类型和同名的账户
+                    Toast.makeText(MainActivity.this, "Account creation failed", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+        Button removeAccountButton = findViewById(R.id.removeAccountButton);
+        removeAccountButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+                    // 对于 Android 5.1 及以上版本，可以直接删除账户
+                    // 使用removeAccountExplicitly方法删除账户
+                    boolean success = accountManager.removeAccountExplicitly(account);
+                    // 检查删除操作是否成功
+                    if (success) {
+                        // 账户删除成功
+                        Toast.makeText(MainActivity.this, "Account removed", Toast.LENGTH_SHORT).show();
+                    } else {
+                        // 账户删除失败
+                        Toast.makeText(MainActivity.this, "Account removal failed", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    // 对于 Android 5.1 以下版本，需要调用已经弃用的方法
+                    accountManager.removeAccount(account, new AccountManagerCallback<Boolean>() {
+                        @Override
+                        public void run(AccountManagerFuture<Boolean> future) {
+                            try {
+                                if (future.getResult()) {
+                                    // 账户删除成功
+                                    Toast.makeText(MainActivity.this, "Account removed", Toast.LENGTH_SHORT).show();
+                                } else {
+                                    // 账户删除失败
+                                    Toast.makeText(MainActivity.this, "Account removal failed", Toast.LENGTH_SHORT).show();
+                                }
+                            } catch (OperationCanceledException | IOException | AuthenticatorException e) {
+                                // 处理异常
+                                Toast.makeText(MainActivity.this, "Account removal failed", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    }, null);
+                }
+            }
+        });
+    }
+}
+```
+
+addAccountExplicitly，removeAccountExplicitly 方法需要 **MANAGE_ACCOUNTS** 或者 **WRITE_CONTACTS** 权限，而且从 Android 8.0（API 26）开始，只有系统应用可以删除账户。如果你的应用不是系统应用，或者没有这些权限，这个方法会返回 false			
+
+​				
+
+#### 关于AccountManager 的一些操作
+
+`AccountManager.get(Context)` 是一个静态方法，它返回与提供的 `Context` 相关联的 `AccountManager` 实例。
+
+`AccountManager` 是 Android 系统中用于访问设备上的账户信息的一个关键类，它提供了一组 API 来管理和访问账户。你可以用它来做许多账户相关的操作，比如获取账户信息、添加和删除账户、获取和设置授权令牌等等
+
+
+
+调用 `AccountManager.get(Context)` 方法来获取一个 `AccountManager` 的实例
+
+```java
+AccountManager accountManager = AccountManager.get(this);
+```
+
+​					
+
+通过账户类型获取账户数组
+
+```java
+AccountManager accountManager = AccountManager.get(this);
+Account[] googleAccounts = accountManager.getAccountsByType("com.google");
+Account[] facebookAccounts = accountManager.getAccountsByType("com.facebook.katana");
+```
+
+​						
+
+获取所有账户
+
+```java
+Account[] accounts = accountManager.getAccounts();
+for (Account account : accounts) {
+    Log.d("Account List", "name: " + account.name + " type: " + account.type);
+}
+```
+
+请注意，你的应用需要 `GET_ACCOUNTS` 权限才能调用 `getAccounts` 方法。你需要在你的应用的 AndroidManifest.xml 文件中添加这个权限：
+
+```
+xmlCopy code
+<uses-permission android:name="android.permission.GET_ACCOUNTS" />
+```
+
+从 Android 6.0（API 级别 23）开始，`GET_ACCOUNTS` 权限被分类为 "危险" 权限，所以你需要在运行时请求这个权限。否则，如果你没有这个权限，`getAccounts` 方法将返回一个空的数组。
+
+然而，从Android 8.0（API 级别 26）开始，对 `GET_ACCOUNTS` 权限的需求已经变得更加严格。你不能再使用这个权限来获取其他应用的账户。如果你想要获取特定类型的账户，你应该使用 `getAccountsByType` 方法，并为其提供正确的账户类型。				
+
+​					
+
+添加账户
+
+```java
+public boolean addAccountExplicitly(Account account, String password, Bundle userdata)
+```
+
+`addAccountExplicitly` 是 `AccountManager` 类的一个方法，它用于在设备上创建一个新的账户。
+
+参数说明如下：
+
+- `account`: 要添加的 `Account` 对象，它包含了账户的名称和类型。
+- `password`: 账户的密码，可以为 null。
+- `userdata`: 一个可选的 `Bundle`，用于存储一些与账户相关的额外数据。
+
+返回值是一个布尔值，如果账户成功添加则返回 `true`，否则返回 `false`（例如，如果这个账户已经存在，就会返回 `false`）。				
+
+​					
+
+```java
+AccountManager accountManager = AccountManager.get(context);
+Account account = new Account("username", "com.example");
+boolean result = accountManager.addAccountExplicitly(account, "password", null);
+if (result) {
+    // 账户添加成功
+} else {
+    // 账户添加失败
+}
+```
+
+注意：如果你的应用没有 `MANAGE_ACCOUNTS` 或 `USE_CREDENTIALS` 权限，那么你不能使用 `addAccountExplicitly` 方法。你需要在你的应用的 AndroidManifest.xml 文件中添加这些权限。
+
+然而，请注意，从 Android 6.0（API 级别 23）开始，这两个权限都被标记为 "危险"，所以你需要在运行时请求它们。此外，从 Android 8.0（API 级别 26）开始，只有系统应用或者拥有 `MANAGE_ACCOUNTS` 权限的应用才能添加新的账户。		
+
+​					
+
+`addAccountExplicitly` 方法的参数说明如下：
+
+1. `Account account`: 一个 `Account` 对象，该对象包含了账户名称和账户类型。
+2. `String password`: 该参数用于存储账户的密码。这个密码并不一定每次登录都会用到，这取决于账户的类型和具体的应用逻辑。例如，如果你的应用使用了某种形式的 token（比如 OAuth token）来处理认证，**那么可能在用户首次登录时需要密码，之后就不再需要了**。在这种情况下，你可以把 token 存储在 `AccountManager` 中，而把密码设置为 `null`。另一种情况是，你的应用可能会使用这个密码来进行某种加密操作，这样即使是在设备被盗的情况下，攻击者也无法获取用户的凭据。需要注意的是，这个密码存储在设备上，因此应该进行适当的安全处理，防止被恶意访问。
+3. `Bundle userdata`: 这是一个可选的参数，它是一个 `Bundle` 对象，可以用来存储一些额外的与账户相关的数据。你可以使用这个 `Bundle` 来存储任何你需要的数据，比如用户的配置信息、用户的首选项等。这些数据在设备上保存，当你查询账户信息时，可以通过 `AccountManager` 类的 `getUserData` 方法来获取。需要注意的是，这些数据也是存储在设备上，所以同样应该进行适当的安全处理。
+
+​				
+
+getUserData方法来获取 account 的额外的数据
+
+```java
+public class MainActivity extends AppCompatActivity {
+
+    private static final String ACCOUNT_TYPE = "com.example";
+    private static final String ACCOUNT_NAME = "user@example.com";
+    private static final String USER_DATA_KEY = "user_data_key";
+    private static final String USER_DATA_VALUE = "user_data_value";
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        AccountManager accountManager = AccountManager.get(this);
+        Account account = new Account(ACCOUNT_NAME, ACCOUNT_TYPE);
+
+        // Create a bundle for the user data
+        Bundle userData = new Bundle();
+        userData.putString(USER_DATA_KEY, USER_DATA_VALUE);
+
+        // Add the account with user data
+        if (accountManager.addAccountExplicitly(account, null, userData)) {
+            Toast.makeText(this, "Account created", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "Account creation failed", Toast.LENGTH_SHORT).show();
+        }
+
+        // Get the user data
+        String userDataRetrieved = accountManager.getUserData(account, USER_DATA_KEY);
+
+        // Display the user data
+        Toast.makeText(this, "User data: " + userDataRetrieved, Toast.LENGTH_SHORT).show();
+    }
+}
+```
+
+​						
+
+​		
+
+在这种情况下，你可以把 token 存储在 `AccountManager` 中，而把密码设置为 `null`代码示例
+
+```java		
+// Assume we have an account
+Account account = new Account("user@example.com", "com.example");
+
+// Assume we get a token from server after user login
+String token = "abcd1234"; // This should be replaced with actual token
+
+// Create AccountManager instance
+AccountManager accountManager = AccountManager.get(context);
+
+// Add the account with password as null
+if(accountManager.addAccountExplicitly(account, null, null)){
+    // If the account is successfully added, set the token
+    accountManager.setAuthToken(account, "full_access", token);
+}
+```
+
+在这个例子中，我假设用户已经登录，应用已经从服务器获取到了token。我首先创建了一个Account对象，然后用addAccountExplicitly方法将这个Account添加到了AccountManager中，注意密码参数我传入的是null，因为我不打算在设备上存储密码。然后，我用setAuthToken方法将token存储在AccountManager中。这样，在后续的操作中，我就可以使用这个token来代替密码进行认证了。这是一种更为安全的做法，因为即使设备被盗，攻击者也无法获取到用户的密码。同时，token通常具有时效性，即使被盗，也只能在一段有限的时间内使用。				
+
+​				
+
+其中的 `setAuthToken` 的第二个参数是 token 的类型（可以结合账户的类型来理解）
+
+为什么需要指定token类型呢？一个原因是同一个应用可能会有多种类型的token。比如，你可能有一个用于读取用户数据的token，另一个用于修改用户数据的token。这两个token可能有不同的权限，因此需要区分开来。
+
+使用`authTokenType`参数，你可以区分和管理你的应用中的不同类型的token。当你需要获取一个特定类型的token时，你可以通过这个类型作为参数传递给`getAuthToken`方法，这样你就能获取到正确类型的token。
+
+```java
+// Assume we have an account
+Account account = new Account("user@example.com", "com.example");
+
+// Assume we get a read token and a write token from server after user login
+String readToken = "read_abcd1234"; // This should be replaced with actual read token
+String writeToken = "write_abcd1234"; // This should be replaced with actual write token
+
+// Create AccountManager instance
+AccountManager accountManager = AccountManager.get(context);
+
+// Add the account with password as null
+if(accountManager.addAccountExplicitly(account, null, null)){
+    // If the account is successfully added, set the tokens
+    accountManager.setAuthToken(account, "read_access", readToken);
+    accountManager.setAuthToken(account, "write_access", writeToken);
+}
+
+// Later, when you need to get the read token
+String readAuthToken = accountManager.peekAuthToken(account, "read_access");
+
+// And the write token
+String writeAuthToken = accountManager.peekAuthToken(account, "write_access");
+```
+
+在这个当中 readAuthToken 和 readToken 是同一个东西 				
+
+​						
+
+```java
+String readAuthToken = accountManager.peekAuthToken(account, "read_access");
+```
+
+`peekAuthToken`是`AccountManager`类的一个方法，它用于获取（但不删除）特定账户的特定类型的认证令牌（token）。这个方法不会引发任何网络活动，只会返回本地存储的token。
+
+`peekAuthToken`的参数是：
+
+1. `account`: 这是一个`Account`对象，表示你想要获取其认证令牌的账户。
+2. `authTokenType`: 这是一个字符串，表示你想要获取的认证令牌的类型。如前所述，一个应用可以有多种类型的认证令牌，每种类型的认证令牌可能具有不同的访问权限。所以这个参数可以帮助你区分和管理你的应用中的不同类型的认证令牌。
+
+注意：`peekAuthToken`只能返回在应用程序运行期间被存储的认证令牌。如果认证令牌是在应用运行期间被添加的（例如通过`setAuthToken`方法），那么`peekAuthToken`就可以返回它。但是，如果应用程序被终止或设备被重启，那么存储的认证令牌将被清除，`peekAuthToken`将无法返回任何认证令牌。
+
+​							
+
+#### 低版本当中的一些添加和删除账户
+
+在API 22之前，删除用户的过程和现在是不同的。我们不能直接调用`removeAccountExplicitly`方法，因为它是在API 22中才被引入的。对于低版本的Android，我们需要使用`removeAccount`方法
+
+​					
+
+```java
+AccountManager accountManager = AccountManager.get(context);
+Account accountToRemove = new Account("user@example.com", "com.example");
+
+// 注意这里没有直接使用 removeAccountExplicitly
+accountManager.removeAccount(accountToRemove, new AccountManagerCallback<Boolean>() {
+    @Override
+    public void run(AccountManagerFuture<Boolean> future) {
+        try {
+            if (future.getResult()) {
+                // 账户删除成功
+                Toast.makeText(context, "Account removed", Toast.LENGTH_SHORT).show();
+            } else {
+                // 账户删除失败
+                Toast.makeText(context, "Account removal failed", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            // 处理异常
+            e.printStackTrace();
+        }
+    }
+}, null);
+```
+
+在上述代码中，我们创建了一个`AccountManagerCallback<Boolean>`对象。`removeAccount`方法在后台线程中执行，当账户被删除时，这个回调的`run`方法将被调用。这个回调接收一个`AccountManagerFuture<Boolean>`对象，我们可以从中获取删除操作的结果。
+
+添加账户的过程和现在基本是一样的，我们仍然可以使用`addAccountExplicitly`方法：
+
+​					
+
+```java
+AccountManager accountManager = AccountManager.get(context);
+Account newAccount = new Account("user@example.com", "com.example");
+
+if(accountManager.addAccountExplicitly(newAccount, "password", null)){
+    // 账户添加成功
+    Toast.makeText(context, "Account added", Toast.LENGTH_SHORT).show();
+} else {
+    // 账户添加失败
+    Toast.makeText(context, "Account addition failed", Toast.LENGTH_SHORT).show();
+}
+```
+
+​					
+
+### ContentResolver
+
+翻译：				
+
+Resolver：解析器				
+
+​				
+
+ContentResolver是Android应用程序用来访问数据的一种机制。ContentResolver通过ContentProvider获取数据。ContentProvider是Android四大主要组件之一，是用来进行跨进程数据共享的标准接口，它的主要目的是封装数据，使数据更安全，操作更方便。
+
+ContentResolver类提供了一些方法，如`query()`,`insert()`,`update()`,`delete()`等，这些方法可以被用来操作数据。这些操作对应于SQL数据库查询的基本操作: SELECT, INSERT, UPDATE, DELETE。
+
+​				
+
+读取联系人的示例
+
+```java
+public class MainActivity extends AppCompatActivity {
+    private static final int PERMISSIONS_REQUEST_READ_CONTACTS = 100;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        // Check the SDK version and whether the permission is already granted or not.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, PERMISSIONS_REQUEST_READ_CONTACTS);
+        } else {
+            showContacts();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == PERMISSIONS_REQUEST_READ_CONTACTS) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission is granted
+                showContacts();
+            } else {
+                Toast.makeText(this, "Until you grant the permission, we cannot display the names", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void showContacts() {
+        ContentResolver contentResolver = getContentResolver();
+        Cursor cursor = contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null,null, null, null);
+        int nameIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
+        int numberIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
+
+        if (nameIndex == -1 || numberIndex == -1) {
+            Toast.makeText(this, "No contacts found.", Toast.LENGTH_SHORT).show();
+        } else {
+            while (cursor.moveToNext()) {
+                String name = cursor.getString(nameIndex);
+                String number = cursor.getString(numberIndex);
+                Toast.makeText(this, "Name: " + name + "Number: " + number, Toast.LENGTH_SHORT).show();
+            }
+        }
+
+        cursor.close();
+    }
+}
+```
+
+​			
+
+分析这个代码			
+
+​							
+
+```java
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, PERMISSIONS_REQUEST_READ_CONTACTS);
+        } else {
+            showContacts();
+        }
+```
+
+1. `Build.VERSION.SDK_INT >= Build.VERSION_CODES.M`：这个检查是看你的设备的Android版本是否大于或等于Android 6.0。因为从Android 6.0开始，Android系统引入了动态权限管理，应用需要在运行时向用户请求敏感权限，比如访问联系人、照片、位置等。
+2. `checkSelfPermission(Manifest.permission.READ_CONTACTS) != PackageManager.PERMISSION_GRANTED`：这个检查是看应用是否已经拥有读取联系人的权限。如果应用已经拥有这个权限，`checkSelfPermission`方法会返回`PackageManager.PERMISSION_GRANTED`。
+3. 如果以上两个条件都满足（设备版本>=Android 6.0且应用尚未获得读取联系人的权限），那么应用需要向用户请求读取联系人的权限，这就是`requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, PERMISSIONS_REQUEST_READ_CONTACTS)`这行代码做的事情。这个方法会弹出一个对话框，向用户说明应用为何需要这个权限，并询问用户是否授权。
+4. 如果以上条件有任何一个不满足（设备版本<Android 6.0或者应用已经获得读取联系人的权限），那么应用就可以直接访问联系人数据，即执行`showContacts()`方法。
+5. 当用户对权限请求做出反应后，系统会调用`onRequestPermissionsResult`方法。在这个方法中，你可以检查用户是否给予了权限。如果用户同意，你可以继续你的操作；如果用户拒绝，你可以提示用户你的应用需要这个权限来提供服务。
+
+​						
+
+`PERMISSIONS_REQUEST_READ_CONTACTS` 是一个整数常量，通常在应用程序中定义，用作请求权限的唯一识别符。
+
+当你调用 `requestPermissions(new String[]{Manifest.permission.READ_CONTACTS}, PERMISSIONS_REQUEST_READ_CONTACTS)` 时，你传递了这个常量值作为请求的标识符。系统将此请求代码返回到 `onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults)` 方法，以确定结果对应于哪个权限请求。这是非常有用的，因为你可能会在同一时间请求多个权限，或者在应用的生命周期中请求不同的权限。通过检查返回的 `requestCode`，你可以清楚地知道哪个权限的结果。
+
+例如，如果你同时请求读取联系人和访问GPS的权限，你可能会有两个常量，比如 `PERMISSIONS_REQUEST_READ_CONTACTS = 100` 和 `PERMISSIONS_REQUEST_ACCESS_GPS = 101`。当用户响应权限请求时，你可以通过检查 `onRequestPermissionsResult` 方法中的 `requestCode` 参数来区分用户是对哪个权限做出了响应。					
+
+​										
+
+```java
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == PERMISSIONS_REQUEST_READ_CONTACTS) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission is granted
+                showContacts();
+            }
+            else {
+                Toast.makeText(this, "Until you grant the permission, we cannot display the names", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+```
+
+​						
+
+```java
+    private void showContacts() {
+        ContentResolver contentResolver = getContentResolver();
+        Cursor cursor = contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null,null, null, null);
+        int nameIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
+        int numberIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
+
+        if (nameIndex == -1 || numberIndex == -1) {
+            Toast.makeText(this, "No contacts found.", Toast.LENGTH_SHORT).show();
+        } else {
+            while (cursor.moveToNext()) {
+                String name = cursor.getString(nameIndex);
+                String number = cursor.getString(numberIndex);
+                Toast.makeText(this, "Name: " + name + "Number: " + number, Toast.LENGTH_SHORT).show();
+            }
+        }
+
+        cursor.close();
+    }
+```
+
+这个`showContacts`方法的目的是获取设备上的所有联系人的姓名和电话号码，并在一个Toast消息中显示这些信息。下面是对每一步的详细解释：
+
+1. `ContentResolver contentResolver = getContentResolver();`：首先创建一个ContentResolver对象。ContentResolver对象是Android操作ContentProvider的工具，可以对ContentProvider进行增删查改的操作。在这个例子中，它将用来查询联系人数据。
+2. `Cursor cursor = contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null,null, null, null);`：这个语句对联系人数据库进行查询，返回的结果保存在一个 Cursor对象中。它使用了ContentResolver的query方法，参数说明如下：
+   - 第一个参数是 URI ，表示我们要查询的数据，这里我们查询的是电话号码数据。
+   - 第二个参数是 projection ，表示我们想从查询结果中获取哪些列的数据，如果为null，则返回所有列。
+   - 第三和第四个参数是selection和selectionArgs，用于过滤查询结果。这里我们没有指定过滤条件，所以传入null。
+   - 第五个参数是sortOrder，表示结果的排序方式，这里也传入null，表示不指定排序方式。
+3. `int nameIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME); int numberIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);`：这两行代码获取联系人姓名和电话号码在查询结果中对应的列索引。
+4. 判断如果获取的`nameIndex`或`numberIndex`为-1，表示没有找到联系人信息，弹出提示。否则，继续处理查询到的联系人信息。
+5. `while (cursor.moveToNext()) { ... }`：这个循环遍历查询结果中的每一行。在每一行中，它先获取联系人的姓名和电话号码，然后显示一个包含这些信息的Toast消息。
+6. `cursor.close();`：最后，关闭Cursor对象，释放它占用的资源。这是一个好的实践，应始终在完成使用Cursor对象后关闭它。
+
+​				
+
+```
+Cursor cursor = contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null,null, null, null);
+```
+
+分析这个函数
+
+`query`方法的各参数的定义如下：
+
+- `Uri uri`：所要查询的数据库的URI。
+- `String[] projection`：你想要返回的列。传递null将返回所有的列。
+- `String selection`：定义一个筛选标准来限制返回的数据。传递null将返回所有的数据。
+- `String[] selectionArgs`：你可能包括在选择参数中的问号将由选择参数中的值取代。这个数组将被传递到你的选择参数字符串中。
+- `String sortOrder`：如何排序行。传递null将使用默认的排序顺序，这可能是无序的。
+
+​					
+
+```java
+// 定义要返回的列
+String[] projection = new String[] {
+    ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+    ContactsContract.CommonDataKinds.Phone.NUMBER
+};
+
+// 定义选择标准，例如，只返回名字以"A"开头的联系人
+String selection = ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " LIKE ?";
+
+// 定义选择参数，用来替换选择标准中的问号
+String[] selectionArgs = new String[] {"A%"};
+
+// 定义排序方式，例如，按名字升序排序
+String sortOrder = ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC";
+
+// 执行查询
+Cursor cursor = contentResolver.query(
+    ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+    projection,
+    selection,
+    selectionArgs,
+    sortOrder);
+```
+
+1. `projection`：定义返回的列。在这个例子中，查询将返回联系人的显示名称(`DISPLAY_NAME`)和电话号码(`NUMBER`)。
+2. `selection`：定义筛选标准。在这个例子中，筛选标准为显示名称以"A"开头的联系人。
+3. `selectionArgs`：定义选择参数，用于替换选择标准中的问号。在这个例子中，任何显示名称以"A"开头的联系人都会被返回。
+4. `sortOrder`：定义排序方式。在这个例子中，联系人将按显示名称的升序排序。
+5. `contentResolver.query`：执行查询。这个方法将从联系人数据库中返回一个包含满足以上所有条件的联系人的`Cursor`对象。
+
+​				
+
+`ContentResolver contentResolver = getContentResolver();` 这个就好像是打开了一个软件		
+
+​				
+
+这个代码就是，将要处理的文件加载到这个软件
+
+```java
+Cursor cursor = contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null,null, null, null);
+```
+
+​						
+
+**第一个参数是打开不同的表格**			
+
+`ContactsContract` 类的不同子类提供了许多不同的 `CONTENT_URI`，可以用来获取和操作 Android 设备中的各种联系人数据。以下是一些常用的 `CONTENT_URI`：
+
+1. `ContactsContract.Contacts.CONTENT_URI`：这是获取联系人基本信息的 URI，例如联系人的名称、ID等。
+2. `ContactsContract.CommonDataKinds.Phone.CONTENT_URI`：这是获取联系人电话信息的 URI，例如联系人的电话号码、电话类型等。
+3. `ContactsContract.CommonDataKinds.Email.CONTENT_URI`：这是获取联系人电子邮件信息的 URI，例如联系人的电子邮件地址、电子邮件类型等。
+4. `ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_URI`：这是获取联系人邮寄地址信息的 URI，例如联系人的街道、城市、州、邮编、国家等。
+5. `ContactsContract.CommonDataKinds.Organization.CONTENT_URI`：这是获取联系人组织信息的 URI，例如联系人的公司、职务、部门等。
+6. `ContactsContract.RawContacts.CONTENT_URI`：这是获取原始联系人信息的 URI。一个原始联系人是从一个帐户获取的联系人数据的集合，例如，您可能有来自 Google 帐户和设备本地存储的同一联系人的两个原始联系人。
+
+​				
+
+**第二个参数**
+
+比如说，你想获取联系人电话信息，那么你就会使用 `ContactsContract.CommonDataKinds.Phone.CONTENT_URI`。这个 URI 返回的列在 `ContactsContract.CommonDataKinds.Phone` 类中定义。你可以在这个类中找到各种列的常量，例如 `DISPLAY_NAME`，`NUMBER` 等。这些常量就是你可以在 `ContentResolver.query()` 的第二个参数中使用的列名。
+
+如果你想要返回所有的列，那么可以将第二个参数设为 `null`。然后，你可以使用 `Cursor` 的 `getColumnNames()` 方法来获取查询结果中的所有列名。这是一个例子：
+
+```java
+javaCopy code
+Cursor cursor = contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, null);
+String[] columnNames = cursor.getColumnNames();
+for (String columnName : columnNames) {
+    Log.d("MyApp", "Column name: " + columnName);
+}
+cursor.close();
+```
+
+​								
+
+**第三和第四个参数是结合起来看的**
+
+当然可以，以下是使用各种运算符的一些例子：
+
+1. 等于（`=`）: 假设我们想找到显示名称等于 "John Doe" 的联系人。
+
+```java
+javaCopy code
+String selection = ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " = ?";
+String[] selectionArgs = new String[] {"John Doe"};
+```
+
+
+
+1. 不等于（`!=`）: 假设我们想找到显示名称不等于 "John Doe" 的所有联系人。
+
+```java
+javaCopy code
+String selection = ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " != ?";
+String[] selectionArgs = new String[] {"John Doe"};
+```
+
+
+
+1. 大于（`>`）: 假设我们想找到联系人 ID 大于 100 的所有联系人。
+
+```java
+javaCopy code
+String selection = ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " > ?";
+String[] selectionArgs = new String[] {"100"};
+```
+
+
+
+1. `BETWEEN`: 假设我们想找到联系人 ID 在 100 和 200 之间的所有联系人。
+
+```java
+javaCopy code
+String selection = ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " BETWEEN ? AND ?";
+String[] selectionArgs = new String[] {"100", "200"};
+```
+
+
+
+1. `IN`: 假设我们想找到显示名称是 "John Doe"、"Jane Doe" 或 "Robert Roe" 的所有联系人。
+
+```java
+javaCopy code
+String selection = ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " IN (?, ?, ?)";
+String[] selectionArgs = new String[] {"John Doe", "Jane Doe", "Robert Roe"};
+```
+
+
+
+**第五个参数就是显示顺序**
+
+`ContentResolver.query()` 方法的第五个参数用于指定查询结果的排序方式。该参数是一个字符串，该字符串应包含一列名称，后面跟着 `ASC` （升序）或 `DESC` （降序）。
+
+例如，假设你正在查询联系人的电话号码，你可能希望结果按照联系人的显示名（`DISPLAY_NAME`）以升序排序。你可以这样做：
+
+```java
+javaCopy code
+String sortOrder = ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC";
+Cursor cursor = contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, sortOrder);
+```
+
+​				
+
+你也可以根据多列进行排序，只需在字符串中包含多个列名，每个列名后面都跟着 `ASC` 或 `DESC`，并用逗号分隔。例如：
+
+```java
+javaCopy code
+String sortOrder = ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC, " + ContactsContract.CommonDataKinds.Phone.NUMBER + " DESC";
+Cursor cursor = contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, sortOrder);
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ### apk的签名
 
 keytool -genkey -keystore **my-release-key.keystore** -alias **my_alias** -keyalg RSA -keysize 4096 -validity 10000 
@@ -12597,7 +13564,7 @@ my_alias 这个是密钥库的别名
 
 ​				
 
-
+&&&
 
 
 
