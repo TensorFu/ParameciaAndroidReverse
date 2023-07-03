@@ -13524,7 +13524,349 @@ String sortOrder = ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC, 
 Cursor cursor = contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, sortOrder);
 ```
 
+​						
 
+可以通过自定义ContentProvider和ContentResolver来访问和管理你自己数据库中的数据。ContentProvider和ContentResolver提供了一种跨应用共享数据的方式，这样你的数据库就可以被你的其他应用，甚至是其他开发者的应用所访问。					
+
+首先，你需要创建一个ContentProvider，ContentProvider在Android中充当数据的提供者，它可以提供任何形式的数据，包括数据库，文件，网络，甚至是内存中的数据					
+
+​						
+
+&&&
+
+### 数据库
+
+**创建数据库：** 在 Android 中，通常我们会创建一个扩展 `SQLiteOpenHelper` 的类来创建和管理数据库。`SQLiteOpenHelper` 是一个帮助类，用来管理数据库的创建和版本管理。我们需要覆写它的 `onCreate(SQLiteDatabase)` 和 `onUpgrade(SQLiteDatabase, int, int)` 方法。例如：
+
+​				
+
+
+SQLite数据库在Android设备上的存储位置是在应用的私有目录中的一个特定的文件夹中，具体的路径是：
+
+`/data/data/你的包名/databases/你的数据库名.db`			
+
+
+
+```java
+package com.fu.tt;
+
+import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+
+public class DBHelper extends SQLiteOpenHelper {
+
+    private static final String DATABASE_NAME = "mydatabase.db";
+    private static final int DATABASE_VERSION = 1;
+
+    public DBHelper(Context context) {
+        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+    }
+
+    @Override
+    public void onCreate(SQLiteDatabase db) {
+        db.execSQL(
+                "CREATE TABLE users (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                        "name TEXT," +
+                        "age INTEGER)"
+        );
+    }
+
+    @Override
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        db.execSQL("DROP TABLE IF EXISTS users");
+        onCreate(db);
+    }
+}
+```
+
+​				
+
+```java
+package com.fu.tt;
+
+
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.os.Bundle;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+public class MainActivity extends AppCompatActivity {
+
+    private DBHelper dbHelper;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        dbHelper = new DBHelper(this);
+
+        insertUser("Alice", 25);
+        insertUser("Bob", 30);
+
+        Cursor cursor = getUsers();
+        while (cursor.moveToNext()) {
+            int nameIndex = cursor.getColumnIndex("name");
+            int ageIndex = cursor.getColumnIndex("age");
+
+            if (nameIndex != -1 && ageIndex != -1) {
+                while (cursor.moveToNext()) {
+                    String name = cursor.getString(nameIndex);
+                    int age = cursor.getInt(ageIndex);
+                    Toast.makeText(this, "User: " + name + ", Age: " + age, Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                Toast.makeText(this, "Error retrieving data from database", Toast.LENGTH_SHORT).show();
+            }
+            Toast.makeText(this, "User: " + nameIndex + ", Age: " + ageIndex, Toast.LENGTH_SHORT).show();
+        }
+        cursor.close();
+    }
+
+    private void insertUser(String name, int age) {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        ContentValues values = new ContentValues();
+        values.put("name", name);
+        values.put("age", age);
+
+        long id = db.insert("users", null, values);
+        if (id == -1) {
+            Toast.makeText(this, "Failed to insert user", Toast.LENGTH_SHORT).show();
+        }
+        db.close();
+    }
+
+    private Cursor getUsers() {
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+
+        String[] projection = {
+                "id",
+                "name",
+                "age"
+        };
+
+        Cursor cursor = db.query("users", projection, null, null, null, null, null);
+        return cursor;
+    }
+}
+```
+
+​					
+
+**分析这个代码**			
+
+这段代码定义了一个名为`DBHelper`的类，它是`SQLiteOpenHelper`的子类。`SQLiteOpenHelper`是一个帮助管理SQLite数据库的工具类。它提供了数据库的创建和版本控制等功能。
+
+以下是这段代码的详细解释：
+
+1. `DATABASE_NAME`：这是你的数据库名称，你的应用会在设备的私有存储区域创建一个叫做`mydatabase.db`的数据库文件。
+2. `DATABASE_VERSION`：这是你的数据库版本。每当你修改数据库架构（例如，添加新的表或者修改已有的表），你需要增加这个版本号。这个版本号被用来在`onUpgrade`和`onDowngrade`方法中确定是否需要更新数据库。
+3. `DBHelper`构造器：当你创建`DBHelper`对象时，你需要传递一个`Context`对象作为参数。这个`Context`对象是用来确定在哪里创建数据库文件的。`super(context, DATABASE_NAME, null, DATABASE_VERSION)`这行代码是在调用父类`SQLiteOpenHelper`的构造器，创建一个数据库。
+
+​					
+
+`DATABASE_VERSION`是一个整数值，代表了你的数据库的版本。这个版本数值在你的数据库架构发生变化时是很重要的，比如说，你在开发过程中可能会添加新的表，或者修改现有的表。当这些改变发生时，你需要更新数据库版本，这样你的应用程序就能知道它需要更新数据库。他会触发 upgrade 的这个函数				
+
+​							
+
+Oncreate 函数
+
+```java
+    @Override
+    public void onCreate(SQLiteDatabase db) {
+        db.execSQL(
+                "CREATE TABLE users (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                        "name TEXT," +
+                        "age INTEGER)"
+        );
+    }
+```
+
+这个函数的触发并不是在 `dbHelper = new DBHelper(this);` 的时候，因为这个时候，当你创建 `DBHelper` 对象的时候，数据库并没有被创建或打开。只有当你第一次调用 `getWritableDatabase()` 或 `getReadableDatabase()` 方法的时候，数据库才会被创建或打开。如果这是第一次创建数据库，`onCreate()` 方法就会被调用。
+
+​				
+
+```java
+    @Override
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        db.execSQL("DROP TABLE IF EXISTS users");
+        onCreate(db);
+    }
+```
+
+这个函数是在 数据库文件的版本发生变化的时候才会触发，这个函数的内容是，如果检测到新的数据库的文件，就直接将原本的数据库删除掉，并且创建一个新的数据库的表格			
+
+​					
+
+与此类似的还有一个降级的函数
+
+```java
+@Override
+public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+    db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
+    onCreate(db);
+}
+```
+
+检测数据库是否需要升级或降级是自动完成的。`oldVersion` 参数是系统从磁盘上的数据库获取的版本号，`newVersion` 是你在 `SQLiteOpenHelper` 的构造函数中提供的版本号。			
+
+​			
+
+想要获取当前的版本号码 
+
+```java
+DBHelper dbHelper = new DBHelper(context);
+SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+int version = db.getVersion();
+```
+
+​					
+
+示例
+
+```java
+package com.fu.tt;
+
+import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+
+public class DBHelper extends SQLiteOpenHelper {
+
+    private static final String DATABASE_NAME = "mydatabase.db";
+    private static final int DATABASE_VERSION = 2; // 注意这里我们把版本号设为2
+
+    // Table name and column names
+    protected static final String TABLE_PEOPLE = "people";
+    protected static final String COLUMN_ID = "_id";
+    protected static final String COLUMN_NAME = "name";
+    protected static final String COLUMN_AGE = "age";
+    protected static final String COLUMN_ADDRESS = "address"; // 新增的地址列
+
+    public DBHelper(Context context) {
+        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+    }
+
+    @Override
+    public void onCreate(SQLiteDatabase db) {
+        String CREATE_PEOPLE_TABLE = "CREATE TABLE " + TABLE_PEOPLE +
+                "(" +
+                COLUMN_ID + " INTEGER PRIMARY KEY," +
+                COLUMN_NAME + " TEXT," +
+                COLUMN_AGE + " INTEGER" +
+                ")";
+        db.execSQL(CREATE_PEOPLE_TABLE);
+    }
+
+    @Override
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        if (oldVersion < 2) {
+            // 我们在数据库版本2中添加了一个新的列
+            String ADD_COLUMN_ADDRESS = "ALTER TABLE " + TABLE_PEOPLE + " ADD COLUMN " + COLUMN_ADDRESS + " TEXT";
+            db.execSQL(ADD_COLUMN_ADDRESS);
+        }
+    }
+}
+```
+
+这个就是当检测有版本更新就会触发 onUpgrade ，然后如果版本低于 2 就会添加一列
+
+​						
+
+```java
+    private void insertUser(String name, int age) {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+        ContentValues values = new ContentValues();
+        values.put("name", name);
+        values.put("age", age);
+
+        long id = db.insert("people", null, values);
+        if (id == -1) {
+            Toast.makeText(this, "Failed to insert user", Toast.LENGTH_SHORT).show();
+        }
+        db.close();
+    }
+```
+
+1. `SQLiteDatabase db = dbHelper.getWritableDatabase();`: 这行代码是获取数据库的一个可写入的实例，用于插入数据。
+2. `ContentValues values = new ContentValues();`: `ContentValues` 是一个用来存储一组键值对的容器。我们将用它来保存要插入数据库的数据。
+3. `values.put("name", name); values.put("age", age);`: 这两行代码将传入的 `name` 和 `age` 分别作为键值对存储到 `ContentValues` 对象中。
+4. `long id = db.insert("people", null, values);`: 这行代码是调用 `insert` 方法向数据库中插入数据。 `"people"` 是表名，`values` 是要插入的数据。如果插入成功，此方法将返回插入数据的行 ID；如果插入失败，将返回 `-1`。
+5. `if (id == -1) {`: 这行代码是一个条件判断，如果 `id` 等于 `-1`，说明数据插入失败。
+6. `Toast.makeText(this, "Failed to insert user", Toast.LENGTH_SHORT).show();`: 这行代码是用来在屏幕上显示一条提示消息，说明数据插入失败。
+7. `db.close();`: 最后，我们在操作完数据库后，需要关闭数据库连接，释放资源。
+
+​				
+
+`ContentValues` 是Android提供的一个类，主要用于以某种方式封装要添加到SQLiteDatabase中的值。它基本上是一个存储一些列名称和对应值的容器，通常用于Android的SQLiteDatabase操作，如插入（insert）、更新（update）等			
+
+它的工作方式非常类似于一个Java的`HashMap`或者`Bundle`					
+
+虽然`ContentValues`通常用于数据库操作，但并不意味着它只能在数据库操作中使用。事实上，任何需要键值对存储的场景都可以使用`ContentValues`，只是在实际开发中，我们看到它的主要用途是与SQLite数据库一起使用
+
+​						
+
+```java
+    private Cursor getUsers() {
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+
+        String[] projection = {
+                DBHelper.COLUMN_ID,  
+                DBHelper.COLUMN_NAME,
+                DBHelper.COLUMN_AGE
+        };
+
+        Cursor cursor = db.query("people", projection, null, null, null, null, null);
+        return cursor;
+    }
+```
+
+1. `SQLiteDatabase db = dbHelper.getReadableDatabase();`
+
+   首先，方法通过调用`dbHelper.getReadableDatabase()`来获取一个可读的`SQLiteDatabase`实例。这是一种获取数据库的方法，以便你能执行读取操作。
+
+2. ```java
+   
+   String[] projection = {
+           DBHelper.COLUMN_ID,  
+           DBHelper.COLUMN_NAME,
+           DBHelper.COLUMN_AGE
+   };
+   ```
+
+   然后，定义了一个`projection`数组，这个数组包含了你想从数据库中获取的列的名字。在这个例子中，你想获取ID，名字和年龄。
+
+3. ```java
+   javaCopy code
+   Cursor cursor = db.query("people", projection, null, null, null, null, null);
+   return cursor;
+   ```
+
+   最后，调用`db.query`方法查询数据库。这个方法的第一个参数是表名，第二个参数是你想获取的列的数组（即上一步创建的`projection`数组），后面的参数分别是查询条件、查询参数、分组、过滤和排序，这里都设置为null，表示没有特定的条件或参数，也没有分组、过滤和排序，你想获取所有的数据。
+
+   `db.query`方法返回一个`Cursor`对象，这个对象包含了查询结果。在这个例子中，`Cursor`对象包含了所有在"people"表中的行的ID、名字和年龄。这个`Cursor`对象然后被返回，以便在其他地方使用。					
+
+   ​						
+
+**关于 cursor**
+
+你可以把它想象成一个可以在查询结果行之间移动的指针。
+
+`Cursor`对象提供了很多方法来帮助你处理查询结果。这里有一些最常用的方法：
+
+- `moveToFirst()` 和 `moveToNext()`: 这两个方法用来在结果集中移动。`moveToFirst()`让`Cursor`移动到第一行，而`moveToNext()`让`Cursor`移动到下一行。如果移动成功，这两个方法会返回`true`，否则返回`false`。所以通常我们会在一个循环中使用`moveToNext()`，直到它返回`false`为止，这表示没有更多的行了。
+- `getColumnIndex(String columnName)`: 这个方法返回给定列名的列的索引。你可以使用这个索引来获取这一列的值。
+- `getString(int columnIndex)`, `getInt(int columnIndex)`等方法：这些方法用来获取当前行指定列的值。你需要传入列的索引（可以用`getColumnIndex()`方法获取），然后方法会返回这一列的值。这个“某一列”就是方法参数中的`columnIndex`，例如，`columnIndex`为0就表示读取第一列的数据
+- `close()`: 当你处理完结果集后，你应该调用这个方法来关闭`Cursor`。这非常重要，因为如果你忘记关闭`Cursor`，可能会导致内存泄露
 
 
 
