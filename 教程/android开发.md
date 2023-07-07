@@ -114,6 +114,13 @@
 - [ResultReceiver](#resultreceiver)
 - [Bundle](#bundle)
 - [Parcelable](#parcelable)
+- [TextUtils](#textutils)
+- [Android 当中的账户](#android-当中的账户)
+  - [account和AccountManager](#account和accountmanager)
+  - [关于AccountManager 的一些操作](#关于accountmanager-的一些操作)
+  - [低版本当中的一些添加和删除账户](#低版本当中的一些添加和删除账户)
+- [ContentResolver](#contentresolver)
+- [数据库](#数据库)
 - [apk的签名](#apk的签名)
 
 
@@ -777,7 +784,7 @@ Fragments 分段，块
 
 在大屏的手机上，特别是平板上，我们竖着拿平板，和横着拿平板，我们的显示布局是不一样的		
 
-Fragments的作用就是将一个 activity 的界面，分为好几段，方便管理，他依附于 activity 而存在
+Fragments的作用就是将一个 activity 的界面，分为好几段，方便管理，他依附于 activity 而存在（就是将一个Activity拆分成多个小组，帅领将，将领兵，Fragments 就是这个将）
 
 1. **灵活性**：Fragments 可以在不同的 Activity 之间重用，这意味着可以在不同的屏幕和场景下共享相同的 UI 逻辑。
 2. **适应性**：Fragments 支持动态调整布局，可以根据屏幕尺寸和方向更好地适应不同的设备。例如，在手机上，您可以使用一个 Fragment 显示列表，然后在用户选择列表项时，启动另一个 Activity 并使用另一个 Fragment 显示详细信息。而在平板电脑上，您可以在同一个 Activity 中并排显示这两个 Fragment。
@@ -13534,6 +13541,10 @@ Cursor cursor = contentResolver.query(ContactsContract.CommonDataKinds.Phone.CON
 
 &&&
 
+
+
+
+
 ### 数据库
 
 **创建数据库：** 在 Android 中，通常我们会创建一个扩展 `SQLiteOpenHelper` 的类来创建和管理数据库。`SQLiteOpenHelper` 是一个帮助类，用来管理数据库的创建和版本管理。我们需要覆写它的 `onCreate(SQLiteDatabase)` 和 `onUpgrade(SQLiteDatabase, int, int)` 方法。例如：
@@ -13701,7 +13712,15 @@ Oncreate 函数
     }
 ```
 
-这个函数是在 数据库文件的版本发生变化的时候才会触发，这个函数的内容是，如果检测到新的数据库的文件，就直接将原本的数据库删除掉，并且创建一个新的数据库的表格			
+这个函数是在 数据库文件的版本发生变化的时候才会触发，这个函数的内容是，如果检测到新的数据库的文件，就直接将原本的数据库删除掉，并且创建一个新的数据库的表格，为什么 DATABASE_VERSION 的值在发生改变的时候， onUpgrade 这个函数会马上做出反应，是因为，这个变量名是固定的嘛？并不是，是因为在继承这个类的时候传进去了
+
+```java
+    public DBHelper(Context context) {
+        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+    }
+```
+
+
 
 ​					
 
@@ -13800,10 +13819,58 @@ public class DBHelper extends SQLiteOpenHelper {
 1. `SQLiteDatabase db = dbHelper.getWritableDatabase();`: 这行代码是获取数据库的一个可写入的实例，用于插入数据。
 2. `ContentValues values = new ContentValues();`: `ContentValues` 是一个用来存储一组键值对的容器。我们将用它来保存要插入数据库的数据。
 3. `values.put("name", name); values.put("age", age);`: 这两行代码将传入的 `name` 和 `age` 分别作为键值对存储到 `ContentValues` 对象中。
-4. `long id = db.insert("people", null, values);`: 这行代码是调用 `insert` 方法向数据库中插入数据。 `"people"` 是表名，`values` 是要插入的数据。如果插入成功，此方法将返回插入数据的行 ID；如果插入失败，将返回 `-1`。
-5. `if (id == -1) {`: 这行代码是一个条件判断，如果 `id` 等于 `-1`，说明数据插入失败。
-6. `Toast.makeText(this, "Failed to insert user", Toast.LENGTH_SHORT).show();`: 这行代码是用来在屏幕上显示一条提示消息，说明数据插入失败。
-7. `db.close();`: 最后，我们在操作完数据库后，需要关闭数据库连接，释放资源。
+4. `long id = db.insert("people", null, values);`: 这行代码是调用 `insert` 方法向数据库中插入数据。 `"people"` 是表名，`values` 是要插入的数据。如果插入成功，此方法将返回插入数据的行 ID；如果插入失败，将返回 `-1`。一般来说，第二个参数他就是 null ，他的作用是这个样子的
+
+假设我们有一个表格
+
+| id   | name | age  | address |
+| ---- | ---- | ---- | ------- |
+| 1    | Tom  | 22   | NY      |
+| 2    | Lisa | 23   | LA      |
+
+如果你执行以下的插入操作：
+
+```java
+ContentValues values = new ContentValues();
+values.put("name", "John");
+values.put("age", 30);
+values.put("address", "SF");
+
+long id = db.insert("people", "age", values);
+```
+
+插入后的表格会变成：
+
+| id   | name | age  | address |
+| ---- | ---- | ---- | ------- |
+| 1    | Tom  | 22   | NY      |
+| 2    | Lisa | 23   | LA      |
+| 3    | John | 30   | SF      |
+
+如果你执行以下的插入操作：
+
+```java
+ContentValues values = new ContentValues();
+long id = db.insert("people", "age", values);
+```
+
+因为"values"为空，并且"nullColumnHack"被设定为"age"，所以会在表中插入一行新数据，其中"age"列的值为NULL，其余列也为NULL。插入后的表格会变成：
+
+| id   | name | age  | address |
+| ---- | ---- | ---- | ------- |
+| 1    | Tom  | 22   | NY      |
+| 2    | Lisa | 23   | LA      |
+| 3    | NULL | NULL | NULL    |
+
+在很多情况下，`nullColumnHack` 参数可能并不会被频繁使用，因为在大部分场景下，我们在插入数据时，都会明确指定要插入的列及其对应的值。完全空的插入操作（即不包含任何列数据）在实际应用中并不常见。
+
+同时，如果我们需要将某个字段设为 `NULL`，我们确实可以直接在 `ContentValues` 中为这个字段设置 `NULL` 值，而不必使用 `nullColumnHack`。			
+
+
+
+5.`if (id == -1) {`: 这行代码是一个条件判断，如果 `id` 等于 `-1`，说明数据插入失败。
+
+6. `db.close();`: 最后，我们在操作完数据库后，需要关闭数据库连接，释放资源。
 
 ​				
 
@@ -13835,16 +13902,15 @@ public class DBHelper extends SQLiteOpenHelper {
    首先，方法通过调用`dbHelper.getReadableDatabase()`来获取一个可读的`SQLiteDatabase`实例。这是一种获取数据库的方法，以便你能执行读取操作。
 
 2. ```java
-   
    String[] projection = {
            DBHelper.COLUMN_ID,  
            DBHelper.COLUMN_NAME,
            DBHelper.COLUMN_AGE
    };
    ```
-
+   
    然后，定义了一个`projection`数组，这个数组包含了你想从数据库中获取的列的名字。在这个例子中，你想获取ID，名字和年龄。
-
+   
 3. ```java
    javaCopy code
    Cursor cursor = db.query("people", projection, null, null, null, null, null);
@@ -13867,6 +13933,8 @@ public class DBHelper extends SQLiteOpenHelper {
 - `getColumnIndex(String columnName)`: 这个方法返回给定列名的列的索引。你可以使用这个索引来获取这一列的值。
 - `getString(int columnIndex)`, `getInt(int columnIndex)`等方法：这些方法用来获取当前行指定列的值。你需要传入列的索引（可以用`getColumnIndex()`方法获取），然后方法会返回这一列的值。这个“某一列”就是方法参数中的`columnIndex`，例如，`columnIndex`为0就表示读取第一列的数据
 - `close()`: 当你处理完结果集后，你应该调用这个方法来关闭`Cursor`。这非常重要，因为如果你忘记关闭`Cursor`，可能会导致内存泄露
+
+
 
 
 
