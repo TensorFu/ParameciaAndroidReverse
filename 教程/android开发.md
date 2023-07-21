@@ -13912,15 +13912,14 @@ long id = db.insert("people", "age", values);
    然后，定义了一个`projection`数组，这个数组包含了你想从数据库中获取的列的名字。在这个例子中，你想获取ID，名字和年龄。
    
 3. ```java
-   javaCopy code
    Cursor cursor = db.query("people", projection, null, null, null, null, null);
    return cursor;
    ```
-
+   
    最后，调用`db.query`方法查询数据库。这个方法的第一个参数是表名，第二个参数是你想获取的列的数组（即上一步创建的`projection`数组），后面的参数分别是查询条件、查询参数、分组、过滤和排序，这里都设置为null，表示没有特定的条件或参数，也没有分组、过滤和排序，你想获取所有的数据。
-
+   
    `db.query`方法返回一个`Cursor`对象，这个对象包含了查询结果。在这个例子中，`Cursor`对象包含了所有在"people"表中的行的ID、名字和年龄。这个`Cursor`对象然后被返回，以便在其他地方使用。					
-
+   
    ​						
 
 **关于 cursor**
@@ -13934,11 +13933,216 @@ long id = db.insert("people", "age", values);
 - `getString(int columnIndex)`, `getInt(int columnIndex)`等方法：这些方法用来获取当前行指定列的值。你需要传入列的索引（可以用`getColumnIndex()`方法获取），然后方法会返回这一列的值。这个“某一列”就是方法参数中的`columnIndex`，例如，`columnIndex`为0就表示读取第一列的数据
 - `close()`: 当你处理完结果集后，你应该调用这个方法来关闭`Cursor`。这非常重要，因为如果你忘记关闭`Cursor`，可能会导致内存泄露
 
+​				
+
+### 内容提供者
+
+用来封装数据，并提供一种在应用程序之间共享数据的机制。内容提供者处理所有有关数据读取、写入等操作的细节		
+
+内容提供者主要用于不同的应用程序之间传输数据，比如微信和QQ之间的数据交换，或者你的应用需要访问系统应用（比如联系人、短信等）的数据。这种数据交换通常是通过定义的URI来进行的				
+
+​					
+
+使用内容提供者的步骤大致如下：
+
+1. 定义一个URI(Uniform Resource Identifier，统一资源标识符)：这个URI用于唯一地标识你的内容提供者。其他应用可以使用这个URI来访问你的内容提供者。URI的格式通常是 "content://authority/path/id"。
+2. 实现一个继承自ContentProvider的类：在这个类中，你需要实现几个方法，包括 query()、insert()、update()、delete() 和 getType()。这些方法分别对应于对数据的查询、插入、更新、删除以及获取数据类型的操作。
+3. 在AndroidManifest.xml文件中声明你的内容提供者：你需要在manifest文件中使用 <provider> 元素来声明你的内容提供者。
+4. 在其他应用中访问你的内容提供者：其他应用可以使用ContentResolver对象来访问你的内容提供者。ContentResolver提供了与内容提供者中定义的操作对应的方法，例如 query()、insert()、update() 和 delete()。
+
+​						
+
+首先看看 xml 
+
+```xml
+        <provider
+            android:name=".MyContentProvider"
+            android:authorities="com.example.myapp.provider"
+            android:exported="true" />
+```
+
+`android:authorities` 是在 AndroidManifest.xml 文件中定义的一个属性，用于指定 ContentProvider 的唯一标识符，这个标识符用于在整个 Android 系统中唯一识别和定位你的 ContentProvider					
+
+如果两个应用程序试图使用同样的 `authorities` 值，那么第二个安装的应用程序将无法安装。				
+
+当你的应用程序需要与其他应用程序共享数据时，其他应用程序将通过这个 `authorities` 值（通常在一个 URI 形式，如 `content://com.example.myapp.provider/...`）来访问你的 ContentProvider。				
+
+​			
+
+`android:exported="true"` 是另一个属性，它决定了是否允许其他应用程序访问你的 ContentProvider。如果设置为 `true`，那么任何应用程序都可以通过 `ContentResolver` 访问你的 ContentProvider。如果设置为 `false`，那么只有你的这一款应用程序可以访问你的 ContentProvider。
+
+​					
+
+MainActivity.java
+
+```java
+package com.fu.tt;
 
 
+import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
+import android.os.Bundle;
+import android.util.Log;
+import android.widget.Toast;
 
+import androidx.appcompat.app.AppCompatActivity;
 
+public class MainActivity extends AppCompatActivity {
 
+    private DBHelper dbHelper;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        ContentResolver resolver = getContentResolver();
+
+// 插入一条数据
+        ContentValues values = new ContentValues();
+        values.put("name", "John Doe");
+        Uri newUri = resolver.insert(Uri.parse("content://com.example.myapp.provider/contacts"), values);
+
+// 查询所有数据
+        Cursor cursor = resolver.query(Uri.parse("content://com.example.myapp.provider/contacts"), null, null, null, null);
+        while (cursor.moveToNext()) {
+            int nameIndex = cursor.getColumnIndex("name");
+            if (nameIndex != -1) {
+                String name = cursor.getString(nameIndex);
+                Log.d("MyApp", "Name: " + name);
+            } else {
+                Log.e("MyApp", "Error: name column not found");
+            }
+        }
+        cursor.close();
+
+// 更新数据
+        ContentValues updatedValues = new ContentValues();
+        updatedValues.put("name", "Jane Doe");
+        resolver.update(Uri.parse("content://com.example.myapp.provider/contacts"), updatedValues, "name=?", new String[]{"John Doe"});
+
+// 删除数据
+        resolver.delete(Uri.parse("content://com.example.myapp.provider/contacts"), "name=?", new String[]{"Jane Doe"});
+    }
+}
+```
+
+​			
+
+```java
+package com.fu.tt;
+
+import android.content.ContentProvider;
+import android.content.ContentUris;
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.net.Uri;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+public class MyContentProvider extends ContentProvider {
+
+    private DatabaseHelper dbHelper;
+
+    @Override
+    public boolean onCreate() {
+        dbHelper = new DatabaseHelper(getContext());
+        return true;
+    }
+
+    @Nullable
+    @Override
+    public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection,
+                        @Nullable String[] selectionArgs, @Nullable String sortOrder) {
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        return db.query(dbHelper.getTableName(), projection, selection, selectionArgs, null, null, sortOrder);
+    }
+
+    @Nullable
+    @Override
+    public Uri insert(@NonNull Uri uri, @Nullable ContentValues values) {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        long id = db.insert(dbHelper.getTableName(), null, values);
+        return ContentUris.withAppendedId(uri, id);
+    }
+
+    @Override
+    public int update(@NonNull Uri uri, @Nullable ContentValues values, @Nullable String selection,
+                      @Nullable String[] selectionArgs) {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        return db.update(dbHelper.getTableName(), values, selection, selectionArgs);
+    }
+
+    @Override
+    public int delete(@NonNull Uri uri, @Nullable String selection, @Nullable String[] selectionArgs) {
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+        return db.delete(dbHelper.getTableName(), selection, selectionArgs);
+    }
+
+    @Nullable
+    @Override
+    public String getType(@NonNull Uri uri) {
+        // We only support one type of content
+        return "vnd.android.cursor.dir/vnd.com.example.myapp.provider." + dbHelper.getTableName();
+    }
+}
+```
+
+​				
+
+```java
+package com.fu.tt;
+
+import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+
+public class DatabaseHelper extends SQLiteOpenHelper {
+
+    private static final String DATABASE_NAME = "contacts.db";
+    private static final int DATABASE_VERSION = 1;
+    private static final String TABLE_NAME = "contacts";
+    private static final String COLUMN_ID = "_id";
+    private static final String COLUMN_NAME = "name";
+
+    public DatabaseHelper(Context context) {
+        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+    }
+
+    @Override
+    public void onCreate(SQLiteDatabase db) {
+        String CREATE_TABLE = "CREATE TABLE " + TABLE_NAME + "("
+                + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + COLUMN_NAME + " TEXT" + ")";
+        db.execSQL(CREATE_TABLE);
+    }
+
+    @Override
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
+        onCreate(db);
+    }
+
+    public String getTableName() {
+        return TABLE_NAME;
+    }
+
+    public String getIdColumnName() {
+        return COLUMN_ID;
+    }
+
+    public String getNameColumnName() {
+        return COLUMN_NAME;
+    }
+}
+```
+
+​					
 
 
 

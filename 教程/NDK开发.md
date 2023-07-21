@@ -178,21 +178,6 @@ target_link_libraries( # Specifies the target library.
 
 ​			
 
-```tex
-add_library( # Sets the name of the library.
-        myc_plus
-
-        # Sets the library as a shared library.
-        SHARED
-
-        # Provides a relative path to your source file(s).
-        native-lib.cpp)
-```
-
-这个部分决定了生成的 so 文件的名字
-
-​			
-
 ### C++ 代码
 
 ```C++
@@ -206,5 +191,74 @@ Java_com_example_myapp_MyActivity_stringFromJNI(
 }
 ```
 
+**extern "C"**
 
+当你在代码中看到 `extern` ，可以把它理解为"这个函数/变量的定义存在于别的地方"。`extern`关键字告诉编译器，即使在当前文件中没有找到该函数或变量的定义，也不要报错，因为定义在其他地方。
+
+
+
+这是一个链接说明符，用于告诉C++编译器按照C语言的方式来处理函数。C++支持函数重载，即函数名可以相同但参数不同，如果不加上这个关键词，那么编译的时候他就会按照 C++  的规则进行编译，那么这个时候，函数的名字就发生了改变了，而C 不会做出这样的改变，编译了以后能够保持函数的名字不变。C++在编译时会通过名字修饰（name mangling）来保持函数的唯一性。`extern "C"`使得该函数在编译时不进行名字修饰，从而可以在C代码或者其他C++代码中被找到和调用。
+
+那么为什么要这样做呢？
+
+因为：当Java通过Java Native Interface (JNI)调用C/C++代码时，需要的是具有特定名称的函数。这个名称在Java中是作为字符串硬编码的，因此，在这种情况下，对于Java来说，C/C++函数的名称必须是唯一的，就是在做 ndk 开发的时候，是不支持函数的重载的。
+
+
+
+**JNIEXPORT jstring JNICALL**
+
+`JNIEXPORT`: 这是一个导出标志，用于告诉编译器这个函数将被导出，因此其他代码（例如Java代码）可以调用它。
+
+​			
+
+`jstring` 这个就是，告诉系统，`Java_com_example_myapp_MyActivity_stringFromJNI` 这个函数的返回值的类型
+
+​				
+
+`JNICALL` 就是告诉编译器，这个函数应该使用JNI调用约定。也就是要使用 JNI 函数的调用规范来使用这个函数
+
+
+
+```C++
+Java_com_my_myc_1plus_MainActivity_stringFromJNI(
+        JNIEnv* env,
+        jobject /* this */) {
+    std::string hello = "Hello from C++";
+    return env->NewStringUTF(hello.c_str());
+}
+```
+
+这里面有两个参数
+
+第一个参数是 **JNIEnv* env：**		
+
+```java
+jclass cls = env->FindClass("com/example/myapp/MyClass");
+```
+
+`env`是一个指向`JNIEnv`结构体的指针，`JNIEnv`中有一个名为`FindClass`的成员（在这种情况下，`FindClass`是一个函数指针）。所以`env->FindClass`就是通过`env`指针访问`JNIEnv`结构体中的`FindClass`函数
+
+​			
+
+第二个参数 **jclass obj** / **jobject obj**
+
+第二个参数是，不定的，主要是看你的 native 方法是不是静态的			
+
+如果是静态方法，那么就是 **jclass** 
+
+如果是实例方法，那么就是 **jobject**
+
+
+
+当我们的静态方法的时候，我们应该使用 jclass 			
+
+比方说我有一个类  Mainclass 并且在里面申请了 native 方法
+
+jclass obj 的 obj 代表的就是`Mainclass`这个Java类。你可以通过这个`obj`参数，调用该类的其他静态方法，或者访问该类的静态字段。			
+
+当然你也是可以访问，实例方法的，这个随后介绍
+
+​					
+
+当我们的实例方法的时候，我们应该使用 jobject
 
