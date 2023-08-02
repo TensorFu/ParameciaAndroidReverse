@@ -12605,39 +12605,35 @@ Parcelable：可打包的
    例如：
 
    ```
-   javaCopy code
    if (TextUtils.isEmpty(myString)) {
        // myString 是空的或长度为0
    }
    ```
-
+   
 2. `equals(CharSequence a, CharSequence b)`: 这个函数比较两个 `CharSequence` 是否相等。如果两者都为空，或者两者的长度相同且相应位置的字符都相同（不区分大小写），它返回 `true`，否则返回 `false`。
 
    例如：
 
    ```
-   javaCopy code
    if (TextUtils.equals(str1, str2)) {
        // str1 和 str2 相等
    }
    ```
-
+   
 3. `concat(CharSequence... text)`: 这个函数接受一个或多个 `CharSequence` 参数，将它们连接起来，然后返回连接结果。
 
    例如：
 
    ```
-   javaCopy code
    String result = TextUtils.concat("Hello", " ", "World").toString();
    // 结果为 "Hello World"
    ```
-
+   
 4. `join(CharSequence delimiter, Iterable tokens)`: 这个函数接受一个分隔符和一个 `Iterable`（如 `List` 或 `Set`），将 `Iterable` 中的元素连接起来，用给定的分隔符分隔，然后返回连接结果。
 
    例如：
 
    ```
-   javaCopy code
    List<String> list = Arrays.asList("Apple", "Banana", "Cherry");
    String result = TextUtils.join(", ", list);
    // 结果为 "Apple, Banana, Cherry"
@@ -12669,7 +12665,6 @@ Account[] accounts = accountManager.getAccountsByType("com.google");
 我们可以使用 `Account` 对象来访问账户的相关信息，例如账户名称和类型：
 
 ```
-javaCopy code
 String name = account.name;  // 账户名称
 String type = account.type;  // 账户类型
 ```
@@ -12992,8 +12987,7 @@ for (Account account : accounts) {
 
 请注意，你的应用需要 `GET_ACCOUNTS` 权限才能调用 `getAccounts` 方法。你需要在你的应用的 AndroidManifest.xml 文件中添加这个权限：
 
-```
-xmlCopy code
+```xml
 <uses-permission android:name="android.permission.GET_ACCOUNTS" />
 ```
 

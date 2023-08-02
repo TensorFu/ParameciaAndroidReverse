@@ -219,6 +219,8 @@ Java_com_example_myapp_MyActivity_stringFromJNI(
 
 
 
+#### JNI 函数的两个参数 JNIEnv* env , jobject obj (jclass obj)
+
 ```C++
 Java_com_my_myc_1plus_MainActivity_stringFromJNI(
         JNIEnv* env,
@@ -238,6 +240,8 @@ jclass cls = env->FindClass("com/example/myapp/MyClass");
 
 `env`是一个指向`JNIEnv`结构体的指针，`JNIEnv`中有一个名为`FindClass`的成员（在这种情况下，`FindClass`是一个函数指针）。所以`env->FindClass`就是通过`env`指针访问`JNIEnv`结构体中的`FindClass`函数
 
+他的作用主要就是一个，调用 JNI 的函数，指向哪一个，就调用哪一个的函数
+
 ​			
 
 第二个参数 **jclass obj** / **jobject obj**
@@ -250,9 +254,9 @@ jclass cls = env->FindClass("com/example/myapp/MyClass");
 
 
 
-当我们的静态方法的时候，我们应该使用 jclass 			
+当我们的方法是静态方法的时候，我们应该使用 jclass 			
 
-比方说我有一个类  Mainclass 并且在里面申请了 native 方法
+比方说我有一个类  Mainclass 并且在里面申请了 native 方法，并且是静态的方式申请的。
 
 jclass obj 的 obj 代表的就是`Mainclass`这个Java类。你可以通过这个`obj`参数，调用该类的其他静态方法，或者访问该类的静态字段。			
 
@@ -261,4 +265,50 @@ jclass obj 的 obj 代表的就是`Mainclass`这个Java类。你可以通过这�
 ​					
 
 当我们的实例方法的时候，我们应该使用 jobject
+
+jobject obj 的 obj 表示调用该 JNI 函数的Java对象。例如，如果你在一个Java实例方法中调用了一个native方法，那么这个`obj`就代表了那个Java实例 ，比方说我有一个类  Mainclass 并且在里面申请了 native 方法，并且是实例方法申请的			
+
+那么
+
+```java
+Mainclass mainclass  = new Mainclass();
+mainclass.native_function();
+```
+
+我们的 obj 就是表示的 mainclass 这个实例			
+
+同样的，我们还是可以调用他们的静态函数，静态变量，或者是，实例方法，或者实例变量。
+
+
+
+现在我们来看看第二个参数的使用
+
+1. 首先，如果我们的 native 的函数是一个静态的函数
+
+   1. 那么我们的第二个参数就应该是 jclass 
+   2. 通过 jclass 获取静态的变量和静态的方法
+
+   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
