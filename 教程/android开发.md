@@ -125,6 +125,8 @@
 
 
 
+[TOC]
+
 
 
 
@@ -12604,7 +12606,7 @@ Parcelable：可打包的
 
    例如：
 
-   ```
+   ```java
    if (TextUtils.isEmpty(myString)) {
        // myString 是空的或长度为0
    }
@@ -14174,41 +14176,476 @@ my_alias 这个是密钥库的别名
 
 &&&
 
+----
+
+## 零碎
+
+### context.getResources().getString(context.getApplicationInfo().labelRes);
 
 
 
+```java
+String welcomeMessage = getString(R.string.welcome_message);
+```
+
+这个非常的简单，就是获取一个从字符串资源来的一个字符串。welcome_message 就是对应的 key		
+
+`getString(R.string.welcome_message);` 就是一个获取一个字符串
 
 
 
+```java
+context.getResources().getString(context.getApplicationInfo().labelRes)
+```
+
+这个其实是一样的
+
+​			
+
+为什么需要前面的这个部分
+
+```java
+context.getResources()
+```
+
+在Android的`Activity`和其他一些类里，你确实可以直接调用`getString(int resId)`，因为这些类已经继承了`Context`类或与`Context`有关。因此，它们可以直接访问`getString(int resId)`这样的方法，而不需要显式地先调用`getResources()`。
+
+但是，请注意，如果你在一个不直接扩展或没有直接访问`Context`的类中（例如一个普通的Java类），那么你就需要显式地使用`context.getResources().getString(resId)`这种方式来获取资源。
 
 
 
+`context.getApplicationInfo().labelRes` 
+
+这个部分，我们感觉很陌生，但是其实跟，`R.string.welcome_message` 是一样的。
+
+`R.string.welcome_message` 访问的是，字符串资源的一个字符串
 
 
 
+`context.getApplicationInfo().labelRes` 他是访问的，Androidmanifest.xml 的部分内容
+
+比方说（部分）：			
+
+- 应用程序的标签（`android:label`）
+- 应用程序的图标（`android:icon`）
+- 应用程序的主题（`android:theme`）
+- 是否支持从右到左的布局（`android:supportsRtl`）
 
 
 
+从下面的这个例子当中
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.KeepGO"
+        tools:targetApi="31">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
+```
+
+`context.getApplicationInfo().labelRes` 就是访问的 `android:label="@string/app_name"` 的内容
+
+也就是， APPName。
 
 
 
+但是需要注意的是，Android并没有制定统一的规范，来访问这些标签，所以并不能想当然认为，能够通过
+
+Iconres 访问，icon 的信息			
 
 
 
+要在代码中访问 `AndroidManifest.xml` 中 `<application>` 标签的属性，您可以使用 `ApplicationInfo` 类的相关字段。以下是如何获取一些常见属性：
+
+1. **android:allowBackup**
+
+   ```java
+   javaCopy code
+   boolean allowBackup = (context.getApplicationInfo().flags & ApplicationInfo.FLAG_ALLOW_BACKUP) != 0;
+   ```
+
+2. **android:icon**
+
+   ```java
+   javaCopy code
+   int iconResId = context.getApplicationInfo().icon;
+   ```
+
+3. **android:label**
+
+   ```java
+   javaCopy code
+   int labelResId = context.getApplicationInfo().labelRes;
+   String label = context.getString(labelResId);
+   ```
+
+4. **android:roundIcon** (需要API 26及以上)
+
+   ```Java
+   javaCopy code
+   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+       int roundIconResId = context.getApplicationInfo().roundIcon;
+   }
+   ```
+
+----
+
+### 内容提供者
+
+想象一下，你住在一个大公寓楼里，每个住户都有自己的房间和物品。但有时，住户可能想与其他住户分享一些物品。这里，公寓楼就像一个设备，每个住户就像一个应用，物品就像数据。内容提供者就像是一个“管理员”，帮助住户之间交换物品。
+
+如果没有“管理员”（即内容提供者），住户（应用）可能会直接进入其他住户的房间（数据存储）来取物品，这可能会导致隐私泄露或数据损坏。内容提供者作为一个中间人，确保数据的安全、有序和高效的共享。
+
+- **URI**：每个内容提供者都有一个地址，就像每个房间都有门牌号。这个地址称为URI，它是内容提供者的唯一标识。
+- **ContentResolver**：它就像是你与“管理员”交谈的方式。当你想要与其他住户交换物品时，你会通过ContentResolver与内容提供者交互。
+
+内容提供者（Content Providers）是Android平台上一个非常重要的组件，它提供了一个抽象化的方式来存储和检索数据，同时支持跨应用数据共享
 
 
 
+#### 1. **什么是内容提供者（Content Providers）？**
+
+内容提供者是一种封装数据的机制，它允许一个应用访问和/或共享与其他应用共同使用的数据。例如，Android系统有一个联系人内容提供者，它允许任何应用访问设备上的联系人数据（当然，需要适当的权限）。
+
+#### 2. **为什么需要内容提供者？**
+
+- **数据封装**：应用可以将其数据存储在文件、SQLite数据库、网络或其他地方。通过内容提供者，其他应用无需知道数据存储的具体位置或格式即可访问这些数据。
+- **数据共享**：允许应用之间共享数据。
+- **数据安全性**：通过内容提供者，可以控制对数据的访问权限，确保数据的安全性和隐私。
 
 
 
+#### 3. **基本组件**:
+
+- **URI（统一资源标识符）**：每个内容提供者都有一个唯一的标识符，称为URI。它类似于网址，用于标识和访问数据。
+- **ContentResolver**：这是用于访问内容提供者的主要类。它提供了CRUD（创建、读取、更新、删除）方法来与内容提供者交互。
+
+#### 4. **创建内容提供者**:
+
+如果你想创建自己的内容提供者，你需要：
+
+- **继承 `ContentProvider` 类**：并实现其方法，如 `query()`, `insert()`, `update()`, 和 `delete()`。
+- **在 `AndroidManifest.xml` 中声明**：提供者和相关的权限。
+
+#### 5. **使用内容提供者**:
+
+要使用内容提供者（无论是您自己的还是其他应用的），您通常会使用 `ContentResolver` 类来执行查询、插入、更新和删除操作。
+
+---
+
+### Instrumentation
+
+#### 比喻：
+
+想象一下，你是一位舞台剧导演。在舞台上，演员们（应用的组件）根据剧本（代码）表演。作为导演，你不仅可以观察他们的表演（监控应用的状态），还可以给他们指示（控制应用的行为）。在这个比喻中，`Instrumentation` 就像是导演。
+
+#### 解释：
+
+`Instrumentation` 是 Android 测试框架的一部分。它允许你监控应用的组件（如 `Activities`、`Services`）和与用户的交互。它是一种强大的工具，用于在真实或模拟的设备上自动执行一系列的操作，并验证应用程序的行为和输出是否符合预期。
 
 
 
+这个需要在 xml 当中注册
+
+```xml
+    <instrumentation
+        android:name="com.fu.keepGO.asuka.AsukaMainInstrumentation"
+        android:targetPackage="${applicationId}"
+        android:targetProcesses="${applicationId},${applicationId}:asukaService,${applicationId}:asukaWorker,${applicationId}:asukaChannel"
+        tools:targetApi="o" />
+```
+
+```
+android:targetProcesses
+```
+
+表示 `Instrumentation` 对象针对哪些进程运行。如果以逗号分隔列表的形式列出了进程，表示将针对这些特定的进程运行插桩测试。如果值为 `"*"`，表示将针对在 `android:targetPackage` 中定义的应用的所有进程运行插桩测试。
+
+---
+
+### 关于服务的启动
+
+两种启动服务的方式
+
+#### 1. **使用 `startService()` 启动服务**：
+
+- 当你通过调用 `startService(Intent)` 方法来启动一个服务时，系统将调用服务的 `onStartCommand(Intent, int, int)` 方法。这是告诉服务应该开始它的工作。
+- 用 `startService()` 启动的服务将在后台无限期地运行，除非服务自己用 `stopSelf()` 停止自身或者其他组件通过调用 `stopService(Intent)` 来停止它。
+- 使用 `startService()` 启动的服务，即使启动它的组件（如 `Activity`）被销毁，服务仍然会运行。
+- **重要的是，使用 `startService()` 来启动一个服务，并不会导致 `onBind(Intent)` 被调用**。
+
+#### 2. **使用 `bindService()` 绑定服务**：
+
+- 当你通过调用 `bindService(Intent, ServiceConnection, int)` 方法绑定到一个服务时，系统将调用服务的 `onBind(Intent)` 方法。
+- 绑定到服务允许组件与服务进行直接的交互。例如，一个 `Activity` 可以绑定到一个 `Service`，然后通过返回的 `IBinder` 对象调用服务的方法。
+- 当所有客户端都解绑（即调用 `unbindService(ServiceConnection)`）后，系统将调用服务的 `onUnbind(Intent)` 方法，然后可能调用 `onDestroy()`，除非还有其他客户端通过 `startService()` 启动了服务。
+- 使用 `bindService()` 绑定的服务，只在绑定它的组件（如 `Activity`）存在时运行。当所有客户端都解绑后，服务会被销毁。
+
+#### 总结：
+
+- **`startService(Intent)`**：启动服务并允许它在后台运行，触发 `onStartCommand(Intent, int, int)` 方法。它不会触发 `onBind(Intent)`。
+- **`bindService(Intent, ServiceConnection, int)`**：绑定到服务，以进行交互，触发 `onBind(Intent)` 方法。
+
+这两种方式可以独立使用，也可以同时使用。例如，一个服务可以通过 `startService()` 被启动，然后不同的组件可以通过 `bindService()` 绑定到它，以进行交互。
 
 
 
+那么Oncreate 是什么时候触发？？
+
+####  **`TimerService` 的生命周期和 `onCreate()` 的调用时机**：
+
+- 当我们通过 `startService(intent)` 第一次启动 `TimerService` 时，以下是 `TimerService` 生命周期方法的调用顺序：
+  1. **`onCreate()`** ：`TimerService` 的实例被首次创建，`onCreate()` 方法被调用。在这个方法中，我们初始化了 `Timer` 对象并开始了计时任务。
+  2. **`onStartCommand()`** ：服务开始执行具体的操作。
+
+---
+
+### service
+
+Service 是 Android 四大组件之一，它是一个在后台运行的组件，用来处理不需要用户交互的任务。Service 的一个重要特点是，它可以在后台运行，即使用户没有交互的界面，它也可以持续地执行操作。
+
+### 1. **Service 的类型和用途**：
+
+#### a. **Started Service (或 Foreground Service)**
+
+- 当应用程序组件（如 Activity）通过调用 `startService(Intent)` 方法启动服务时，该服务称为 Started Service。
+- Started Service 用于执行一次性操作或长期运行的操作，不与用户直接交互。
+- 当任务执行完毕，Service 需要自己通过 `stopSelf()` 或外部组件通过 `stopService()` 来停止自己。
+
+#### b. **Bound Service**
+
+- 当应用程序组件通过调用 `bindService(Intent, ServiceConnection, flags)` 方法绑定到服务时，该服务称为 Bound Service。
+- Bound Service 用于实现客户端-服务器型的接口，允许组件与 Service 互动、发送请求、获取结果，甚至进行进程间通信（IPC）。
+- Bound Service 通过返回一个 `IBinder` 对象来与组件交互。
+
+#### 2. **Service 的生命周期和主要回调方法**：
+
+##### a. **对于 Started Service**：
+
+- `onCreate()`：Service 被首次创建时调用，适合执行一次性初始化操作。
+- `onStartCommand(Intent, int, int)`：每次通过 `startService(Intent)` 启动 Service 时都会调用此方法。
+- `onDestroy()`：在 Service 被终止之前调用，适合做清理工作。
+
+##### b. **对于 Bound Service**：
+
+- `onCreate()`：同上。
+- `onBind(Intent)`：当其他组件首次绑定到 Service 时调用，必须返回一个 `IBinder` 对象，如果不允许绑定，则返回 `null`。
+- `onUnbind(Intent)`：当所有客户端都断开连接时调用。
+- `onDestroy()`：同上。
+
+#### 3. **如何创建一个 Service**：
+
+- 创建一个继承自 `Service` 类的 Java 类。
+- 实现 Service 的生命周期方法。
+- 在 AndroidManifest.xml 中注册 Service。
+
+#### 4. **如何启动、停止和绑定 Service**：
+
+- **启动 Service**：`startService(new Intent(this, YourService.class))`。
+- **停止 Service**：`stopService(new Intent(this, YourService.class))` 或在 Service 内部调用 `stopSelf()`。
+- **绑定 Service**：`bindService(new Intent(this, YourService.class), serviceConnection, BIND_AUTO_CREATE)`。
+- **解绑 Service**：`unbindService(serviceConnection)`。
+
+#### 5. **与 Service 通信**：
+
+- 对于 Bound Service，可以通过 `onBind()` 方法返回的 `IBinder` 对象与 Service 进行通信。
+- 通过定义一个返回 Service 实例的 `Binder` 类（如上面的例子中的 `LocalBinder` 类）。
+
+#### 6. **Service 运行模式和优先级**：
+
+- Service 可以作为 Foreground Service 运行，这样可以让 Service 拥有较高的进程优先级，不容易被系统杀死。
+
+#### 7. **IntentService**：
+
+- `IntentService` 是 Service 的一个子类，它使用一个工作线程来处理所有的启动请求，适用于不需要多个线程处理的情况。
 
 
 
+```java
+public class MyService extends Service {
 
+    @Override
+    public void onCreate() {
+        // Service is being created
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        // Service is starting due to a call to startService()
+        // Perform your service operations here
+        return START_STICKY;
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        // Return the communication channel to the service
+        return null;
+    }
+
+    @Override
+    public void onDestroy() {
+        // Service is being destroyed
+    }
+}
+```
+
+​			
+
+```xml
+<service android:name=".MyService" />
+```
+
+
+
+#### 5. **启动和停止 Service**
+
+##### a. **启动 Service**
+
+要启动一个 Service，你可以从应用的其他组件（如 Activity）中调用 `startService()` 方法。这将触发 Service 的 `onStartCommand()` 方法。
+
+例如，假设我们有一个 `MyService` 类，我们可以从 Activity 中这样启动它：
+
+```java
+Intent intent = new Intent(this, MyService.class);
+startService(intent);
+```
+
+
+
+#### b. **停止 Service**
+
+Service 可以自己停止自己，或者可以被其他组件停止。
+
+- 要让 Service 停止自己，你可以在 Service 的内部调用 `stopSelf()` 方法。
+- 要从外部组件（如 Activity）停止 Service，你可以调用 `stopService()` 方法。
+
+例如：
+
+```
+javaCopy code
+Intent intent = new Intent(this, MyService.class);
+stopService(intent);
+```
+
+#### 6. **绑定和解绑 Service**
+
+#### a. **绑定 Service**
+
+要绑定到一个 Service，你需要从应用的其他组件（如 Activity）中调用 `bindService()` 方法，并传递一个 `ServiceConnection` 对象。这将触发 Service 的 `onBind()` 方法。
+
+例子：
+
+```java
+Intent intent = new Intent(this, MyService.class);
+bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
+```
+
+`ServiceConnection` 是一个接口，它的回调方法 `onServiceConnected()` 和 `onServiceDisconnected()` 分别在 Service 成功绑定后和解绑后被调用。
+
+例子：
+
+```java
+private ServiceConnection serviceConnection = new ServiceConnection() {
+
+    @Override
+    public void onServiceConnected(ComponentName className, IBinder service) {
+        // This is called when the connection with the service has been established
+        // service is the Binder you returned in Service's onBind method
+        // You can now use this IBinder to communicate with the service
+    }
+
+    @Override
+    public void onServiceDisconnected(ComponentName arg0) {
+        // This is called when the connection with the service has been unexpectedly disconnected
+    }
+};
+```
+
+#### b. **解绑 Service**
+
+要解绑一个 Service，你可以调用 `unbindService()` 方法：
+
+```java
+unbindService(serviceConnection);
+```
+
+#### 7. **与 Service 通信**
+
+对于 Bound Service，组件可以通过 `onBind()` 方法返回的 `IBinder` 对象与 Service 进行通信。
+
+这是一个简单的例子，说明如何通过 `Binder` 与 Service 进行通信：
+
+在 `MyService` 类中：
+
+```java
+public class MyService extends Service {
+
+    private final IBinder binder = new LocalBinder();
+
+    public class LocalBinder extends Binder {
+        MyService getService() {
+            return MyService.this;
+        }
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return binder;
+    }
+
+    public int add(int a, int b) {
+        return a + b;
+    }
+}
+```
+
+在 Activity 类中：
+
+```java
+public class MainActivity extends AppCompatActivity {
+
+    MyService myService;
+    boolean isBound = false;
+
+    private ServiceConnection serviceConnection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            MyService.LocalBinder binder = (MyService.LocalBinder) service;
+            myService = binder.getService();
+            isBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName arg0) {
+            isBound = false;
+        }
+    };
+    
+    // ... other Activity methods
+}
+```
+
+这样，当 Activity 与 `MyService` 绑定后，它就可以通过 `myService.add(3, 4)` 直接调用 `MyService` 的 `add()` 方法了。
 
