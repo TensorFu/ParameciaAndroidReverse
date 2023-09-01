@@ -32,11 +32,17 @@
 ---
 
 - [ParameciaAndroidReverse](#parameciaandroidreverse)
+  - [Android开发](#android开发)
+    - [NDK 开发](#ndk-开发)
+    - [CPP 文件的编译以及 OLLVM 的混淆](#cpp-文件的编译以及-ollvm-的混淆)
+  - [Android项目的文件结构](#android项目的文件结构)
   - [APK 文件结构](#apk-文件结构)
   - [APK 的打包流程](#apk-的打包流程)
   - [Android逆向当中的常用命令](#android逆向当中的常用命令)
   - [Android 相关的基础知识](#android-相关的基础知识)
-  - [Android开发流程简介](#android开发流程简介)
+  - [Android的生命周期](#android的生命周期)
+  - [Android开发流程](#android开发流程)
+  - [Android 开发教程](#android-开发教程)
   - [android的保活](#android的保活)
   - [java 代码基础](#java-代码基础)
   - [smali 语法](#smali-语法)
@@ -51,6 +57,10 @@
   - [IDAso层动态调试破解登录过程实例](#idaso层动态调试破解登录过程实例)
   - [工具脱壳实操](#工具脱壳实操)
   - [apk文件加壳的常用so文件命名方式](#apk文件加壳的常用so文件命名方式)
+  - [fart 脱壳机的理解](#fart-脱壳机的理解)
+  - [unidbg 使用教程](#unidbg-使用教程)
+  - [JNItrace](#jnitrace)
+  - [奇怪的知识增加了](#奇怪的知识增加了)
 
 ---
 
@@ -259,7 +269,7 @@ static关键字[static关键字的修饰方法，static关键字修饰变量，s
 
 ---
 
-### fart 脱壳机的理解
+## fart 脱壳机的理解
 
 [fart 脱壳机的理解](教程/fart 脱壳机的理解)
 
@@ -267,7 +277,30 @@ static关键字[static关键字的修饰方法，static关键字修饰变量，s
 
 ----
 
-### unidbg 使用教程
+## unidbg 使用教程
 
-[unidbg 使用教程](教程/unidbg使用教程.md)
+[unidbg 使用教程之自带案例 kanxue.test2 分析](教程/unidbg使用教程1.md)
+
+> 在这一篇文章当中，了解 kanxue.test2 的这一个 demo 所涉及到的一些代码
+>
+> 1. 什么是构造虚拟机，以及虚拟机的选择
+>
+> 2. 什么是后端工厂的引擎以及，怎么选择后端工厂的引擎
+> 3. 如何设置模拟器的解析器
+> 4. 如何初始化 android 库
+> 5. 如何调用 SO 文件当中的函数
+
+
+
+---
+
+## JNItrace
+
+[JNItrace使用教程]()
+
+----
+
+## 奇怪的知识增加了
+
+[jadx-gui不能够解析dex的文件](教程/jadx-gui不能够解析dex的文件)
 
