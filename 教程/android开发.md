@@ -127,38 +127,6 @@
 
 [TOC]
 
-
-
-
-### Android 体系结构
-Android系统采用分层架构，从高到低分为四层，分别是
-1. 应用程序层
-     提供一些核心应用程序包，如短信客户端程序、电话拨号程序，Web浏览器、日历、闹钟，安装在上面的程序
-
-2. 应用程序框架层
-     主要提供构建应用程序时用到的各种API。例如，活动管理器、窗体管理器、内容提供者、资源管理器等。
-
-3. 系统库与Android运行层
-
-     1. 系统库
-
-          是应用程序框架的支撑，主要通过C/C++库来为Android系统提供主要的特性支持。例如包含有SQLite嵌人式数据库引擎，WebKit提供浏览器内核的支持，Media Framework多媒体库，支持多种常用的音频、视频格式的录制和回放
-
-       2. Android运行时层
-
-          包含核心库和虚拟机，核心库兼容了大多数JAVA语言所需要调用的功能函数，还包含了Android的核心API
-
-4. Linux内核层
-    作为硬件和软件之间的抽象层，为Android设备上的各种硬件提供底层驱动，如品示驱动、音频驱动、蓝牙驱动等
-
-
-
-1. 我们使用Android最主要的就是使用应用，我们所使用的应用，就是应用层
-2. 但是开发应用需要用到一些 API 这些 API 就是应用程序框架层
-3. API 也不是凭空来的，他也需要支持，比方说数据库，多媒体等等，这个就是 Android 的系统库
-4. 与此同时，还有一个 Android 系统的虚拟机 ，Android 的程序就是运行在这个地方。
-5. 系统库也不是凭空来的，还需要 Linux 的内核，这个内核就是和硬件进行交流的驱动程序
-
 -----
 
 
@@ -1391,43 +1359,9 @@ public class OneFragment extends Fragment {
 
 ### 广播接受者（BroadcastReceiver）
 
-广播接收器（BroadcastReceiver）是 Android 系统中一种用于在应用程序之间发送和接收全局消息的组件。它允许你响应系统级事件，例如设备启动、网络状态变化、电池电量变化等。广播接收器还可以用于在应用程序内部发送和接收消息，以实现不同组件之间的通信
 
-* 设置接收到之后的操作
 
-```java
-public class MyBroadcastReceiver extends BroadcastReceiver {
-    @Override
-    public void onReceive(Context context, Intent intent) {
-        // 在这里处理接收到的广播
-    }
-}
-```
 
-​			
-
-* 注册广播
-
-```xml
-<application ...>
-    ...
-    <receiver android:name=".MyBroadcastReceiver">
-        <intent-filter>
-            <action android:name="com.example.MY_BROADCAST" />
-        </intent-filter>
-    </receiver>
-    ...
-</application>
-```
-
-​			
-
-* 发送广播
-
-```java
-Intent intent = new Intent("com.example.MY_BROADCAST");
-sendBroadcast(intent);
-```
 
 
 
