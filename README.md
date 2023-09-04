@@ -33,6 +33,9 @@
 
 - [ParameciaAndroidReverse](#parameciaandroidreverse)
   - [Android开发](#android开发)
+    - [Android 体系结构](#android-体系结构)
+    - [广播接受者](#广播接受者)
+    - [通知](#通知)
   - [NDK 开发](#ndk-开发)
   - [CPP 文件的编译以及 OLLVM 的混淆](#cpp-文件的编译以及-ollvm-的混淆)
   - [Android项目的文件结构](#android项目的文件结构)
@@ -52,6 +55,7 @@
   - [APKtool 工具反编译 apk](#apktool-工具反编译-apk)
   - [frida环境的安装](#frida环境的安装)
   - [frida使用](#frida使用)
+  - [apk 的保护策略](#apk-的保护策略)
   - [JEB 静态分析动态调试Java层破解登录过程实例](#jeb-静态分析动态调试java层破解登录过程实例)
   - [IDA 动态调试流程](#ida-动态调试流程)
   - [IDAso层动态调试破解登录过程实例](#idaso层动态调试破解登录过程实例)
@@ -65,7 +69,6 @@
 ---
 
 ## Android开发
-
 ### Android 体系结构
 
 [Android_体系结构](教程/Android_体系结构.md)
