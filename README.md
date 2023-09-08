@@ -7,10 +7,10 @@
 
 在本教程当中所使用到的软件版本和设备信息列表
 
-* 设备：小米10  虚拟机
+* 设备：小米10  || 虚拟机
 * 手机系统：MIUI 13（基于Android 11-12）
-* PC系统：Windows10专业版    macOS12.3
-* Java：1.8.0_202  Java17
+* PC系统：Windows10专业版    ||  macOS12.3
+* Java：1.8.0_202  || Java17
 * IDA：IDA 7.5 pro 
 * jadx-gui：jadx-gui-1.4.2-no-jre-win.exe
 * JEB：JEB 3.19.1.202005071620
@@ -93,6 +93,14 @@
 
 ​				
 
+### intent以及PendingIntent
+
+[intent以及PendingIntent](教程/intent.md)
+
+> 介绍什么是 intent
+
+​									
+
 ### 通知
 
 [通知](教程/通知.md)
@@ -105,6 +113,26 @@
 >
 > 以及怎么发送一个通知
 > Build.builder 可以添加哪些属性
+
+
+
+​				
+
+### 多线程
+
+#### Thread 类实现多线程开发
+
+[Thread 类实现多线程开发](教程/Thread_类实现多线程开发.md)
+
+> 介绍了传统的 Java 实现多线程的方法
+>
+> 介绍了 Runnable接口 
+>
+> 通过代码解释了 Runnable接口的优点
+
+​					
+
+
 
 
 
@@ -167,20 +195,6 @@ APK文件 就是 Android 的安装包，它本身也是一个压缩包，我们�
 [android相关的基础知识](教程/Android相关的基础知识.md)
 
 简介 Android 系统的框架，和四大组件
-
----
-
-## Android的生命周期
-
-[android的生命周期](教程/android的生命周期.md)
-
----
-
-## Android开发流程
-
-[Android 开发流程](教程/Android开发流程.md)
-
-从新建工程了解 Android 开发的流程
 
 ---
 
