@@ -143,7 +143,11 @@
 
 <img src="./assets/IMG_6722.JPEG" width="300px">
 
-​					
+​		
+
+证书安装 ok 了以后，就可以直接在手机上打开浏览器或者是 APP 进行抓包了！
+
+​							
 
 ### 抓android的包
 
