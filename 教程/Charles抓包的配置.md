@@ -116,10 +116,21 @@
 
 ![image-20230913191315786](./assets/image-20230913191315786.png)
 
+​				
 
+注意：安装了证书之后一定要去，打开这个证书
 
 <img src="./assets/IMG_6716-4607646.JPEG" width="300px">			
 
-​			
+​					
 
-你好
+<img src="./assets/IMG_6717.JPEG" width="300px">	
+
+​						
+
+<img src="./assets/IMG_6718.JPEG" width="300px">
+
+<img src="./assets/IMG_6722.JPEG" width="300px">
+
+​					
+
