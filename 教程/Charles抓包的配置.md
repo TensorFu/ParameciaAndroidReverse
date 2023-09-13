@@ -109,8 +109,6 @@
 
 <img src="./assets/IMG_6713%202.JPEG" width="300px">
 
-<img src="./assets/IMG_6713%202.JPEG" width="300px">
-
 ​				
 
 <img src="./assets/IMG_6714.JPEG" width="300px">
