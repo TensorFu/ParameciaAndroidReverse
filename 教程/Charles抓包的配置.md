@@ -118,8 +118,7 @@
 
 
 
-<img src="./assets/IMG_6716.jPEG" width="300px">			
+<img src="./assets/IMG_6716-4607646.JPEG" width="300px">			
 
 ​			
 
-​			
