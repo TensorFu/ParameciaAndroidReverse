@@ -134,3 +134,40 @@
 
 ​					
 
+#### 安装 android 证书
+
+首先也是一样的，需要在手机的浏览器下载证书，但是这里有两个坑
+
+1. 如果你是小米的手机，不能够直接使用自带的浏览器下载的。可以使用第三方的比方说 Chrome ，Edge 浏览器之类的，并且官方会告诉你，在浏览器当中输入 **chls.pro/ssl**  但是亲测下来，我不知道为什么一直没有下载成功，总是报错，于是查到了输入这个，这个地址更好，http://charlesproxy.com/getssl			
+2. android 手机也不能直接的将证书放在 **/system/etc/security/cacerts** 因为 android 7.0 之后这个就是被禁止的了，即便是 root 用户也是不允许的。
+
+
+
+针对第二个问题，可以使用 Magisk 的模块
+
+模块的链接地址  [Movecert 模块](https://github.com/Magisk-Modules-Repo/movecert)
+
+但是这个 magisk 直接压缩，进行安装，貌似是不可以的有坑（还没有时间研究）
+
+直接使用别人打包好的，在这个 [issue](https://github.com/Magisk-Modules-Repo/movecert/issues/12) 当中有一个老哥已经打包好了，大概在这个位置
+
+![image-20230913211146348](./assets/image-20230913211146348.png)
+
+​				
+
+这个是 [下载链接](https://github.com/Magisk-Modules-Repo/movecert/files/8473364/movecert-1.9.zip)
+
+​				
+
+为了防止文件不见了，我也备份一份，在我的 **Release** 当中，就是 **movecert.zip** 				
+
+安装好了以后，重启手机，然后
+
+设置 -> 安全 -> 更多安全设置 -> 加密与凭证 -> 安装证书 -> CA 证书 -> 选择你下载的证书
+
+​				
+
+剩下的步骤跟 iOS 的抓包没有任何的区别，都是在同一个 WIFI 下面，进行配置代理，然后就可以抓包了！
+
+
+
