@@ -114,7 +114,7 @@ context.startActivity(intent);
 
 #### 注意
 
-最后的两种都会指定报名，这是因为，他可以用来打开其他应用的 activity 
+最后的两种都会指定包名，这是因为，他可以用来打开其他应用的 activity 	
 
 ​				
 

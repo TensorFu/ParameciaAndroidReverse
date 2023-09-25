@@ -134,6 +134,24 @@
 
 ​					
 
+### 网络编程
+
+#### android的网络编程_HttpURLConnection框架
+
+[android的网络编程_HttpURLConnection框架](教程/android的网络编程.md)
+
+> 从最基本的什么是网络编程开始，到介绍使用android自带的HttpURLConnection框架进行网络编程，收发数据
+>
+> 发出请求，处理响应
+
+#### Retrofit
+
+[Retrofit](教程/Retrofit.md)
+
+> 
+
+
+
 
 
 
@@ -375,5 +393,5 @@ static关键字[static关键字的修饰方法，static关键字修饰变量，s
 
 ## 奇怪的知识增加了
 
-[jadx-gui不能够解析dex的文件](教程/jadx-gui不能够解析dex的文件)
+[jadx-gui不能够解析dex的文件](教程/jadxgui不能够解析dex的文件.md)
 

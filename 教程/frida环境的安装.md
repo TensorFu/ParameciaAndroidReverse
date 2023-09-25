@@ -16,7 +16,7 @@ firda 可以插入一些 代码到原生App的内存空间去动态地监视和�
 
 ![image-20220926201451519](./assets/image-20220926201451519.png)
 
-
+​							
 
 * 将这个 firda-server 文件解压之后，通过 push 指令，发送到 /data/local/tmp 文件夹下面
 * 并且将这个文件的权限通过 chmod 指令设置为最高
