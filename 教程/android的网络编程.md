@@ -156,7 +156,7 @@ HTTP是无状态的，这意味着每个请求都是独立的，服务器不会�
 
 HTTPS（HyperText Transfer Protocol Secure，安全超文本传输协议）是HTTP的安全版本。它使用SSL/TLS协议来加密传输的数据，以保护数据的隐私和完整性。HTTPS通常使用TCP端口443。
 
-​		
+​						
 
 #### HTTP 与 HTTPS 的主要区别
 
@@ -173,7 +173,7 @@ HTTPS（HyperText Transfer Protocol Secure，安全超文本传输协议）是HT
 5. **URL显示：**
    - 在大多数浏览器的地址栏中，HTTPS 网站会显示一个锁的图标，以表示连接是安全的
 
-​				
+​							
 
 ### 请求和响应
 
@@ -193,7 +193,7 @@ HTTP请求是由客户端（通常是Web浏览器）发送到服务器的，要�
 - **URL**：指定了请求的资源。例如`/index.html`。
 - **HTTP版本**：定义了使用的HTTP协议版本，例如HTTP/1.1
 
-​		
+​						
 
 ##### 请求头（Request Headers）
 
@@ -223,7 +223,7 @@ Accept: text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8
 username=user&password=pass
 ```
 
-​				
+​							
 
 #### 一个post请求的案例
 
@@ -282,7 +282,7 @@ Referer: http://www.example.com/login
 - `Connection`：指定了连接管理的指令。
 - `Referer`：包含了发起请求的页面的URL。
 
-​				
+​											
 
 请求体（Request Body）
 
@@ -290,17 +290,298 @@ Referer: http://www.example.com/login
 username=user&password=pass
 ```
 
+​				
 
+#### 关于请求的重定向
 
+重定向是HTTP协议中的一种机制，它允许服务器告诉客户端（通常是网页浏览器）去请求一个不同的页面。当服务器发送一个重定向响应时，它会包含一个特殊的状态码和一个`Location`头，`Location`头指定了新的URL。				
 
+​					
 
+##### HTTP重定向状态码
 
+重定向可以由几个不同的HTTP状态码表示，其中最常见的是：
 
+- **301 Moved Permanently**：这表明目标资源已被永久移动到新的位置，所有的未来请求都应该使用新的URL。
+- **302 Found**（HTTP/1.1）或 **302 Moved Temporarily**（HTTP/1.0）：这表明目标资源临时移动到了新的位置，但未来的请求仍应该使用原始的URL。
+- **303 See Other**：这表明服务器已经处理了请求，客户端应该查看另一个URL。
+- **307 Temporary Redirect**：这与302类似，但它要求客户端使用相同的HTTP方法进行重定向。
 
+​				
+
+###### 例子
+
+1. **用户访问**：`http://example.com/old-page`
+
+2. 服务器响应
+
+   ```makefile
+   HTTP/1.1 301 Moved Permanently
+   Location: http://example.com/new-page
+   ```
+
+3. **浏览器行为**：浏览器看到301状态码和新的`Location`，然后会自动发起一个新的GET请求到`http://example.com/new-page`。
+
+​					
+
+#### 响应
+
+当服务器收到HTTP请求后，它会生成一个HTTP响应并将其发送回客户端。HTTP响应包含服务器返回给客户端的数据和信息。下面是HTTP响应的一些基础知识。			
+
+​											
+
+##### 响应结构
+
+一个HTTP响应通常由三部分组成：
+
+1. **状态行**：包含HTTP版本、状态码和状态消息。
+2. **响应头**：包含有关响应的元数据，例如`Content-Type`和`Content-Length`。
+3. **响应体**：包含返回给客户端的实际数据。
+
+​						
+
+##### 状态码
+
+状态码是一个三位数字，指示了请求的结果。状态码分为五类：
+
+- **1xx（信息性）**：请求已收到，继续处理。
+- **2xx（成功）**：请求已成功接收、理解、并接受。
+- **3xx（重定向）**：需要进一步操作以完成请求。
+- **4xx（客户端错误）**：请求包含错误语法或无法完成。
+- **5xx（服务器错误）**：服务器在尝试处理请求时失败。
+
+一些常见的状态码包括：
+
+- **200 OK**：请求成功。
+- **201 Created**：请求成功，并且服务器创建了新的资源。
+- **204 No Content**：服务器成功处理了请求，但没有返回任何内容。
+- **301 Moved Permanently**：资源永久性移动。
+- **400 Bad Request**：服务器无法理解请求。
+- **401 Unauthorized**：请求未授权。
+- **403 Forbidden**：服务器拒绝请求。
+- **404 Not Found**：服务器找不到请求的资源。
+- **500 Internal Server Error**：服务器遇到错误。
+
+​				
+
+##### 响应头
+
+响应头提供了有关响应的元数据。一些常见的响应头包括：
+
+- **Content-Type**：响应体的媒体类型。
+- **Content-Length**：响应体的长度（字节）。
+- **Content-Encoding**：使用的编码类型（例如gzip）。
+- **Set-Cookie**：设置Cookie。
+- **Cache-Control**：缓存指令。
+- **Location**：用于重定向或创建资源的URL。
+- **WWW-Authenticate**：用于请求客户端认证的信息。
+
+​					
+
+##### 响应体
+
+响应体包含服务器返回给客户端的实际数据。响应体可以是HTML、JSON、XML、图片、视频或其他任何媒体类型的数据。
+
+​				
+
+##### Cookies
+
+通过`Set-Cookie`响应头，服务器可以发送Cookies到客户端。这些Cookies会存储在客户端，并在以后的请求中发送回服务器。
+
+​					
+
+##### 缓存
+
+通过使用响应头（如`Cache-Control`和`ETag`），服务器可以控制响应的缓存行为。良好的缓存策略可以减少加载时间和服务器负载。
+
+​			
+
+##### 示例
+
+以下是一个典型的HTTP响应示例
+
+```makefile
+HTTP/1.1 200 OK
+Date: Tue, 28 Sep 2023 12:01:20 GMT
+Server: Apache/2.4.41 (Ubuntu)
+Content-Language: en
+Content-Location: http://www.example.com/index.html
+Vary: Accept-Encoding,User-Agent
+Cache-Control: max-age=3600, must-revalidate
+Expires: Wed, 29 Sep 2023 12:01:20 GMT
+Last-Modified: Sat, 25 Sep 2023 18:00:30 GMT
+ETag: "3e86-410-4a5c1c1e"
+Accept-Ranges: bytes
+Content-Length: 10917
+Connection: keep-alive
+Content-Type: text/html; charset=UTF-8
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Example Website</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="/home">Home</a></li>
+                <li><a href="/about">About Us</a></li>
+                <li><a href="/contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <h1>Welcome to Example.com!</h1>
+        <p>This is the home page for the Example.com website. Here, you will find various resources and information about our services.</p>
+        <section>
+            <h2>Latest News</h2>
+            <article>
+                <h3>New Website Launch</h3>
+                <p>We are excited to announce the launch of our new website. Take a look around and let us know what you think!</p>
+            </article>
+            <!-- More articles... -->
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2023 Example.com. All rights reserved.</p>
+    </footer>
+</body>
+</html>
+
+```
+
+在这个例子中：
+
+- 状态行包含HTTP版本（1.1）、状态码（200）和状态消息（OK）。
+- 响应头包含日期、服务器类型、最后修改时间、内容长度、内容类型等信息。
+- 响应体包含HTML内容。
+
+​						
+
+- **状态行**：`HTTP/1.1 200 OK`，表明这是一个成功的响应。
+- 响应头
+  - `Date`：响应的日期和时间。
+  - `Server`：生成响应的服务器的类型。
+  - `Content-Language`：文档的语言。
+  - `Content-Location`：请求的URI。
+  - `Vary`：决定缓存响应的头。
+  - `Cache-Control` 和 `Expires`：缓存控制信息。
+  - `Last-Modified`：文档的最后修改时间。
+  - `ETag`：文档的实体标签。
+  - `Accept-Ranges`：表明服务器接受范围请求。
+  - `Content-Length`：响应体的长度。
+  - `Connection`：连接管理信息。
+  - `Content-Type`：响应体的媒体类型和字符集。
+
+​		
 
 ### Android中的网络编程
 
 在Android中，你可以使用`HttpURLConnection`类或第三方库（如OkHttp）来发送HTTP请求和接收HTTP响应。通常，网络请求应该在一个单独的线程中执行，以避免阻塞主线程。
 
-​			
+​				
+
+一个案例，它执行一个GET请求并打印响应
+
+```java		
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
+public class HttpExample {
+    public static void main(String[] args) {
+        try {
+            // 创建URL和连接
+            URL url = new URL("http://www.example.com");
+            HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+
+            // 设置请求方法
+            httpURLConnection.setRequestMethod("GET");
+
+            // 获取响应码
+            int responseCode = httpURLConnection.getResponseCode();
+            System.out.println("Response Code: " + responseCode);
+
+            // 读取响应
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream(), "utf-8"))) {
+                StringBuilder response = new StringBuilder();
+                String responseLine = null;
+                while ((responseLine = br.readLine()) != null) {
+                    response.append(responseLine.trim());
+                }
+                System.out.println(response.toString());
+            }
+
+            // 断开连接
+            httpURLConnection.disconnect();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
+
+​					
+
+**创建链接**
+
+要使用 `HttpURLConnection`，您首先需要创建一个 `URL` 对象，并通过调用 `openConnection()` 方法来创建一个 `HttpURLConnection` 对象。
+
+```java
+URL url = new URL("http://www.example.com");
+HttpURLConnection httpURLConnection = (HttpURLConnection) url.openConnection();
+```
+
+​					
+
+**设置请求方法**
+
+`HttpURLConnection` 允许您设置请求方法（GET、POST、PUT、DELETE等）。
+
+```java
+httpURLConnection.setRequestMethod("GET"); // 或者 "POST", "PUT", "DELETE" 等
+```
+
+​				
+
+**设置请求头**
+
+使用 `setRequestProperty` 方法来设置请求头
+
+```java
+httpURLConnection.setRequestProperty("Content-Type", "application/json");
+```
+
+​				
+
+**获取响应**
+
+要读取响应，您可以获取 `InputStream` 并从中读取数据。
+
+```java
+try (BufferedReader br = new BufferedReader(new InputStreamReader(httpURLConnection.getInputStream(), "utf-8"))) {
+    StringBuilder response = new StringBuilder();
+    String responseLine = null;
+    while ((responseLine = br.readLine()) != null) {
+        response.append(responseLine.trim());
+    }
+    System.out.println(response.toString());
+}
+```
+
+​				
+
+**关闭连接**
+
+完成后，您应该断开与服务器的连接。
+
+```java
+httpURLConnection.disconnect();
+```
+
+​					
 

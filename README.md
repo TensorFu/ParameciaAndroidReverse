@@ -140,9 +140,13 @@
 
 [android的网络编程_HttpURLConnection框架](教程/android的网络编程.md)
 
-> 从最基本的什么是网络编程开始，到介绍使用android自带的HttpURLConnection框架进行网络编程，收发数据
+> 从最基本的什么是网络编程开始
 >
-> 发出请求，处理响应
+> 介绍了什么是IP，以及私有IP和公有IP，端口，HTTP/HTTPS协议的区别和特点
+>
+> 介绍了URL，以及如何解析URL
+>
+> 介绍了请求和响应，以及如何发送请求，处理响应（基于  HttpURLConnection ）
 
 #### Retrofit
 
