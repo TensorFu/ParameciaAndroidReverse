@@ -463,3 +463,60 @@ public class MainActivity extends AppCompatActivity {
 
 
 ##### 请求的主体
+
+```java
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("https://api.openweathermap.org/data/2.5/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        OpenWeatherMapApi api = retrofit.create(OpenWeatherMapApi.class);
+
+
+                // 在这里发起网络请求
+                Call<WeatherResponse> call = api.getCurrentWeatherData("35.6895", "139.6917", "544a1d9a2925e59467b8c59d1f59c29f");
+                call.enqueue(new Callback<WeatherResponse>() {
+                    @Override
+                    public void onResponse(Call<WeatherResponse> call, Response<WeatherResponse> response) {
+                        float temperature = response.body().main.temp;
+                        Log.i("天气", "Temperature: " + temperature); // 在这里打印温度
+                        Log.i("天气","获取成功");
+                    }
+
+                    @Override
+                    public void onFailure(Call<WeatherResponse> call, Throwable t) {
+                        // 处理错误
+                        Log.i("天气","获取失败");
+                    }
+                });
+```
+
+​					
+
+**创建 Retrofit Builder**
+
+```java
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("https://api.openweathermap.org/data/2.5/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+```
+
+**设置基础 URL**
+
+```java
+baseUrl("https://api.openweathermap.org/data/2.5/")
+```
+
+**添加转换工厂**
+
+```java
+addConverterFactory(GsonConverterFactory.create())
+```
+
+这个工厂负责将 HTTP 响应体转换成 Java 对象，以及将 Java 对象转换成请求体			
+
+`GsonConverterFactory.create()` 使用 Gson 库来解析 JSON 响应			
+
+​					
+
