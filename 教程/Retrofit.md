@@ -520,3 +520,91 @@ addConverterFactory(GsonConverterFactory.create())
 
 ​					
 
+```java
+        OpenWeatherMapApi api = retrofit.create(OpenWeatherMapApi.class);
+
+
+                // 在这里发起网络请求
+                Call<WeatherResponse> call = api.getCurrentWeatherData("35.6895", "139.6917", "544a1d9a2925e59467b8c59d1f59c29f");
+                call.enqueue(new Callback<WeatherResponse>() {
+                    @Override
+                    public void onResponse(Call<WeatherResponse> call, Response<WeatherResponse> response) {
+                        float temperature = response.body().main.temp;
+                        Log.i("天气", "Temperature: " + temperature); // 在这里打印温度
+                        Log.i("天气","获取成功");
+                    }
+
+                    @Override
+                    public void onFailure(Call<WeatherResponse> call, Throwable t) {
+                        // 处理错误
+                        Log.i("天气","获取失败");
+                    }
+```
+
+​			
+
+```java
+OpenWeatherMapApi api = retrofit.create(OpenWeatherMapApi.class);
+```
+
+创建一个 `OpenWeatherMapApi` 接口的实例，该实例能够发起符合该接口描述的网络请求。Retrofit 会动态地为这个接口创建一个实现，这个实现会根据你在接口中定义的方法和注解来发起实际的 HTTP 请求。
+
+​				
+
+```java
+Call<WeatherResponse> call = api.getCurrentWeatherData("35.6895", "139.6917", "544a1d9a2925e59467b8c59d1f59c29f");
+                call.enqueue(new Callback<WeatherResponse>() {
+                    @Override
+                    public void onResponse(Call<WeatherResponse> call, Response<WeatherResponse> response) {
+                        float temperature = response.body().main.temp;
+                        Log.i("天气", "Temperature: " + temperature); // 在这里打印温度
+                        Log.i("天气","获取成功");
+                    }
+
+                    @Override
+                    public void onFailure(Call<WeatherResponse> call, Throwable t) {
+                        // 处理错误
+                        Log.i("天气","获取失败");
+                    }
+```
+
+​		
+
+```java
+Call<WeatherResponse> call = api.getCurrentWeatherData("35.6895", "139.6917", "544a1d9a2925e59467b8c59d1f59c29f");
+```
+
+通过之前创建的 `OpenWeatherMapApi` 接口的实例 `api`，调用了 `getCurrentWeatherData` 方法，传入了经纬度和 API 密钥，创建了一个 `Call<WeatherResponse>` 对象，代表了一个还未执行的 HTTP 请求。
+
+​				
+
+```java
+call.enqueue(new Callback<WeatherResponse>() {...});
+```
+
+这行代码通过调用 `Call` 对象的 `enqueue` 方法来异步执行前面创建的 HTTP 请求。`enqueue` 方法需要一个 `Callback<WeatherResponse>` 参数，该回调将在请求成功或失败时被触发。
+
+​			
+
+```java
+public void onResponse(Call<WeatherResponse> call, Response<WeatherResponse> response) {
+    float temperature = response.body().main.temp;
+    Log.i("天气", "Temperature: " + temperature);
+    Log.i("天气","获取成功");
+}
+```
+
+处理成功的响应
+
+​			
+
+```java
+public void onFailure(Call<WeatherResponse> call, Throwable t) {
+    Log.i("天气","获取失败");
+}
+```
+
+处理失败的响应
+
+​				
+
