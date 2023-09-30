@@ -102,7 +102,7 @@
 
 [intent以及PendingIntent](教程/intent.md)
 
-> 介绍什么是 intent
+> 介绍什么是 intent，以及什么是PendingIntent
 
 ​									
 
