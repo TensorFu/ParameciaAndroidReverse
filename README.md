@@ -42,6 +42,7 @@
     - [网络编程](#网络编程)
       - [android的网络编程\_HttpURLConnection框架](#android的网络编程_httpurlconnection框架)
       - [Retrofit](#retrofit)
+      - [OKHttp](#okhttp)
   - [NDK 开发](#ndk-开发)
   - [CPP 文件的编译以及 OLLVM 的混淆](#cpp-文件的编译以及-ollvm-的混淆)
   - [Android项目的文件结构](#android项目的文件结构)
@@ -59,7 +60,8 @@
   - [汇编代码阅读](#汇编代码阅读)
   - [APKtool 工具反编译 apk](#apktool-工具反编译-apk)
   - [frida环境的安装](#frida环境的安装)
-  - [frida使用](#frida使用)
+  - [frida](#frida)
+  - [objection](#objection)
   - [apk 的保护策略](#apk-的保护策略)
   - [JEB 静态分析动态调试Java层破解登录过程实例](#jeb-静态分析动态调试java层破解登录过程实例)
   - [IDA 动态调试流程](#ida-动态调试流程)
@@ -299,11 +301,25 @@ static关键字[static关键字的修饰方法，static关键字修饰变量，s
 
 ## frida环境的安装
 
-[frida环境的安装](教程/frida环境的安装.md)
+
 
 ---
 
-## frida使用
+## frida
+
+[Frida简介以及安装](教程/frida简介.md)
+
+> 介绍 Frida 的这一款工具
+>
+> 介绍如何在你的设备上安装 Frida
+
+
+
+[frida环境的安装](教程/frida环境的安装.md)
+
+[Frida的两种启动方式](教程/Frida的两种启动方式.md)
+
+
 
 [frida使用](教程/frida使用.md)
 
