@@ -10475,34 +10475,7 @@ public class MainActivity extends AppCompatActivity {
 
 ### LiveData
 
-（简而言之就是，一个能够在 activity之间，Fragment之间，ViewModel之间，或者他们相互之间，实时更新，实时共享的数据，类似于多线程的，共享数据）
-
-LiveData 是 Android Jetpack 构件库中的一个核心组件，它是一个可观察的数据持有者类，可用于在应用程序的不同组件（如 Activity、Fragment 或 ViewModel）之间共享和观察数据。LiveData 遵循观察者模式，使 UI 组件（如 Activity 或 Fragment）能够在数据更改时自动更新。这有助于实现更简洁、可维护和可测试的代码。		
-
-​					
-
-1. **确保 UI 与数据状态一致**：因为 LiveData 遵循观察者模式，所以当数据更改时，所有订阅的 UI 组件都会自动更新。
-2. **生命周期感知**：LiveData 是生命周期感知的，这意味着它会自动管理观察者的订阅，确保只在活跃的生命周期（如 Activity 处于 started 或 resumed 状态）时更新 UI。这样可以避免在不活跃的生命周期（如 Activity 处于 paused 或 stopped 状态）中进行不必要的 UI 更新，从而提高性能。
-3. **无内存泄漏**：由于 LiveData 会自动管理订阅，所以在组件（如 Activity 或 Fragment）销毁时不会造成内存泄漏。
-4. **数据共享**：LiveData 可以在不同组件之间轻松共享数据，特别是与 ViewModel 一起使用时，可以实现 UI 逻辑与数据处理逻辑的解耦。
-
-​											
-
-可以了解到 **LiveData** 的最主要的作用是，共享数据，并且是共享实时数据，但是我们在前面的学习当中就已经学习了，通过多线程的数据共享的方式进行共享数据，为什么还需要这个东西？
-
-线程之间的数据共享是指多个线程同时访问和操作相同的数据。这种情况下，需要注意线程同步和互斥的问题，以避免数据不一致、数据竞争和其他潜在问题。线程之间的数据共享主要关注如何在多线程环境下正确处理数据。
-
-而 LiveData 提供的数据共享是指在应用程序的不同组件（如 Activity、Fragment 或 ViewModel）之间共享和观察数据。LiveData 的数据共享关注的是组件间的数据传递，以及在数据变化时自动更新 UI。LiveData 的优势在于生命周期感知、自动管理观察者订阅、避免内存泄漏等。
-
-LiveData 和线程间的数据共享有以下区别：
-
-1. **目的**：线程间的数据共享关注的是多线程环境下数据的正确处理，而 LiveData 关注的是组件间的数据传递和自动更新 UI。
-2. **生命周期感知**：LiveData 是生命周期感知的，这意味着它会根据组件的生命周期自动管理观察者订阅，从而避免在不活跃的生命周期中进行不必要的 UI 更新。线程间的数据共享不涉及生命周期感知。
-3. **线程安全**：LiveData 保证了数据的线程安全，因为它内部使用了线程安全的数据结构（如 AtomicReference）和同步机制。线程间的数据共享需要手动处理同步和互斥问题，以确保数据的正确性。
-
-总之，LiveData 的存在意义在于提供一种生命周期感知、线程安全且易于管理的数据共享方式，使组件间的数据传递更加简洁、可维护和可测试。而线程间的数据共享主要关注在多线程环境下如何正确处理数据。在实际应用中，可以根据需求和场景选择合适的方式进行数据共享。
-
-​					
+### 实例代码_观察单个变量的变化
 
 CounterViewModel.java
 
@@ -10536,7 +10509,7 @@ MutableLiveData `MutableLiveData`是一个类，它可以包含或持有某种�
 
 `MutableLiveData`实例。我们可以通过`counter.setValue()`来设置这个值，通过`counter.getValue()`来获取这个值。
 
-​					
+​				
 
 MainActivity.java
 
@@ -10582,6 +10555,22 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 }
+```
+
+
+
+​				
+
+​											
+
+
+
+​							
+
+
+
+```java
+
 ```
 
 ​				
