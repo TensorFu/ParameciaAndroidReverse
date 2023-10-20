@@ -88,3 +88,8 @@
 
 ​					
 
+### 开始工作
+
+点击这里的 ready 就可以了
+
+![img_v2_9e77032f-e462-4a3d-91e4-490a5bd42c5g](./assets/img_v2_9e77032f-e462-4a3d-91e4-490a5bd42c5g.jpg)
