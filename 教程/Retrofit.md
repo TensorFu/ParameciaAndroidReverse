@@ -1,6 +1,17 @@
 ## Retrofit
 
-[TOC]
+- [Retrofit](#retrofit)
+  - [主要特点：](#主要特点)
+  - [一个实战的案例](#一个实战的案例)
+    - [请求的格式](#请求的格式)
+    - [响应的格式](#响应的格式)
+    - [开始写代码](#开始写代码)
+      - [WeatherResponse](#weatherresponse)
+        - [如果有更加深的JSON](#如果有更加深的json)
+      - [编写接口 OpenWeatherMapApi](#编写接口-openweathermapapi)
+    - [发起请求](#发起请求)
+      - [请求的主体](#请求的主体)
+
 
 简单来说 Retrofit  就是一个高级的 OKHttp 			
 
