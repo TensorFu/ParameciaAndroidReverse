@@ -109,6 +109,103 @@ public class UserRepository {
 - `executor.execute()`用于异步运行代码块。
 - 在此代码块中，我们模拟了网络延迟，然后创建了一个新的`User`对象并通过回调返回
 
+​				
+
+
+
+```java
+package com.open.ok;
+
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.ViewModel;
+
+// UserViewModel.java
+public class UserViewModel extends ViewModel {
+    private final UserNameLiveData userNameLiveData = new UserNameLiveData();
+
+    public LiveData<String> getUserName() {
+        return userNameLiveData;
+    }
+
+    public void loadUserData() {
+        UserRepository.getInstance().getUser(new UserRepository.UserDataCallback() {
+            @Override
+            public void onDataLoaded(User user) {
+                userNameLiveData.updateData(user.getName());
+            }
+        });
+    }
+
+    static class UserNameLiveData extends LiveData<String> {
+        public void updateData(String data) {
+            postValue(data); // 此处调用是合法的，因为我们在 LiveData 的子类中
+        }
+    }
+}
+```
+
+​			
+
+```java
+package com.open.ok;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
+
+import android.os.Bundle;
+import android.widget.Button;
+import android.widget.TextView;
+
+import com.open.ok.databinding.ActivityMainBinding;
+
+public class MainActivity extends AppCompatActivity {
+    private UserViewModel viewModel;
+
+    // Used to load the 'ok' library on application startup.
+    static {
+        System.loadLibrary("ok");
+    }
+
+    private ActivityMainBinding binding;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        binding = ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(binding.getRoot());
+
+        // Example of a call to a native method
+        TextView tv = binding.sampleText;
+        tv.setText(stringFromJNI());
+
+        final TextView userNameTextView = findViewById(R.id.userNameTextView);
+        Button loadDataButton = findViewById(R.id.loadDataButton);
+
+        viewModel = new ViewModelProvider(this).get(UserViewModel.class);
+        viewModel.getUserName().observe(this, new androidx.lifecycle.Observer<String>() {
+            @Override
+            public void onChanged(String userName) {
+                userNameTextView.setText(userName);
+            }
+        });
+
+        loadDataButton.setOnClickListener(new android.view.View.OnClickListener() {
+            @Override
+            public void onClick(android.view.View v) {
+                viewModel.loadUserData(); // 模拟数据加载
+            }
+        });
+    }
+
+    /**
+     * A native method that is implemented by the 'ok' native library,
+     * which is packaged with this application.
+     */
+    public native String stringFromJNI();
+}
+```
+
 
 
 
