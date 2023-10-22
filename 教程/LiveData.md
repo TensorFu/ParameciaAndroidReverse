@@ -111,7 +111,7 @@ public class UserRepository {
 
 ​				
 
-
+UserViewModel.java
 
 ```java
 package com.open.ok;
@@ -144,7 +144,11 @@ public class UserViewModel extends ViewModel {
 }
 ```
 
+注意：这里的 LiveData 传进去的数据有两种方式，第一种方式是，setValue() 的方式，这种方式其实几乎可以忽略，因为他只能在主线程当中使用，而我们的 postValue 是一个可以再任何
+
 ​			
+
+MainActivity.java
 
 ```java
 package com.open.ok;
