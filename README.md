@@ -150,7 +150,9 @@
 
 [RxJava](教程/RxJava.md)
 
-> 
+> 介绍 RxJava 的基本的知识，RxJava 的 Observable 可以看作是一个更复杂、更灵活的 LiveData
+>
+> 分析一个实际的真实的案例
 
 ​						
 
@@ -204,6 +206,10 @@
 [Retrofit](教程/Retrofit.md)
 
 > 介绍了如果使用 Retrofit 进行发送请求
+
+[Retrofit和RxJava的结合使用](教程/Retrofit和RxJava的结合使用.md)
+
+> 在真实的开发当中，我们经常，用 Retrofit 和 RxJava 结合使用，一个负责请求网络数据，一个负责对响应的数据数据做出反应
 
 #### OKHttp
 
