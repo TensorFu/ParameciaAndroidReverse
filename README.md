@@ -50,6 +50,11 @@
       - [Retrofit](#retrofit)
       - [OKHttp](#okhttp)
   - [NDK 开发](#ndk-开发)
+  - [动态加载](#动态加载)
+  - [隐藏图标](#隐藏图标)
+  - [androidmanifest.xml 分析](#androidmanifestxml-分析)
+  - [android原理](#android原理)
+    - [Android 13 应用的启动流程](#android-13-应用的启动流程)
     - [virtualAPP](#virtualapp)
   - [CPP 文件的编译以及 OLLVM 的混淆](#cpp-文件的编译以及-ollvm-的混淆)
   - [Android项目的文件结构](#android项目的文件结构)
@@ -70,6 +75,7 @@
   - [frida](#frida)
   - [objection](#objection)
   - [apk 的保护策略](#apk-的保护策略)
+    - [学习nmmp](#学习nmmp)
   - [JEB 静态分析动态调试Java层破解登录过程实例](#jeb-静态分析动态调试java层破解登录过程实例)
   - [IDA 动态调试流程](#ida-动态调试流程)
   - [IDAso层动态调试破解登录过程实例](#idaso层动态调试破解登录过程实例)
@@ -113,7 +119,20 @@
 
 > 介绍什么是 intent，以及什么是PendingIntent
 
+​			
+
+### Parcel 和 Parcelable
+
+[Parcel 和 Parcelable](教程/Parcel_Parcelable.md)
+
+> 我们知道在 Android 的系统当中，我们可以 IPC 也就是跨进程通信，我们创建一个 activity 的时候，或者是，从一个 service 当中拿到数据，就会用到进程通信，但是你不能够直接咔咔咔把这些数据或者intent，就传递给 binder ，不够统一，不够标准， 就没有办法识别，那么操作系统的做法就是，将一个intent打包成一个标准化的格式，那么这个格式就是 Parcel 的格式
+>
+> 1. **Parcel**：它是一个数据容器，用于存储和传输数据。但是他也不是所有的数据都能够接受，您可以将各种类型的数据写入 `Parcel`，包括基本数据类型和那些实现了 `Parcelable` 接口的对象。`Parcel` 被广泛用于 Android 的进程间通信（IPC）中，特别是在使用 Binder 或 Intent 传输数据时。
+> 2. **Parcelable**：它就是一个，处理这个容器的接口，他可以往这个容器当中写数据，也可以处理容器当中的数据
+
 ​				
+
+
 
 ### 数据持有类
 
@@ -226,7 +245,7 @@
 
 ## NDK 开发
 
-[NDK开发_解读最简单的模板代码](教程/NDK开发_解读最简单的模板代码.md)
+[NDK开发_解读最简单的模板代码 JNI](教程/NDK开发_解读最简单的模板代码.md)
 
 > 创建一个 NDK 的项目
 >
@@ -234,9 +253,77 @@
 >
 > 了解最基本的，编译文件，加载 SO 文件，静态注册函数的命名规则，C++ 文件的几个字段
 
-​						
+​					
+
+[JNA开发和学习](教学/JNA开发学习.md)
+
+> 学习 JNA 开发和学习
+>
+> 
+
+​		
+
+## android studio调试
+
+[android studio调试](教程/android调试.md)
+
+> 如何使用android studio对你的 Android 程序进行调试
+
+​			
+
+## 反射
+
+[反射](教程/反射.md)			
+
+> 关于 Android 反射的相关的知识
+
+​				
+
+## 动态加载
+
+[动态加载概括](教程/动态加载概括.md)
+
+> 在这里我们了解什么是动态加载，有什么作用
+>
+> 有哪几种类型，每一种类型的实现的思路
+
+​				
+
+## 隐藏图标
+
+[隐藏图标](教程/隐藏图标.md)
+
+> 所谓的隐藏图标就是在，运行的过程当中，整个 app  的图标消失，让用户不知道的自己安装了这个应用，从而可以使 app 能够长期存活在用户的手机当中，而不被发现
+
+​					
+
+## androidmanifest.xml 分析
+
+[androidmanifest.xml分析](教程/androidmanifest.md)
+
+> 分析 Androidmanifest.xml 当中的内容
+
+
+
+## 保活原理的讲解
+
+[保活原理的讲解](教程/保活原理的讲解.md)
+
+> 在 2023 年这样的大环境下，分析一下，现在工业当中的还能够保活，拉活的一些方法，以及实现这一目的的原理
+
+​				
 
 ## android原理
+
+### Android 13 应用的启动流程
+
+> 在我们的了解 Android 13 应用的启动流程的时候，需要对一些前置的知识一些了解
+>
+> 我们会把整个过程当中涉及到的一些的东西全部拿出来，详细的解释，如果你觉得，总是有一个盲人摸象的感觉，那么你是对的，如果我直接讲整个启动的流程，你可能会觉得很难接受，因为里面会出现大量的之前可能没有了解过的内容，比方说 AIDL，Zygote，Binder ... 为了避免后面的理解的空洞，我们先将这些概念都了解一下
+
+
+
+
 
 [Android13 应用启动流程分析](教程/Android13 应用启动流程分析.md)
 
@@ -413,7 +500,17 @@ static关键字[static关键字的修饰方法，static关键字修饰变量，s
 >
 > 介绍了如何编译 OLLVM的C++ 的混淆工具
 
+​				
 
+### 学习nmmp
+
+[学习nmmp](教程/学习nmmp.md)
+
+>
+> 根据他的 GitHub 上的 readme 的介绍，nmmp 是一个 基于dex-vm运行dalvik字节码从而对dex进行保护，对dex进行转换，把dex里数据转为c结构体。我们了解到，这个其实就是将我们的，将 Java 代码或者是 Kotlin 的代码下沉到 C 代码
+> 我们这一章的目的是，全面的了解这个加固的技术，并且最后能够通过修改这个源代码，从而做出一个自己的 nmmp
+
+​				
 
 
 
@@ -503,4 +600,3 @@ static关键字[static关键字的修饰方法，static关键字修饰变量，s
 [Httpcanary证书的安装](教程/Httpcanary证书的安装.md)
 
 [不用设置路由器翻墙的抓包外网APP的方法](教程/不用设置路由器翻墙的抓包外网APP的方法.md)
-
