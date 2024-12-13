@@ -32,10 +32,12 @@
 ---
 
 - [ParameciaAndroidReverse](#parameciaandroidreverse)
-  - [Android开发](#android开发)
+  - [Android development](#android-development)
     - [Android 体系结构](#android-体系结构)
     - [广播接受者](#广播接受者)
     - [intent以及PendingIntent](#intent以及pendingintent)
+    - [Parcel 和 Parcelable](#parcel-和-parcelable)
+    - [What is Bundle](#what-is-bundle)
     - [数据持有类](#数据持有类)
       - [viewModel](#viewmodel)
     - [响应式编程](#响应式编程)
@@ -50,9 +52,12 @@
       - [Retrofit](#retrofit)
       - [OKHttp](#okhttp)
   - [NDK 开发](#ndk-开发)
+  - [android studio调试](#android-studio调试)
+  - [反射](#反射)
   - [动态加载](#动态加载)
   - [隐藏图标](#隐藏图标)
   - [androidmanifest.xml 分析](#androidmanifestxml-分析)
+  - [保活原理的讲解](#保活原理的讲解)
   - [android原理](#android原理)
     - [Android 13 应用的启动流程](#android-13-应用的启动流程)
     - [virtualAPP](#virtualapp)
@@ -86,9 +91,10 @@
   - [JNItrace](#jnitrace)
   - [奇怪的知识增加了](#奇怪的知识增加了)
 
+
 ---
 
-## Android开发
+## Android development
 ### Android 体系结构
 
 [Android_体系结构](教程/Android_体系结构.md)
@@ -131,6 +137,10 @@
 > 2. **Parcelable**：它就是一个，处理这个容器的接口，他可以往这个容器当中写数据，也可以处理容器当中的数据
 
 ​				
+
+### What is Bundle
+
+[Bundle](Tutorial/Bundle.md)
 
 
 
